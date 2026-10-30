@@ -3,34 +3,802 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bharosa (backend preview)</title>
-<style>
-  body { font: 14px/1.4 system-ui, sans-serif; margin: 16px; background: #F5F5F7; color: #111418; }
-  pre { background: #fff; padding: 12px; border-radius: 12px; overflow: auto; max-height: 70vh; }
-  #trace div { font-family: ui-monospace, monospace; font-size: 12px; }
-</style>
+<title>Bharosa on Paytm</title>
+<link rel="stylesheet" href="/static/css/tokens.css">
+<link rel="stylesheet" href="/static/css/base.css">
+<link rel="stylesheet" href="/static/css/layout.css">
+<link rel="stylesheet" href="/static/css/soundbox.css">
+<link rel="stylesheet" href="/static/css/apps.css">
+<link rel="stylesheet" href="/static/css/overview.css">
+<script src="/static/vendor/qrcode.min.js"></script>
+<script src="/static/vendor/chart.umd.min.js"></script>
+<script src="/static/js/util.js"></script>
+<script src="/static/js/app.js"></script>
+<script defer src="/static/vendor/alpine.min.js"></script>
 </head>
-<body>
-<!-- Placeholder until the real UI (static/ is owned by the frontend build). Shows the live SSE feed. -->
-<h1>Bharosa backend preview</h1>
-<p>Sim time: <b id="now">…</b> · <button onclick="fetch('/api/demo/reset',{method:'POST'})">Reset</button></p>
-<div id="trace"></div>
-<pre id="snap">connecting…</pre>
-<script>
-  const es = new EventSource('/api/stream');
-  es.onmessage = (ev) => {
-    const msg = JSON.parse(ev.data);
-    if (msg.type === 'snapshot') {
-      document.getElementById('now').textContent = msg.data.now;
-      document.getElementById('snap').textContent = JSON.stringify(msg.data, null, 2);
-    } else {
-      const d = document.createElement('div');
-      d.textContent = `[${msg.type}] ` + JSON.stringify(msg.data);
-      const t = document.getElementById('trace');
-      t.prepend(d);
-      while (t.children.length > 12) t.lastChild.remove();
-    }
-  };
-</script>
+<body x-data="bharosa" x-cloak>
+
+<!-- ======================================================= TOP BAR -->
+<header class="topbar">
+  <div class="brand">Bharosa <span class="chip">on <span class="wordmark"><b>Pay</b><span>tm</span></span></span></div>
+  <nav class="tabs">
+    <template x-for="t in [['live','Live Demo'],['soundbox','Soundbox'],['merchant','Merchant'],['customer','Customer'],['overview','Overview']]" :key="t[0]">
+      <a class="tab" :class="view===t[0] && 'on'" :href="'#/'+t[0]" x-text="t[1]"></a>
+    </template>
+  </nav>
+  <div class="tools">
+    <span class="conn" :class="connected && 'ok'" :title="connected ? 'Live' : 'Reconnecting…'"></span>
+    <span class="simclock" x-text="U.simClock(now)"></span>
+    <button class="btn btn-secondary btn-sm" @click="nextDay()" title="Advance the simulated clock one day">+1 day</button>
+    <div class="seg" title="Soundbox and briefing language">
+      <button :class="snap?.lang==='hi-IN' && 'on'" @click="setLang('hi-IN')">हिं</button>
+      <button :class="snap?.lang==='kn-IN' && 'on'" @click="setLang('kn-IN')">ಕನ್ನ</button>
+    </div>
+    <button class="icon-btn" @click="soundOn=!soundOn; started=true" :title="soundOn ? 'Sound on' : 'Sound off'" x-text="soundOn ? '🔊' : '🔈'"></button>
+    <button class="btn btn-outline btn-sm" @click="reset()" :disabled="demo.busy">Reset</button>
+  </div>
+</header>
+
+<!-- ======================================================= DEVICES -->
+<main x-show="view!=='overview'">
+  <div class="stage" :class="'view-'+view">
+
+    <!-- ------------------------------------------------ SOUNDBOX -->
+    <section x-show="view==='live' || view==='soundbox'">
+      <div class="col-title"><span>Paytm AI Soundbox · Lakshmi Stores</span><button x-show="view==='live'" @click="go('soundbox')" title="Full view">⤢</button></div>
+      <div class="soundbox-wrap">
+        <div class="sbx">
+          <div class="sbx-logo wordmark"><b>Pay</b><span>tm</span> <span style="color:var(--ink)">AI Soundbox</span></div>
+
+          <!-- top display: merchant facing -->
+          <div class="topdisp" :class="top?.band">
+            <div class="led"></div>
+            <template x-if="!top"><div class="idle">Lakshmi Stores · ready</div></template>
+            <template x-if="top && top?.band !== 'clarify'">
+              <div>
+                <div class="band" x-text="{green:'Safe', amber:'Caution', red:'High risk'}[top?.band] + ' · ' + U.first(top?.customer) + ' ' + U.inr(top?.requested)"></div>
+                <div class="txt" x-text="top?.text"></div>
+                <div class="meta">
+                  <span class="ms" x-show="top?.ms !== undefined" x-text="top?.ms + ' ms'"></span>
+                  <span x-show="top?.override" class="pill pill-red">Override</span>
+                  <a href="#" class="why" @click.prevent="sb.why=!sb.why" x-show="top?.reasons">Why?</a>
+                </div>
+                <ul class="reasons" x-show="sb.why" x-transition>
+                  <template x-for="r in top?.reasons || []"><li x-text="r"></li></template>
+                </ul>
+              </div>
+            </template>
+            <template x-if="top?.band === 'clarify'">
+              <div>
+                <div class="band">Which customer?</div>
+                <div class="txt" x-text="top?.text"></div>
+                <div class="row" style="flex-wrap:wrap;margin-top:8px">
+                  <template x-for="cand in top?.candidates || []"><button class="btn btn-secondary btn-sm" @click="pickCandidate(cand.id)" x-text="cand.name"></button></template>
+                </div>
+              </div>
+            </template>
+          </div>
+
+          <!-- front screen: customer facing -->
+          <div class="front">
+            <template x-if="front.mode === 'idle'">
+              <div>
+                <div class="lbl">Lakshmi Stores · Scan &amp; pay</div>
+                <div class="qr" x-html="U.qr('upi://pay?pa=lakshmistores@ptyes&pn=Lakshmi%20Stores')"></div>
+                <div class="lbl">Any UPI app</div>
+              </div>
+            </template>
+            <template x-if="front.mode === 'confirm_qr'">
+              <div style="width:100%">
+                <div class="lbl">Scan to confirm udhaar · Lakshmi Stores</div>
+                <div :class="front.pay_qr && 'split'">
+                  <div>
+                    <div class="amt" x-text="U.inr(front.amount) + ' udhaar'"></div>
+                    <div class="qr" :class="front.pay_qr && 'small'" @click="scanConfirm()" title="Click = customer scans with the Paytm app" x-html="U.qr(front.qr_payload)"></div>
+                    <div class="hint">Tap QR = customer scans</div>
+                  </div>
+                  <div x-show="front.pay_qr">
+                    <div class="amt" style="color:var(--navy)" x-text="'Pay ' + U.inr(front.pay_amount) + ' now'"></div>
+                    <div class="qr small" @click="scanPay()" title="Click = customer pays by UPI" x-html="U.qr(front.pay_qr, '#111418')"></div>
+                    <div class="hint">Tap QR = customer pays</div>
+                  </div>
+                </div>
+                <div class="paid" x-show="front.pay_paid" x-text="U.inr(top?.collect_now) + ' paid ✓'"></div>
+                <div class="lbl" x-show="minutesLeft(front.expires_at) !== null" x-text="'Valid for ' + minutesLeft(front.expires_at) + ' min'"></div>
+              </div>
+            </template>
+            <template x-if="front.mode === 'pay_qr'">
+              <div>
+                <div class="lbl">Lakshmi Stores</div>
+                <div class="amt" x-text="'Pay ' + U.inr(front.pay_amount) + ' now'"></div>
+                <div class="qr" @click="scanPay()" title="Click = customer pays by UPI" x-html="U.qr(front.pay_qr, '#111418')"></div>
+                <div class="hint">Tap QR = customer pays by UPI</div>
+              </div>
+            </template>
+            <template x-if="front.mode === 'new_customer'">
+              <div style="width:100%">
+                <div class="lbl">New customer · first udhaar</div>
+                <div class="amt" x-text="(front.name || 'Customer') + ' · ' + U.inr(front.amount)"></div>
+                <input class="input" x-show="!front.name" x-model="sb.newName" placeholder="Name" style="margin-top:6px">
+                <div class="input num" style="margin-top:6px;text-align:center;font-weight:700" x-text="sb.keypad || 'Mobile number'"></div>
+                <div class="keypad">
+                  <template x-for="k in ['1','2','3','4','5','6','7','8','9','⌫','0','✓']">
+                    <button @click="k==='✓' ? submitNewCustomer() : key(k)" x-text="k" :style="k==='✓' && 'background:var(--navy);color:#fff'"></button>
+                  </template>
+                </div>
+              </div>
+            </template>
+            <template x-if="front.mode === 'amount'">
+              <div>
+                <div class="tick">✓</div>
+                <div class="flash-amt" x-text="front.text"></div>
+                <div class="lbl">Lakshmi Stores</div>
+              </div>
+            </template>
+          </div>
+
+          <div class="sbx-bottom">
+            <div class="speaker" :class="playing && 'playing'" title="Speaker"><span>🔊</span></div>
+            <button class="paytm-btn" :class="sb.panel && 'on'" @click="sb.panel=!sb.panel"><span class="mic">🎙</span> Paytm button</button>
+          </div>
+        </div>
+
+        <div class="guard-actions" x-show="top && (top?.band==='amber' || top?.band==='red') && !top?.override && front.mode!=='idle'">
+          <button class="btn btn-primary btn-sm" @click="sb.why=false">Use suggestion</button>
+          <button class="btn btn-danger btn-sm" @click="override()" x-text="'Override: give ' + U.inr(top?.requested)"></button>
+        </div>
+        <div class="last-alert" x-text="snap?.soundbox?.last_alert || ''"></div>
+
+        <div class="speak" x-show="sb.panel" x-transition>
+          <div class="row between"><b style="color:var(--ink)">Speak to the Soundbox</b><span class="small muted">presets skip the AI</span></div>
+          <div class="chips" style="margin-top:8px">
+            <template x-for="p in presets"><button class="chip-btn" @click="say(p)" x-text="p.label"></button></template>
+          </div>
+          <form @submit.prevent="sayText()">
+            <input class="input" x-model="sb.text" placeholder="Type what the shopkeeper says… e.g. Ramesh 340 udhaar">
+            <button class="btn btn-primary">Say</button>
+          </form>
+          <div class="note">Paytm's Soundbox already converts speech to text; we receive the text. Free text goes to the Counter Agent.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ------------------------------------------------ MERCHANT PHONE -->
+    <section x-show="view==='live' || view==='merchant'">
+      <div class="col-title"><span>Paytm for Business · merchant</span><button x-show="view==='live'" @click="go('merchant')" title="Full view">⤢</button></div>
+      <div class="phone"><div class="screen">
+        <div class="statusbar"><span x-text="U.time(now)"></span><span>5G ▮▮▮ 🔋</span></div>
+        <div class="notif" x-show="notif.merchant" x-transition @click="tapNotif('merchant')">
+          <div class="ic">P</div><div><b x-text="notif.merchant?.title"></b><p x-text="notif.merchant?.body"></p></div>
+        </div>
+
+        <!-- HOME -->
+        <div class="scroll" x-show="m.screen==='home'">
+          <div class="app-head">
+            <div class="avatar">LS</div>
+            <div class="grow"><div class="title" x-text="M?.store?.name"></div><div class="sub">Jayanagar · Paytm for Business</div></div>
+            <div class="bell">🔔<i x-show="(M?.drafts?.length||0)+(M?.pending_matches?.length||0)+(M?.disputes?.length||0) > 0"></i></div>
+          </div>
+
+          <div class="card m-collect">
+            <div class="lbl">Today's Collection</div>
+            <div class="big num" x-text="U.inr(M?.today_collection)"></div>
+            <div class="small" style="opacity:.8">via UPI · last 7 days</div>
+            <div x-html="U.spark((M?.collection_7d||[]).map(d=>d.amount), 330, 40)"></div>
+          </div>
+
+          <div class="card brief" x-show="M?.briefing">
+            <div class="row between"><span class="who">📒 Munim · morning briefing</span><button class="play" @click="playBriefing()" title="Play">▶</button></div>
+            <p x-text="M?.briefing?.text"></p>
+          </div>
+
+          <!-- action cards: things that need the merchant -->
+          <template x-for="pm in M?.pending_matches || []" :key="pm.pending_id">
+            <div class="card action-card blue">
+              <div class="card-title" x-text="'Who paid ' + U.inr(pm.amount) + '?'"></div>
+              <div class="small muted" x-text="(pm.payer_name||'') + ' · ' + pm.payer_vpa + (pm.remark ? ' · “' + pm.remark + '”' : '')"></div>
+              <div class="small" style="margin-top:4px" x-show="pm.agent">
+                <span class="badge-src" :class="U.srcBadge(pm.agent?.source)?.[1]" x-text="U.srcBadge(pm.agent?.source)?.[0]"></span>
+                <span x-text="'AI guess ' + (pm.agent?.customer_id ? U.first((pm.candidates.find(c=>c.id===pm.agent.customer_id)||{}).name) : 'none') + ' · ' + Math.round((pm.agent?.confidence||0)*100) + '% (below 85%)'"></span>
+              </div>
+              <div class="chips" style="margin-top:10px">
+                <template x-for="cand in pm.candidates.slice(0,4)"><button class="chip-btn" @click="resolveMatch(pm.pending_id, cand.id)" x-text="cand.name + ' · ' + U.inr(cand.outstanding)"></button></template>
+                <button class="chip-btn" style="background:#EEF0F3;color:var(--ink-2)" @click="resolveMatch(pm.pending_id, null)">Not udhaar</button>
+              </div>
+            </div>
+          </template>
+          <template x-for="d in M?.disputes || []" :key="d.entry_id">
+            <div class="card action-card red">
+              <div class="card-title" x-text="U.first(d.customer) + ' disputes' + (d.claimed_amount!==null ? ': says ' + U.inr(d.claimed_amount) : '')"></div>
+              <div class="small muted" x-text="'“' + d.reason + '” · entry ' + U.inr(d.amount)"></div>
+              <div class="row" style="margin-top:10px">
+                <button class="btn btn-outline btn-sm" @click="correct(d.entry_id, d.amount)" x-text="'Keep ' + U.inr(d.amount)"></button>
+                <button class="btn btn-primary btn-sm" x-show="d.claimed_amount" @click="correct(d.entry_id, d.claimed_amount)" x-text="'Change to ' + U.inr(d.claimed_amount)"></button>
+              </div>
+            </div>
+          </template>
+          <div class="card action-card" x-show="(M?.drafts||[]).length">
+            <div class="card-title" x-text="'Approve ' + (M?.drafts||[]).length + ' reminder' + ((M?.drafts||[]).length>1?'s':'')"></div>
+            <div class="msg-preview" x-text="M?.drafts?.[0]?.text"></div>
+            <div class="row"><button class="btn btn-primary btn-sm" @click="approveAll()">Approve all</button><button class="btn btn-ghost btn-sm" @click="m.screen='collect'">Review →</button></div>
+          </div>
+          <template x-for="t in escalations" :key="t.customer_id">
+            <div class="card action-card red" @click="openThread(t.customer_id)" style="cursor:pointer">
+              <div class="card-title" x-text="U.first(t.customer) + ' needs your attention'"></div>
+              <div class="small" x-text="'“' + t.last_text + '”'"></div>
+            </div>
+          </template>
+
+          <div class="card">
+            <div class="row between"><span class="card-title">Udhaar</span><span class="pill pill-amber" x-show="M?.udhaar?.pending_confirm" x-text="M?.udhaar?.pending_confirm + ' waiting for scan'"></span></div>
+            <div class="trio">
+              <div><span>Outstanding</span><b class="num" x-text="U.inr(M?.udhaar?.outstanding)"></b></div>
+              <div><span>Verified</span><b class="num" x-text="U.inr(M?.udhaar?.verified)"></b></div>
+              <div><span>Overdue</span><b class="num" style="color:var(--red)" x-text="U.inr(M?.udhaar?.overdue)"></b></div>
+            </div>
+            <template x-for="e in M?.pending_entries || []" :key="e.entry_id">
+              <div class="kv"><span x-text="U.first(e.customer) + ' · ' + U.inr(e.amount)"></span><span class="pill pill-amber">Waiting for scan</span></div>
+            </template>
+            <a href="#" class="link" @click.prevent="openBook()">View Udhaar Book →</a>
+          </div>
+
+          <template x-for="b in M?.due_soon || []" :key="b.bill_id">
+            <div class="card" :class="b.gap > 0 && 'due-card'">
+              <div class="row between"><span class="card-title">Due soon</span><span class="pill" :class="b.gap>0 ? 'pill-red' : 'pill-green'" x-text="b.gap>0 ? U.inr(b.gap) + ' short' : 'Covered'"></span></div>
+              <div class="kv"><span x-text="b.distributor"></span><b class="num" x-text="U.inr(b.amount)"></b></div>
+              <div class="kv"><span>Due</span><b x-text="U.dayDate(b.due)"></b></div>
+              <div class="kv" x-show="b.paid_by_lender"><span>Paid by Partner NBFC</span><b class="num" style="color:var(--green)" x-text="U.inr(b.paid_by_lender) + ' ✓'"></b></div>
+              <button class="btn btn-primary btn-block" style="margin-top:10px" x-show="b.gap > 0 && !M?.advance" @click="offerAdvance(b.bill_id)">Get Supplier Advance</button>
+            </div>
+          </template>
+
+          <div class="card adv-card" x-show="M?.advance">
+            <div class="row between"><span class="card-title">Supplier Advance</span><span class="pill" :class="U.statePill(M?.advance?.state)" x-text="U.stateLabel(M?.advance?.state)"></span></div>
+            <template x-if="M?.advance?.state === 'offered'">
+              <div>
+                <div class="kv"><span x-text="M?.advance?.lender + ' pays ' + M?.advance?.paid_to"></span><b class="num" x-text="U.inr(M?.advance?.amount)"></b></div>
+                <div class="kv"><span>Fee (1.5%)</span><b class="num" x-text="U.inr(M?.advance?.fee)"></b></div>
+                <div class="kv"><span>Repaid from</span><b>20% of udhaar repayments</b></div>
+                <div class="row" style="margin-top:10px"><button class="btn btn-primary grow" @click="acceptAdvance()">Accept</button><button class="btn btn-outline" @click="declineAdvance()">Decline</button></div>
+              </div>
+            </template>
+            <template x-if="M?.advance && M?.advance?.state !== 'offered'">
+              <div>
+                <div class="small" style="color:var(--green);font-weight:700;margin-top:4px" x-text="M?.advance?.lender + ' paid ' + M?.advance?.paid_to + ' ' + U.inr(M?.advance?.amount) + ' ✓'"></div>
+                <div class="steps"><template x-for="st in ['offered','accepted','disbursed','repaying','closed']"><span :class="advStepClass(st)" x-text="st"></span></template></div>
+                <div class="row between small"><b class="num" x-text="U.inr(M?.advance?.repaid) + ' of ' + U.inr(M?.advance?.total_due)"></b><span class="muted" x-text="'backstop ' + U.date(M?.advance?.backstop)"></span></div>
+                <div class="progress" style="margin-top:6px"><i :style="'width:' + Math.min(100, 100*M?.advance?.repaid/M?.advance?.total_due) + '%'"></i></div>
+                <div class="small muted" style="margin-top:6px">20% of each UPI / auto-pay repayment goes to the lender</div>
+              </div>
+            </template>
+          </div>
+
+          <div class="section-h"><h4>Manage</h4></div>
+          <div class="card"><div class="grid4">
+            <button @click="openBook()"><span class="circle">📒</span>Udhaar Book</button>
+            <button @click="m.screen='collect'"><span class="circle">📨</span>Collect</button>
+            <button @click="openAdvance()"><span class="circle">🏦</span>Supplier Advance</button>
+            <button @click="m.screen='munim'"><span class="circle">🧮</span>Ask Munim</button>
+          </div></div>
+          <div class="footer-note">Concept prototype · Team MerchantMavericks</div>
+        </div>
+
+        <!-- UDHAAR BOOK -->
+        <div class="scroll" x-show="m.screen==='book'">
+          <div class="back"><button @click="m.screen='home'">←</button>Udhaar Book</div>
+          <input class="input" x-model="m.q" placeholder="Search customers">
+          <div class="card" style="margin-top:10px;padding:6px 14px">
+            <template x-for="cu in bookFiltered" :key="cu.id">
+              <div class="list-item" @click="openCustomer(cu.id)" style="cursor:pointer">
+                <span class="dot" :class="'dot-' + cu.band" :title="'For ₹340: ' + cu.band"></span>
+                <div class="grow"><div class="name" x-text="cu.name"></div>
+                  <div class="small muted" x-text="cu.score_band + (cu.overdue_days ? ' · ' + cu.overdue_days + ' days overdue' : '') + (cu.last_paid ? ' · paid ' + U.date(cu.last_paid) : '')"></div></div>
+                <b class="num" :style="cu.overdue_days && 'color:var(--red)'" x-text="U.inr(cu.outstanding)"></b>
+              </div>
+            </template>
+            <div class="empty" x-show="!bookFiltered.length">No customers</div>
+          </div>
+        </div>
+
+        <!-- CUSTOMER DETAIL -->
+        <div class="scroll" x-show="m.screen==='customer'">
+          <template x-if="m.detail">
+            <div>
+              <div class="back"><button @click="openBook()">←</button><span x-text="m.detail?.name"></span></div>
+              <div class="card">
+                <div class="row between"><span class="big num" x-text="U.inr(m.detail?.outstanding)"></span><span class="pill" :class="U.scorePill(m.detail?.score_band)" x-text="m.detail?.score + ' · ' + m.detail?.score_band"></span></div>
+                <div class="small muted" x-text="U.inr(m.detail?.verified) + ' verified' + (m.detail?.oldest_overdue_days ? ' · oldest ' + m.detail?.oldest_overdue_days + ' days overdue' : '')"></div>
+                <div class="card" style="background:var(--bg);box-shadow:none;margin-top:10px;padding:12px">
+                  <div class="row between"><b style="color:var(--ink)">Safe limit today</b><span class="pill" :class="U.bandPill(m.detail?.risk?.band)" x-text="U.inr(m.detail?.risk?.safe_limit)"></span></div>
+                  <ul class="small" style="margin:6px 0 0;padding-left:18px"><template x-for="r in m.detail?.risk?.reasons || []"><li x-text="r"></li></template></ul>
+                </div>
+                <button class="btn btn-secondary btn-block" style="margin-top:10px" x-show="m.detail?.outstanding>0" @click="remind([m.detail?.id]); m.screen='collect'">Send reminder</button>
+              </div>
+              <div class="section-h"><h4>Entries</h4></div>
+              <div class="card" style="padding:6px 14px">
+                <template x-for="e in m.detail?.entries || []" :key="e.id">
+                  <div class="list-item">
+                    <div class="grow"><div class="name num" x-text="U.inr(e.amount) + (e.paid ? ' · paid ' + U.inr(e.paid) : '')"></div>
+                      <div class="small muted" x-text="U.date(e.created_at) + ' · due ' + U.date(e.due_date) + (e.overdue_days ? ' · ' + e.overdue_days + 'd late' : '')"></div></div>
+                    <span class="pill" :class="U.statePill(e.state)" x-text="U.stateLabel(e.state)"></span>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- COLLECT -->
+        <div class="scroll" x-show="m.screen==='collect'">
+          <div class="back"><button @click="m.screen='home'">←</button>Collect</div>
+          <div class="card">
+            <div class="small">Bharosa reminds customers who are 7+ days overdue (not more than once in 3 days). You approve every message.</div>
+            <button class="btn btn-primary btn-block" style="margin-top:10px" @click="remind()">Draft reminders</button>
+          </div>
+          <div class="card action-card" x-show="(M?.drafts||[]).length">
+            <div class="row between"><span class="card-title" x-text="(M?.drafts||[]).length + ' drafts'"></span><button class="btn btn-primary btn-sm" @click="approveAll()">Approve all</button></div>
+            <template x-for="d in M?.drafts || []" :key="d.message_id"><div class="msg-preview"><b x-text="d.customer"></b><div x-text="d.text"></div></div></template>
+          </div>
+          <div class="section-h"><h4>Conversations</h4></div>
+          <div class="card" style="padding:6px 14px">
+            <template x-for="t in M?.threads || []" :key="t.customer_id">
+              <div class="list-item" @click="openThread(t.customer_id)" style="cursor:pointer">
+                <div class="avatar cyan" x-text="U.initials(t.customer)"></div>
+                <div class="grow"><div class="name" x-text="t.customer"></div><div class="small muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis" x-text="t.last_text"></div>
+                  <div class="small" x-show="t.promise" style="color:var(--green);font-weight:700" x-text="t.promise?.label"></div></div>
+                <span class="pill pill-red" x-show="t.escalated">Needs you</span>
+                <span class="pill pill-amber" x-show="t.last_status==='draft'">Draft</span>
+              </div>
+            </template>
+            <div class="empty" x-show="!(M?.threads||[]).length">No conversations yet</div>
+          </div>
+        </div>
+
+        <!-- THREAD -->
+        <div class="scroll" x-show="m.screen==='thread'">
+          <div class="back"><button @click="m.screen='collect'">←</button><span x-text="(M?.threads||[]).find(t=>t.customer_id===m.thread)?.customer"></span></div>
+          <div class="chat">
+            <template x-for="msg in m.threadMsgs" :key="msg.id">
+              <div class="bubble" :class="[msg.direction==='out' ? 'in' : 'out', msg.status==='draft' && 'draft']">
+                <span x-text="msg.text"></span>
+                <template x-if="msg.agent?.intent"><div class="small" style="margin-top:6px;font-weight:700" x-text="'AI read: ' + msg.agent.intent + (msg.agent.promise ? ' · ' + U.inr(msg.agent.promise.amount) + ' on ' + U.date(msg.agent.promise.date) : '') + (msg.agent.escalate ? ' · escalated' : '')"></div></template>
+                <span class="ts" x-text="U.time(msg.ts) + ' · ' + msg.status + (msg.agent?.source ? ' · ' + U.srcBadge(msg.agent.source)?.[0] : '')"></span>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- SUPPLIER ADVANCE -->
+        <div class="scroll" x-show="m.screen==='advance'">
+          <div class="back"><button @click="m.screen='home'">←</button>Supplier Advance</div>
+          <template x-if="!M?.advance && m.elig">
+            <div class="card">
+              <div class="card-title" x-text="m.elig?.eligible ? 'You can get ' + U.inr(m.elig?.amount) : 'Not available right now'"></div>
+              <ul class="small" style="padding-left:18px"><template x-for="r in m.elig?.reasons || []"><li x-text="r"></li></template></ul>
+              <template x-if="m.elig?.eligible">
+                <div>
+                  <div class="kv"><span>Paid directly to</span><b x-text="m.elig?.distributor"></b></div>
+                  <div class="kv"><span>Fee</span><b class="num" x-text="U.inr(m.elig?.fee)"></b></div>
+                  <div class="kv"><span>Total to repay</span><b class="num" x-text="U.inr(m.elig?.total_due)"></b></div>
+                  <div class="kv"><span>Repaid from</span><b>20% of udhaar repayments</b></div>
+                  <div class="kv"><span>Backstop</span><b x-text="U.date(m.elig?.backstop)"></b></div>
+                  <button class="btn btn-primary btn-block" style="margin-top:10px" @click="offerAdvance(m.elig?.bill_id)">See offer</button>
+                </div>
+              </template>
+            </div>
+          </template>
+          <template x-if="M?.advance">
+            <div>
+              <div class="card adv-card">
+                <div class="row between"><span class="card-title" x-text="M?.advance?.lender"></span><span class="pill" :class="U.statePill(M?.advance?.state)" x-text="U.stateLabel(M?.advance?.state)"></span></div>
+                <div class="steps"><template x-for="st in ['offered','accepted','disbursed','repaying','closed']"><span :class="advStepClass(st)" x-text="st"></span></template></div>
+                <div class="kv"><span>Amount (paid to <span x-text="M?.advance?.paid_to"></span>)</span><b class="num" x-text="U.inr(M?.advance?.amount)"></b></div>
+                <div class="kv"><span>Fee (1.5%)</span><b class="num" x-text="U.inr(M?.advance?.fee)"></b></div>
+                <div class="kv"><span>Total due</span><b class="num" x-text="U.inr(M?.advance?.total_due)"></b></div>
+                <div class="kv"><span>Split rate</span><b x-text="Math.round(M?.advance?.split_rate*100) + '% of UPI & auto-pay repayments'"></b></div>
+                <div class="kv" x-show="M?.advance?.backstop"><span>Backstop</span><b x-text="U.date(M?.advance?.backstop)"></b></div>
+                <div class="row" style="margin-top:10px" x-show="M?.advance?.state==='offered'"><button class="btn btn-primary grow" @click="acceptAdvance()">Accept</button><button class="btn btn-outline" @click="declineAdvance()">Decline</button></div>
+                <template x-if="M?.advance?.state!=='offered'">
+                  <div style="margin-top:8px"><div class="progress"><i :style="'width:' + Math.min(100, 100*M?.advance?.repaid/M?.advance?.total_due) + '%'"></i></div>
+                    <div class="small" style="margin-top:4px" x-text="U.inr(M?.advance?.repaid) + ' repaid of ' + U.inr(M?.advance?.total_due)"></div></div>
+                </template>
+              </div>
+              <div class="section-h" x-show="m.adv?.splits?.length"><h4>Repayment splits</h4></div>
+              <div class="card" style="padding:6px 14px" x-show="m.adv?.splits?.length">
+                <template x-for="sp in m.adv?.splits || []" :key="sp.repayment_id">
+                  <div class="list-item"><div class="grow"><div class="name" x-text="sp.customer"></div><div class="small muted" x-text="U.date(sp.ts) + ' · ' + sp.source + ' ' + U.inr(sp.amount)"></div></div>
+                    <div style="text-align:right"><b class="num" style="color:var(--violet)" x-text="U.inr(sp.lender_share)"></b><div class="small muted" x-text="'shop ' + U.inr(sp.merchant_share)"></div></div></div>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- ASK MUNIM -->
+        <div class="scroll" x-show="m.screen==='munim'" x-ref="munimScroll">
+          <div class="back"><button @click="m.screen='home'">←</button>Ask Munim</div>
+          <div class="chips" x-show="!munimChat.length">
+            <button class="chip-btn" @click="askMunim('Friday ko Sharma ko 18,000 kaise dunga?')">Friday ko Sharma ko 18,000 kaise dunga?</button>
+            <button class="chip-btn" @click="askMunim('Kaun kaun overdue hai?')">Kaun kaun overdue hai?</button>
+            <button class="chip-btn" @click="askMunim('Ramesh ka kitna baaki hai?')">Ramesh ka kitna baaki hai?</button>
+          </div>
+          <div class="chat">
+            <template x-for="(turn, i) in munimChat" :key="i">
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <div class="bubble munim-q" x-text="turn.q"></div>
+                <div class="bubble munim-a" x-show="!turn.a"><span class="thinking"><span class="spinner"></span> thinking…</span></div>
+                <template x-if="turn.a">
+                  <div class="bubble munim-a">
+                    <span x-text="turn.a.answer"></span>
+                    <div class="acts"><template x-for="a in turn.a.actions || []"><button class="btn btn-primary btn-sm" @click="munimAction(a)" x-text="a.label || a.type"></button></template></div>
+                    <details class="steps-list" style="margin-top:8px"><summary class="small muted">How I worked this out
+                      <span class="badge-src" :class="U.srcBadge(turn.a.source)?.[1]" x-text="U.srcBadge(turn.a.source)?.[0]"></span></summary>
+                      <ol style="padding-left:18px;margin:6px 0 0"><template x-for="st in turn.a.steps || []"><li><code x-text="st.tool"></code> <span class="muted" x-text="st.ms + ' ms'"></span></li></template></ol>
+                    </details>
+                  </div>
+                </template>
+              </div>
+            </template>
+          </div>
+          <div style="height:60px"></div>
+        </div>
+        <form class="reply-bar" x-show="m.screen==='munim'" @submit.prevent="askMunim()">
+          <input class="input" x-model="m.question" placeholder="Ask Munim anything…"><button class="btn btn-primary" :disabled="m.asking">Ask</button>
+        </form>
+
+        <button class="fab" x-show="m.screen==='home'" @click="m.screen='munim'">🎙 Ask Munim</button>
+      </div></div>
+    </section>
+
+    <!-- ------------------------------------------------ CUSTOMER PHONE -->
+    <section x-show="view==='live' || view==='customer'">
+      <div class="col-title"><span>Paytm app · customer</span><button x-show="view==='live'" @click="go('customer')" title="Full view">⤢</button></div>
+      <div class="phone"><div class="screen">
+        <div class="statusbar c-head"><span x-text="U.time(now)"></span><span>4G ▮▮▮ 🔋</span></div>
+        <div class="notif" x-show="notif.customer" x-transition @click="tapNotif('customer')">
+          <div class="ic" style="background:var(--cyan);color:var(--navy)">P</div><div><b x-text="notif.customer?.title"></b><p x-text="notif.customer?.body"></p></div>
+        </div>
+
+        <!-- HOME -->
+        <div class="scroll c-head" x-show="c.screen==='home'">
+          <div class="app-head">
+            <div class="avatar cyan" x-text="U.initials(C?.name)"></div>
+            <div class="grow"><div class="sub">Viewing as</div>
+              <select class="switcher" :value="C?.id" @change="focus($event.target.value)">
+                <template x-for="cu in c.customers" :key="cu.id"><option :value="cu.id" x-text="cu.name" :selected="cu.id===C?.id"></option></template>
+              </select></div>
+            <div class="bell">🔔<i x-show="(C?.pending_confirms||[]).length"></i></div>
+          </div>
+
+          <template x-for="p in C?.pending_confirms || []" :key="p.token">
+            <div class="confirm-banner" @click="openConfirm(p.token)" style="margin-bottom:12px">
+              <div class="grow"><b x-text="p.store + ': ' + U.inr(p.amount) + ' on credit'"></b><span>Tap to confirm or dispute</span></div><span class="btn btn-sm" style="background:#fff;color:var(--navy)">Confirm</span>
+            </div>
+          </template>
+
+          <div class="card">
+            <div class="row between"><span class="card-title">Bharosa Score</span><span class="pill pill-green" x-show="C?.score_delta_7d>0" x-text="'+' + C?.score_delta_7d + ' this week'"></span>
+              <span class="pill pill-red" x-show="C?.score_delta_7d<0" x-text="C?.score_delta_7d + ' this week'"></span></div>
+            <div x-html="U.gauge(C?.score||600)"></div>
+            <div class="score-num"><b class="num" x-text="C?.score"></b><span :class="U.scorePill(C?.score_band)" class="pill" x-text="C?.score_band"></span></div>
+            <a href="#" class="link" style="display:block;margin-top:12px" @click.prevent="c.screen='score'">What affects my score →</a>
+          </div>
+
+          <div class="card">
+            <div class="row between"><span class="card-title">My Dues</span><b class="num" x-text="U.inr(totalDues)"></b></div>
+            <template x-for="d in C?.dues || []" :key="d.store_id">
+              <div class="list-item">
+                <div class="grow"><div class="name" x-text="d.store"></div>
+                  <div class="small" :style="d.oldest_overdue_days && 'color:var(--red)'" x-text="(d.verified===d.amount ? '✓ verified' : U.inr(d.verified) + ' verified') + (d.oldest_overdue_days ? ' · ' + d.oldest_overdue_days + ' days overdue' : ' · on time')"></div></div>
+                <b class="num" x-text="U.inr(d.amount)"></b>
+                <button class="btn btn-primary btn-sm" @click="pay(d.store_id, d.amount)">Pay</button>
+              </div>
+            </template>
+            <div class="empty" x-show="!(C?.dues||[]).length">No dues. Nice!</div>
+            <template x-for="cb in C?.credit_balance || []"><div class="small" style="color:var(--green);font-weight:600" x-text="U.inr(cb.amount) + ' credit at ' + cb.store"></div></template>
+          </div>
+
+          <div class="card" :class="hasActiveMandate && 'autopay-active'">
+            <div class="card-title">Salary-day Auto-pay</div>
+            <template x-for="mm in C?.mandates || []"><div class="kv"><span x-text="mm.store + ' · ' + mm.window"></span><span><b class="num" x-text="'up to ' + U.inr(mm.cap)"></b> <span class="pill" :class="U.statePill(mm.status)" x-text="U.stateLabel(mm.status)"></span></span></div></template>
+            <div x-show="!hasActiveMandate"><div class="small muted" style="margin:4px 0 10px">Clear verified dues automatically when your salary arrives. Never miss a date.</div>
+              <button class="btn btn-secondary btn-block" @click="openAutopay()">Set up auto-pay</button></div>
+          </div>
+
+          <div class="card"><div class="grid4">
+            <button @click="C?.dues?.[0] && pay(C.dues[0].store_id, C.dues[0].amount)"><span class="circle">₹</span>Pay Dues</button>
+            <button @click="openAutopay()"><span class="circle">🔁</span>Auto-pay</button>
+            <button @click="c.screen='score'"><span class="circle">⭐</span>My Score</button>
+            <button @click="c.screen='messages'"><span class="circle">💬</span>Messages</button>
+          </div></div>
+          <a href="#" class="link" style="display:block;text-align:center;margin-top:12px" @click.prevent="c.screen='history'">History →</a>
+          <div class="footer-note">Concept prototype · Team MerchantMavericks</div>
+        </div>
+
+        <!-- MESSAGES -->
+        <div class="scroll" x-show="c.screen==='messages'" x-ref="chatScroll">
+          <div class="back"><button @click="c.screen='home'">←</button>Lakshmi Stores via Paytm</div>
+          <div class="chat">
+            <template x-for="msg in C?.messages || []" :key="msg.id">
+              <div class="bubble" :class="msg.direction==='out' ? 'out' : 'in'">
+                <span x-text="msg.text"></span>
+                <div class="acts" x-show="msg.actions?.length"><template x-for="a in msg.actions"><button class="btn btn-secondary btn-sm" @click="msgAction(a)" x-text="a.label"></button></template></div>
+                <span class="ts" x-text="U.time(msg.ts)"></span>
+              </div>
+            </template>
+            <div class="empty" x-show="!(C?.messages||[]).length">No messages</div>
+            <div class="bubble out" x-show="c.busy"><span class="thinking"><span class="spinner"></span></span></div>
+          </div>
+          <div style="height:60px"></div>
+        </div>
+        <form class="reply-bar" x-show="c.screen==='messages'" @submit.prevent="sendReply()">
+          <input class="input" x-model="c.reply" placeholder="Reply… e.g. Salary 1 tareekh ko aati hai"><button class="btn btn-primary" :disabled="c.busy">Send</button>
+        </form>
+
+        <!-- HISTORY -->
+        <div class="scroll" x-show="c.screen==='history'">
+          <div class="back"><button @click="c.screen='home'">←</button>History</div>
+          <div class="card" style="padding:6px 14px">
+            <template x-for="h in C?.history || []" :key="h.type + h.id">
+              <div class="list-item">
+                <div class="circle" style="width:34px;height:34px;font-size:14px" :style="h.type==='repayment' && 'background:var(--green)'" x-text="h.type==='entry' ? '🛒' : '₹'"></div>
+                <div class="grow"><div class="name" x-text="(h.type==='entry' ? 'Udhaar at ' : 'Paid to ') + h.store"></div><div class="small muted" x-text="U.date(h.ts)"></div></div>
+                <div style="text-align:right"><b class="num" x-text="U.inr(h.amount)"></b><div><span class="pill" :class="U.statePill(h.state)" x-text="U.stateLabel(h.state)"></span></div></div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- SCORE DETAILS -->
+        <div class="scroll" x-show="c.screen==='score'">
+          <div class="back"><button @click="c.screen='home'">←</button>My Bharosa Score</div>
+          <div class="card"><div x-html="U.gauge(C?.score||600)"></div><div class="score-num"><b x-text="C?.score"></b><span class="pill" :class="U.scorePill(C?.score_band)" x-text="C?.score_band"></span></div>
+            <template x-for="r in C?.rewards || []"><div class="reward">🎁 <span x-text="r"></span></div></template>
+          </div>
+          <div class="card"><div class="card-title">What builds it</div>
+            <div class="kv"><span>Paying by the due date</span><b style="color:var(--green)">+8</b></div>
+            <div class="kv"><span>Setting up auto-pay</span><b style="color:var(--green)">+5</b></div>
+            <div class="kv"><span>Each auto-pay</span><b style="color:var(--green)">+3</b></div>
+            <div class="kv"><span>Paying 1–15 days late</span><b>+2</b></div>
+            <div class="kv"><span>Paying more than 15 days late</span><b style="color:var(--red)">−4</b></div>
+            <div class="kv"><span>Unpaid after 60 days</span><b style="color:var(--red)">−40</b></div>
+          </div>
+          <div class="card"><div class="card-title">Recent changes</div>
+            <template x-for="e in C?.score_history || []"><div class="kv"><span x-text="e.reason + ' · ' + U.date(e.ts)"></span><b :style="'color:' + (e.delta>=0 ? 'var(--green)' : 'var(--red)')" x-text="(e.delta>0?'+':'') + e.delta"></b></div></template>
+            <div class="empty" x-show="!(C?.score_history||[]).length">No changes yet</div>
+          </div>
+        </div>
+
+        <button class="fab" x-show="c.screen==='home'" @click="view==='live' ? flashToast('Scan = click the QR on the Soundbox front screen') : go('live')">⌗ Scan QR</button>
+
+        <!-- CONFIRM SHEET -->
+        <div class="sheet-backdrop" x-show="c.sheet==='confirm'" x-transition.opacity @click.self="c.sheet=null">
+          <div class="sheet" x-show="c.sheet==='confirm'">
+            <div class="grab"></div>
+            <template x-if="c.confirm">
+              <div>
+                <div class="row"><div class="avatar">LS</div><div><h3 x-text="c.confirm?.store"></h3><div class="small muted" x-text="'Udhaar · ' + c.confirm?.label + ' · ' + U.date(c.confirm?.date)"></div></div></div>
+                <div class="big num" style="margin:14px 0 2px" x-text="U.inr(c.confirm?.amount)"></div>
+                <div class="small muted" x-text="'Due by ' + U.date(c.confirm?.due_date) + ' · confirming builds your Bharosa Score'"></div>
+                <template x-if="c.confirm?.first_time">
+                  <label class="consent"><input type="checkbox" x-model="c.consent"><span>Share my repayment record to build my Bharosa Score (data consent). Auto-pay is set up separately and only if you choose.</span></label>
+                </template>
+                <div x-show="!c.disputing" class="row" style="margin-top:16px">
+                  <button class="btn btn-primary grow" @click="doConfirm()" :disabled="c.busy || c.confirm?.state!=='proposed'" x-text="c.confirm?.state==='proposed' ? 'Confirm' : U.stateLabel(c.confirm?.state)"></button>
+                  <button class="btn btn-outline" @click="c.disputing=true" :disabled="c.confirm?.state!=='proposed'">Dispute</button>
+                </div>
+                <div x-show="c.disputing" style="margin-top:14px">
+                  <div class="chips"><template x-for="r in ['Amount is wrong', 'I did not take this', 'Already paid']"><button class="chip-btn" :class="c.reason===r && 'on'" @click="c.reason=r" x-text="r"></button></template></div>
+                  <input class="input" type="number" style="margin-top:10px" x-model="c.claimed" placeholder="Actual amount (₹)">
+                  <div class="row" style="margin-top:12px"><button class="btn btn-danger grow" @click="doDispute()">Send dispute</button><button class="btn btn-ghost" @click="c.disputing=false">Back</button></div>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- AUTO-PAY SHEET -->
+        <div class="sheet-backdrop" x-show="c.sheet==='autopay'" x-transition.opacity @click.self="c.sheet=null">
+          <div class="sheet" x-show="c.sheet==='autopay'">
+            <div class="grab"></div>
+            <h3>Salary-day Auto-pay</h3>
+            <div class="small muted">UPI AutoPay · clears only dues you have confirmed</div>
+            <div class="mandate-sum">
+              <div class="kv"><span>Pay to</span><b>Lakshmi Stores</b></div>
+              <div class="kv"><span>Maximum per month</span><b class="num"><input class="input" type="number" step="500" min="500" style="width:110px;padding:4px 8px;text-align:right" x-model="c.autopay.cap"></b></div>
+              <div class="kv"><span>When</span><b x-text="c.autopay.start + 'st–' + c.autopay.end + 'th of the month'"></b></div>
+              <div class="kv"><span>Frequency</span><b>Monthly, as presented</b></div>
+              <div class="kv"><span>Valid till</span><b>Cancel anytime in Paytm</b></div>
+            </div>
+            <div class="small muted" style="text-align:center;margin-top:12px">Enter UPI PIN</div>
+            <div class="pin"><i></i><i></i><i></i><i></i></div>
+            <button class="btn btn-primary btn-block" @click="activateAutopay()">Activate</button>
+          </div>
+        </div>
+      </div></div>
+    </section>
+
+    <!-- side panel for single-device views -->
+    <aside class="side" x-show="view==='merchant' || view==='customer' || view==='soundbox'">
+      <h3>Live trace</h3>
+      <div class="trace-mini" style="max-height:620px">
+        <template x-for="(t, i) in traceLong.slice(0, 40)" :key="i">
+          <div class="trace-line" style="grid-template-columns:44px 96px 1fr auto"><span class="t" x-text="U.time(t.ts)"></span><span class="n" x-text="t.node"></span><span class="l" x-text="t.label"></span>
+            <span><template x-if="t.source"><span class="badge-src" :class="U.srcBadge(t.source)?.[1]" x-text="U.srcBadge(t.source)?.[0]"></span></template><span class="ms" x-text="msLabel(t)"></span></span></div>
+        </template>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ======================================================= DEMO BAR (Live Demo) -->
+  <div class="demobar" x-show="view==='live'">
+    <div class="demo-card">
+      <div class="beat-ctl">
+        <button class="btn btn-secondary btn-sm" @click="demoPrev()" :disabled="demo.busy || !(snap?.demo?.beat > 0)">◀</button>
+        <span class="count" x-text="'Beat ' + (snap?.demo?.beat ?? 0) + ' / ' + ((snap?.demo?.total || 7) - 1)"></span>
+        <button class="btn btn-primary btn-sm" @click="demoNext()" :disabled="demo.busy">
+          <span x-show="demo.busy" class="spinner"></span><span x-text="snap?.demo?.awaiting ? 'Do it for me ▶' : 'Next ▶'"></span></button>
+        <span class="small muted grow" style="text-align:right" x-text="demo.script[(snap?.demo?.beat ?? 0)]?.title || ''"></span>
+      </div>
+      <div class="caption" x-text="snap?.demo?.caption"></div>
+      <div class="awaiting" x-show="snap?.demo?.awaiting">👉 <span x-text="snap?.demo?.awaiting"></span></div>
+      <div class="beat-dots"><template x-for="i in 7"><span :class="(i-1) < (snap?.demo?.beat ?? 0) ? 'done' : (i-1) === (snap?.demo?.beat ?? 0) ? 'cur' : ''"></span></template></div>
+    </div>
+    <div class="demo-card">
+      <div class="row between" style="margin-bottom:6px"><b style="color:var(--ink)">Trace</b><a href="#/overview" class="link small">Architecture →</a></div>
+      <div class="trace-mini">
+        <template x-for="(t, i) in traceTail" :key="i">
+          <div class="trace-line"><span class="t" x-text="U.time(t.ts)"></span><span class="n" x-text="t.node"></span><span class="l" x-text="t.label"></span>
+            <span><template x-if="t.source"><span class="badge-src" :class="U.srcBadge(t.source)?.[1]" x-text="U.srcBadge(t.source)?.[0]"></span></template><span class="ms" x-text="msLabel(t)"></span></span></div>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <details class="controls" x-show="view==='live'">
+    <summary>Controls</summary>
+    <div class="ctl-grid">
+      <div class="ctl"><h5>UPI payment</h5>
+        <input class="input" x-model="ctl.vpa" placeholder="payer VPA"><input class="input" x-model="ctl.name" placeholder="payer name">
+        <div class="row"><input class="input" type="number" x-model="ctl.amount" placeholder="₹"><input class="input" x-model="ctl.remark" placeholder="remark"></div>
+        <button class="btn btn-primary btn-sm btn-block" @click="ctlPayment()">Send payment</button></div>
+      <div class="ctl"><h5>Salary credited</h5>
+        <select class="input" x-model="ctl.salary"><template x-for="cu in c.customers" :key="cu.id"><option :value="cu.id" x-text="cu.name"></option></template></select>
+        <button class="btn btn-primary btn-sm btn-block" @click="ctlSalary()">Credit salary</button>
+        <h5 style="margin-top:12px">Time</h5><button class="btn btn-secondary btn-sm btn-block" @click="nextDay()">+1 day (daily jobs)</button></div>
+      <div class="ctl"><h5>Distributor bill</h5>
+        <input class="input" x-model="ctl.billName"><div class="row"><input class="input" type="number" x-model="ctl.billAmount"><input class="input" type="date" x-model="ctl.billDue"></div>
+        <button class="btn btn-primary btn-sm btn-block" @click="ctlBill()">Add bill</button></div>
+      <div class="ctl"><h5>Integrity</h5><div class="small muted" style="margin-bottom:8px">Sai Kirana invents four customers and farms fake udhaar.</div>
+        <button class="btn btn-danger btn-sm btn-block" @click="fraud()">Inject fraud ring</button></div>
+    </div>
+  </details>
+</main>
+
+<!-- ======================================================= OVERVIEW -->
+<section class="overview" x-show="view==='overview'">
+  <div class="hero">
+    <h1>Every kirana is secretly a lender.</h1>
+    <div class="sub">Bharosa makes udhaar safe, verified and self-collecting, on the Soundbox the merchant already has and the Paytm app the customer already uses.</div>
+    <div class="facts">
+      <div class="fact"><b>1.57 crore</b><span>Paytm device merchant subscriptions</span><small>Paytm Q1 FY27</small></div>
+      <div class="fact"><b>7–14 days</b><span>Distributors want payment, while udhaar takes weeks to come back</span><small>IIM Bangalore study</small></div>
+      <div class="fact"><b>≈1% NPL</b><span>Small-merchant lending on payment data can work at scale</span><small>MYbank, SMU case study</small></div>
+    </div>
+  </div>
+
+  <div class="ov-section">
+    <h2>Five moments of a credit sale</h2>
+    <div class="stepper">
+      <div class="st"><div class="n">1</div><h4>Udhaar Guardrail</h4><p>Safe limit and split before credit is given, in milliseconds.</p><div class="by"><span class="pill pill-navy">Formula</span></div></div>
+      <div class="st"><div class="n">2</div><h4>Scan-to-Confirm</h4><p>The customer confirms in the Paytm app: a verified receivable.</p><div class="by"><span class="pill pill-navy">Customer</span></div></div>
+      <div class="st"><div class="n">3</div><h4>Salary-day Auto-pay</h4><p>UPI AutoPay clears dues on payday; the Recovery Agent talks.</p><div class="by"><span class="pill pill-navy">Mandate + policy</span></div></div>
+      <div class="st"><div class="n">4</div><h4>Supplier Advance</h4><p>Lender pays the distributor; repaid from 20% of collections.</p><div class="by"><span class="pill pill-navy">Merchant approves</span></div></div>
+      <div class="st"><div class="n">5</div><h4>Bharosa Score</h4><p>On-time repayment builds credit identity at every Paytm store.</p><div class="by"><span class="pill pill-navy">Scoring</span></div></div>
+    </div>
+  </div>
+
+  <div class="ov-section">
+    <h2>Live architecture</h2>
+    <p class="lead">Boxes light up as each step runs. Every agent line shows whether the answer was LIVE, CACHED or a deterministic FALLBACK.</p>
+    <div class="arch">
+      <div class="arch-svg" x-ref="arch"></div>
+      <div class="trace-panel">
+        <template x-for="(t, i) in traceLong" :key="i">
+          <div class="trace-line"><span class="t" x-text="U.time(t.ts)"></span><span class="n" x-text="t.node"></span><span class="l" :title="t.label" x-text="t.label"></span>
+            <span><template x-if="t.source"><span class="badge-src" :class="U.srcBadge(t.source)?.[1]" x-text="U.srcBadge(t.source)?.[0]"></span></template><span class="ms small" x-text="msLabel(t)"></span></span></div>
+        </template>
+        <div class="empty" x-show="!trace.length">Run a demo beat to see the trace.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ov-section">
+    <h2>Notebook vs Bharosa</h2>
+    <p class="lead">The same customers, purchases and repayment behaviour for 30 days. Only the policy differs.</p>
+    <div class="compare">
+      <div class="chart-card"><h4>Money stuck in udhaar</h4><div style="height:260px"><canvas x-ref="chartStuck"></canvas></div></div>
+      <div class="chart-card"><h4>Bad udhaar given (never repaid), cumulative</h4><div style="height:260px"><canvas x-ref="chartBad"></canvas></div></div>
+    </div>
+    <div class="kpis" x-show="compare">
+      <div class="kpi"><span>Working capital freed</span><b class="num" x-text="U.inr(compare?.kpis?.working_capital_freed)"></b><small class="muted">less stuck at day 30</small></div>
+      <div class="kpi"><span>Bad udhaar prevented</span><b class="num" x-text="U.inr(compare?.kpis?.bad_udhaar_prevented)"></b><small class="muted">never-repaid credit avoided</small></div>
+      <div class="kpi"><span>Collected at counter</span><b class="num" x-text="U.inr(compare?.kpis?.collected_at_counter)"></b><small class="muted">instead of risky credit</small></div>
+      <div class="kpi"><span>Days to collect (median)</span><b class="num" x-text="compare?.kpis?.median_days_to_collect?.notebook + ' → ' + compare?.kpis?.median_days_to_collect?.bharosa"></b><small class="muted">notebook → Bharosa</small></div>
+      <div class="kpi"><span>Supplier paid on time</span><b x-text="(compare?.kpis?.supplier_paid_on_time?.notebook ? 'Yes' : 'No') + ' → ' + (compare?.kpis?.supplier_paid_on_time?.bharosa ? 'Yes' : 'No')"></b><small class="muted">notebook → Bharosa</small></div>
+    </div>
+    <span class="sim-label" x-text="compare?.label || 'Simulation on synthetic data'"></span>
+  </div>
+
+  <div class="ov-section">
+    <h2>Risk console</h2>
+    <p class="lead">Fraud rings fake udhaar to farm loans. Graph rules catch them before any money moves.</p>
+    <template x-for="al in snap?.risk_console?.alerts || []" :key="al.id">
+      <div class="risk-alert">
+        <div class="row between"><h3 x-text="al.store + ': ' + al.summary"></h3><span class="pill pill-red" x-text="'Risk ' + al.risk.toFixed(1)"></span></div>
+        <div class="small" style="margin-top:4px" x-text="al.entry_count + ' entries flagged · ' + (al.advance_blocked ? 'Supplier Advance blocked' : 'advance allowed') + ' · ' + U.simClock(al.ts)"></div>
+        <div class="rules"><template x-for="r in al.rule_details"><div class="rule"><b x-text="r.id + ' ' + r.name"></b><div x-text="r.detail"></div></div></template></div>
+      </div>
+    </template>
+    <div class="card empty" x-show="!(snap?.risk_console?.alerts||[]).length">No alerts. Try “Inject fraud ring” in Live Demo → Controls (beat 6).</div>
+  </div>
+
+  <div class="ov-section">
+    <h2>AI where the world is messy. Code where money moves.</h2>
+    <div class="two-col">
+      <table class="table"><tr><th>AI does</th></tr>
+        <tr><td>Understands the shopkeeper's Hindi, Kannada or Hinglish (Counter Agent)</td></tr>
+        <tr><td>Writes reminders and reads customers' replies (Recovery Agent)</td></tr>
+        <tr><td>Guesses who sent an unclear payment (Reconciliation Agent)</td></tr>
+        <tr><td>Plans with tools and explains options (Munim Agent)</td></tr></table>
+      <table class="table"><tr><th>Code does</th></tr>
+        <tr><td>Safe limits and bands (risk formula)</td></tr>
+        <tr><td>Balances, FIFO allocation, the ledger state machine</td></tr>
+        <tr><td>Auto-pay debits, advance sizing and the 20% split</td></tr>
+        <tr><td>Scores and fraud rules</td></tr></table>
+    </div>
+    <ol class="rules5">
+      <li>One source of truth: the backend ledger.</li>
+      <li>Everything is an event, persisted and replayable.</li>
+      <li>The LLM proposes, code decides, through validators.</li>
+      <li>Adapters at every boundary: swap them and this runs on Paytm.</li>
+      <li>Every step traced; merchants never see other stores' data.</li>
+    </ol>
+  </div>
+
+  <div class="ov-section">
+    <h2>Prototype → production</h2>
+    <table class="table">
+      <tr><th>Concern</th><th>Prototype</th><th>Production</th></tr>
+      <tr><td>Core logic (risk, ledger, reconcile, mandates, forecast, advance, integrity, score)</td><td><b>Same code</b></td><td><b>Same code</b></td></tr>
+      <tr><td>Agents and validators</td><td>Sarvam LLM with cached replay</td><td>Same, plus evaluation sets and monitoring</td></tr>
+      <tr><td>Event flow</td><td>In-process, single lock</td><td>Kafka / managed queue, idempotent consumers</td></tr>
+      <tr><td>Database</td><td>SQLite</td><td>Postgres ledger, partitioned event store</td></tr>
+      <tr><td>Soundbox</td><td>Browser simulator</td><td>Paytm device platform (proposed event contract)</td></tr>
+      <tr><td>UPI / AutoPay</td><td>Simulated</td><td>Paytm UPI and AutoPay mandates; UAP-ready</td></tr>
+      <tr><td>Lender</td><td>Simulated Partner NBFC</td><td>Paytm lending partners</td></tr>
+      <tr><td>Fraud</td><td>Rule graph</td><td>Rule graph + ML; DPIP signal sharing when available</td></tr>
+    </table>
+  </div>
+
+  <div class="ov-section"><div class="team">Team MerchantMavericks · Sujay Mohanty · Sukruth N · Rishi Sharma</div></div>
+  <div class="footer-note">Concept prototype · Team MerchantMavericks · Paytm Build for India AI Hackathon</div>
+</section>
+
+<!-- ======================================================= OVERLAYS -->
+<div class="toast" x-show="toast" x-transition :class="toast?.level" x-text="toast?.text"></div>
+
+<div class="start-overlay" x-show="!started && view==='live'" x-transition.opacity>
+  <div class="start-card">
+    <h2>Bharosa on Paytm</h2>
+    <p>Lakshmi Stores, Jayanagar · Mon 26 Oct, 09:00. The merchant uses the Soundbox. The customer uses the Paytm app. Bharosa connects them.</p>
+    <div class="row" style="justify-content:center;margin-top:18px">
+      <button class="btn btn-primary" @click="start(true)">▶ Start demo (sound on)</button>
+      <button class="btn btn-ghost" @click="start(false)">Silent</button>
+    </div>
+  </div>
+</div>
+
+<audio x-ref="audio" preload="none"></audio>
 </body>
 </html>

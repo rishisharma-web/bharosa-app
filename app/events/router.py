@@ -36,6 +36,16 @@ def before_each(fn):
     return fn
 
 
+# Run inside the transaction just before it commits (e.g. the demo script noticing that the
+# presenter has already done the step it was waiting for). Hooks take the UnitOfWork.
+BEFORE_COMMIT: list[Callable[["UnitOfWork"], None]] = []
+
+
+def before_commit(fn):
+    BEFORE_COMMIT.append(fn)
+    return fn
+
+
 def handles(event_type: str):
     assert event_type in SCHEMAS, event_type
 
@@ -110,6 +120,8 @@ async def unit_of_work():
         uow = UnitOfWork(s)
         try:
             yield uow
+            for hook in BEFORE_COMMIT:
+                hook(uow)
             clock.persist(s)
             lines = tr.drain()
             tr.persist(s, lines)

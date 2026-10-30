@@ -1,0 +1,23 @@
+:root {
+  --navy: #042E6F;        /* Paytm Prussian blue: icon circles, primary buttons */
+  --navy-deep: #172B75;   /* hover / gradients */
+  --navy-tint: #E8EEF8;   /* secondary pill fill */
+  --cyan: #00BAF2;        /* accents, QR frames, links on dark */
+  --link: #0F6FDE;        /* "View All →" style links */
+  --bg: #F5F5F7;          /* app background */
+  --card: #FFFFFF;
+  --ink: #111418;         /* headings */
+  --ink-2: #4A5568;       /* body */
+  --muted: #8A94A6;
+  --line: #E6E8EC;
+  --green: #1E9E5A;  --green-bg: #E6F6EE;
+  --amber: #E08A00;  --amber-bg: #FFF4E0;
+  --red:   #D93025;  --red-bg:   #FDECEA;
+  --violet: #6B4FD8; --violet-bg: #EFEBFD;
+  --radius-card: 24px; --radius-pill: 999px; --radius-sm: 12px;
+  --shadow: 0 2px 12px rgba(4,46,111,.08);
+  --shadow-lg: 0 12px 40px rgba(4,46,111,.18);
+  --font: "Inter", "Roboto", "Segoe UI", system-ui, -apple-system, "Nirmala UI", "Noto Sans Devanagari",
+          "Noto Sans Kannada", sans-serif;
+  --mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+}

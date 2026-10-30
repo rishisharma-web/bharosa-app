@@ -14,12 +14,12 @@ from typing import Awaitable, Callable
 
 from sqlmodel import Session, select
 
-from app import db, state
+from app import clock, db, state
 from app.adapters import soundbox
 from app.agents import munim
 from app.events.effects import caption as caption_effect
-from app.events.router import fire, unit_of_work
-from app.models import Advance, Entry, Mandate, Message
+from app.events.router import before_commit, fire, unit_of_work
+from app.models import Advance, Entry, Mandate, Message, Sale
 from app.sim.seed import seed
 
 RAMESH_REPLY = "Salary 1 tareekh ko aati hai, tab pura de dunga"
@@ -55,6 +55,21 @@ def _ramesh_proposed(s: Session) -> Entry | None:
                   .order_by(Entry.id.desc())).first()
 
 
+def _ramesh_sale_ref(s: Session) -> str | None:
+    """The unpaid 'pay ₹140 now' reference for Ramesh's split sale, if one is still open."""
+    e = s.exec(select(Entry).where(Entry.customer_id == "C_RAMESH", Entry.requested_amount > Entry.amount)
+               .order_by(Entry.id.desc())).first()
+    if e is None or e.created_at.date() != clock.today():
+        return None
+    ref = f"SALE-{e.id}"
+    return None if s.exec(select(Sale.id).where(Sale.ref == ref)).first() else ref
+
+
+def _ramesh_drafts(s: Session) -> list[int]:
+    return [m.id for m in s.exec(select(Message).where(Message.customer_id == "C_RAMESH",
+                                                       Message.status == "draft")).all()]
+
+
 def _event(type_: str, payload: dict | Callable[[Session], dict]):
     async def run():
         await fire(type_, _read(payload) if callable(payload) else payload)
@@ -82,7 +97,7 @@ BEATS = [
     Beat(2, "Confirm", "Ramesh confirms in his own Paytm app. A diary entry becomes a verified receivable.", [
         Step("Ramesh pays ₹140 now by UPI", _event("upi_payment", lambda s: {
             "store_id": "S1", "payer_vpa": "ramesh.k@ptyes", "payer_name": "Ramesh Kumar", "amount": 140,
-            "ref": soundbox.current(s)["front"].get("sale_ref")}), pause_after=1.0),
+            "ref": _ramesh_sale_ref(s)}), pause_after=1.0, done=lambda s: _ramesh_sale_ref(s) is None),
         Step("Scan the QR on the Soundbox, then Confirm on Ramesh's phone",
              _event("customer_confirm", lambda s: {"token": _ramesh_proposed(s).confirm_token,
                                                    "device_id": "dev-ramesh"}),
@@ -92,9 +107,8 @@ BEATS = [
                              "No chasing.", [
         Step("Draft a reminder for Ramesh", _event("nudges_requested", {"store_id": "S1",
                                                                         "customer_ids": ["C_RAMESH"]}), pause_after=1.0),
-        Step("Merchant approves the reminder", _event("nudges_approved", lambda s: {"message_ids": [
-            m.id for m in s.exec(select(Message).where(Message.customer_id == "C_RAMESH",
-                                                       Message.status == "draft")).all()]}), pause_after=1.5),
+        Step("Merchant approves the reminder", _event("nudges_approved", lambda s: {"message_ids": _ramesh_drafts(s)}),
+             pause_after=1.5, done=lambda s: not _ramesh_drafts(s)),
         Step("Ramesh replies", _event("customer_reply", {"customer_id": "C_RAMESH", "store_id": "S1",
                                                          "text": RAMESH_REPLY}), pause_after=1.0),
         Step("Ramesh taps “Set up auto-pay” and activates it",
@@ -124,6 +138,24 @@ TOTAL = len(BEATS)
 
 # ---------------------------------------------------------------- runner
 
+@before_commit
+def _skip_done_presenter_steps(uow) -> None:
+    """After any event, move the beat's waiting point past steps the presenter just did on screen,
+    so the hint under the demo bar is always the next thing to do."""
+    s = uow.s
+    resume = state.get(s, "demo_resume")
+    if resume is None:
+        return
+    steps = BEATS[state.get(s, "demo_beat")].steps
+    i = resume
+    while i < len(steps) and steps[i].done is not None and steps[i].done(s):
+        i += 1
+    if i != resume:
+        nxt = i if i < len(steps) else None
+        state.put(s, "demo_resume", nxt)
+        state.put(s, "demo_awaiting", steps[nxt].label if nxt is not None else None)
+
+
 async def _set(beat: int, resume: int | None, caption: str | None = None) -> None:
     async with unit_of_work() as uow:
         state.put(uow.s, "demo_beat", beat)
@@ -138,11 +170,10 @@ async def _run_steps(beat: Beat, start: int, fast: bool, include_presenter: bool
     ran = []
     for i in range(start, len(beat.steps)):
         st = beat.steps[i]
-        if st.presenter:
-            if st.done and _read(st.done):
-                continue
-            if not include_presenter:
-                return ran, i
+        if st.done and _read(st.done):  # already happened on screen: never repeat a money step
+            continue
+        if st.presenter and not include_presenter:
+            return ran, i
         await st.run()
         ran.append(st.label)
         if st.pause_after and not fast:
@@ -174,7 +205,9 @@ async def next_beat(fast: bool = False) -> dict:
         beat = BEATS[current]
         ran, _ = await _run_steps(beat, resume, fast, include_presenter=True)
         await _set(current, None)
-        return _status(beat, None, ran)
+        if ran:
+            return _status(beat, None, ran)
+        # The presenter already did everything on screen: one press moves straight on.
     if current + 1 >= TOTAL:
         return {"beat": current, "total": TOTAL, "done": True, "caption": BEATS[current].caption, "ran": [],
                 "awaiting": None}

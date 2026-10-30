@@ -8,7 +8,7 @@ from sqlmodel import Session, select
 from app import clock, state
 from app.adapters import soundbox, upi
 from app.core import (
-    advance, collector, forecast, integrity, ledger, mandates, messages, reconcile, risk, score,
+    advance, briefing, collector, forecast, integrity, ledger, mandates, messages, reconcile, risk, score,
 )
 from app.core.money import inr
 from app.events import schemas as sc
@@ -82,6 +82,7 @@ def _expire_confirmations(uow: UnitOfWork) -> None:
 def on_set_language(uow: UnitOfWork, p: sc.SetLanguage):
     state.put(uow.s, "lang", p.lang)
     trace("router", f"Language → {p.lang}")
+    briefing.refresh(uow.s, "S1")  # the briefing card and voice follow the language at once
 
 
 @handles("set_focus_customer")

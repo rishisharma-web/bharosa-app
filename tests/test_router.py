@@ -52,6 +52,7 @@ def test_set_language_persists_without_moving_the_clock(fresh):
     snap = fresh.get("/api/snapshot").json()
     assert snap["lang"] == "kn-IN"
     assert snap["now"] == before
+    assert snap["merchant"]["briefing"]["lang"] == "kn-IN" and snap["merchant"]["briefing"]["text"].startswith("ಶುಭೋದಯ")
     with db.session() as s:
         ev = s.get(Event, r.json()["event_id"])
         assert ev.type == "set_language" and ev.payload == {"lang": "kn-IN"}

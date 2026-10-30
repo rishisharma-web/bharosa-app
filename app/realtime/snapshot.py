@@ -248,6 +248,11 @@ def _customer(s: Session, stores: dict[str, Store], customer_id: str | None) -> 
             for m in reversed(msgs)
         ],
         "history": _history(s, stores, c.id),
+        "score_history": [
+            {"delta": e.delta, "score_after": e.score_after, "reason": e.reason, "ts": clock.iso(e.created_at)}
+            for e in s.exec(select(ScoreEvent).where(ScoreEvent.customer_id == c.id)
+                            .order_by(ScoreEvent.id.desc()).limit(10)).all()
+        ],
         "rewards": sc.rewards(c.score),
     }
 
