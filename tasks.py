@@ -60,6 +60,19 @@ def snapshot():
                                    "amount": 140, "ref": front["sale_ref"]})
         await fire("customer_confirm", {"token": front["token"], "device_id": "dev-ramesh"})
         dump("beat_2_confirmed")
+        await fire("mandate_created", {"customer_id": "C_RAMESH", "store_id": "S1", "cap": 3000,
+                                       "window_start_day": 1, "window_end_day": 5})
+        dump("beat_3_mandate")
+        await fire("offer_advance", {"store_id": "S1", "bill_id": "B1"})
+        snap = dump("beat_4_offer")
+        await fire("advance_accept", {"advance_id": snap["merchant"]["advance"]["id"]})
+        dump("beat_4_advance_repaying")
+        await fire("advance_day", {"days": 6})
+        dump("beat_5_salary_day")
+
+        do_seed()
+        with db.session() as s:
+            clock.load(s)
         await fire("upi_payment", {"store_id": "S1", "payer_vpa": "9876500000@ptyes", "payer_name": "Kamala Kumar",
                                    "amount": 500, "remark": "Ramesh ka udhaar"})
         dump("sample_pending_match")

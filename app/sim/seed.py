@@ -21,6 +21,7 @@ from datetime import date, datetime, time, timedelta
 
 from app import clock, db, state
 from app.config import get_settings
+from app.core import briefing
 from app.models import (
     Allocation, Bill, Consent, Customer, Entry, Mandate, Repayment, Sale, Store, StoreCustomer,
 )
@@ -344,9 +345,14 @@ def _named(w: World) -> None:
     entry("C_VIKRAM", _dt(8, 6, 12), 600)
     paid("C_VIKRAM", _dt(9, 20, 20), 600)
     entry("C_VIKRAM", _dt(8, 16, 9, 45), 2_600)
-    # Suresh: pays cash; ₹900 from 20 Oct, not yet due.
-    entry("C_SURESH", _dt(9, 10, 18), 350)
-    paid("C_SURESH", _dt(9, 18, 19), 350, "cash")
+    # Suresh: pays cash about a week later; 8 of 9 past entries on time, one 7 days late.
+    # Forecast contract (spec 7.6): ₹900 open × 8/9 = ₹800 expected on Tue 27 Oct (20 Oct + median 7 days),
+    # the only collection before Sharma Traders' bill on Fri → cash available ₹8,800, gap ₹9,200.
+    # Entries never overlap, so FIFO allocation settles each one with its own payment.
+    for (m, d, amt, days) in [(6, 20, 400, 37), (8, 5, 300, 7), (8, 14, 250, 7), (8, 22, 180, 6), (8, 30, 350, 8),
+                              (9, 8, 220, 7), (9, 16, 460, 9), (9, 26, 300, 6), (10, 12, 270, 7)]:
+        entry("C_SURESH", _dt(m, d, 18), amt)
+        paid("C_SURESH", _dt(m, d, 19) + timedelta(days=days), amt, "cash")
     entry("C_SURESH", _dt(10, 20, 17, 30), 900)
     # Anita: brand new, no history.
 
@@ -525,6 +531,9 @@ def seed() -> dict:
     db.rebuild()
     world = build_world(get_settings().seed)
     stats = _write(world)
+    with db.session() as s:  # beat 0: the morning briefing is ready when the demo starts
+        briefing.refresh(s, "S1")
+        s.commit()
     stats["seconds"] = round(_time.perf_counter() - t0, 2)
     trace("db", "World seeded", stats, ms=stats["seconds"] * 1000)
     return stats

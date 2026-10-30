@@ -7,12 +7,14 @@ from sqlmodel import Session, select
 
 from app import clock, state
 from app.adapters import soundbox, upi
-from app.core import ledger, messages, reconcile, risk, score
+from app.core import advance, forecast, ledger, mandates, messages, reconcile, risk, score
 from app.core.money import inr
 from app.events import schemas as sc
 from app.events.effects import notify
 from app.events.router import EventError, UnitOfWork, before_each, handles
-from app.models import Consent, Customer, Entry, PendingMatch, Sale, Store, StoreCustomer
+from app.models import Bill, Consent, Customer, Entry, PendingMatch, Sale, Store, StoreCustomer
+from app.realtime.snapshot import window_label
+from app.sim import daily
 from app.realtime.trace import trace
 
 
@@ -336,3 +338,78 @@ def on_match_resolved(uow: UnitOfWork, p: sc.MatchResolved):
         trace("merchant_app", f"Merchant matched {inr(pay['amount'])} to {c.name}", {"pending_id": pm.id})
     pm.resolved, pm.resolved_customer_id = True, p.customer_id
     s.add(pm)
+
+
+# ---------------------------------------------------------------- auto-pay, bills, Supplier Advance (flows B4, D)
+
+@handles("mandate_created")
+def on_mandate_created(uow: UnitOfWork, p: sc.MandateCreated):
+    s = uow.s
+    c = _store_customer(s, p.store_id, p.customer_id)
+    store = s.get(Store, p.store_id)
+    trace("customer_app", f"{messages.first_name(c.name)} activated auto-pay", {"store_id": store.id})
+    m = mandates.create(s, c.id, store.id, p.cap, p.window_start_day, p.window_end_day)
+    return [notify(f"customer:{c.id}", "Auto-pay active",
+                   f"Up to {inr(m.cap)} to {store.name} on salary day "
+                   f"({window_label(m.window_start_day, m.window_end_day)})")]
+
+
+@handles("salary_credited")
+def on_salary_credited(uow: UnitOfWork, p: sc.SalaryCredited):
+    s = uow.s
+    c = s.get(Customer, p.customer_id)
+    if c is None:
+        raise EventError(f"unknown customer {p.customer_id}", 404)
+    trace("upi", f"Salary credited to {messages.first_name(c.name)}")
+    effects = []
+    for m in mandates.active(s, c.id):
+        rep = mandates.execute(s, m)
+        if rep is None:
+            continue
+        store = s.get(Store, m.store_id)
+        msg = messages.received(rep.amount, c.name, _lang(s))
+        soundbox.display(s, store.id, last_alert=msg["display"])
+        effects += [soundbox.play(store.id, msg["spoken"], _lang(s)),
+                    notify(f"customer:{c.id}", "Auto-pay", f"{inr(rep.amount)} auto-paid to {store.name} ✓")]
+    return effects
+
+
+@handles("bill_added")
+def on_bill_added(uow: UnitOfWork, p: sc.BillAdded):
+    s = uow.s
+    store = _store(s, p.store_id)
+    n = len(s.exec(select(Bill.id)).all()) + 1
+    b = Bill(id=f"B{n}", store_id=store.id, distributor=p.distributor, amount=p.amount, due_date=p.due_date)
+    s.add(b)
+    s.flush()
+    g = forecast.gap_for_bill(forecast.forecast(s, store.id), b.id)
+    trace("forecast", f"Bill {b.id} {p.distributor} {inr(p.amount)}: " + (f"{inr(g['gap'])} short" if g else "covered"),
+          {"bill_id": b.id, "gap": g})
+
+
+@handles("offer_advance")
+def on_offer_advance(uow: UnitOfWork, p: sc.OfferAdvance):
+    a = advance.offer(uow.s, p.store_id, p.bill_id)
+    return [notify(f"merchant:{p.store_id}", "Supplier Advance offer",
+                   f"{inr(a.amount)} from {a.lender} · fee {inr(a.fee)}", {"label": "View", "advance_id": a.id})]
+
+
+@handles("advance_accept")
+def on_advance_accept(uow: UnitOfWork, p: sc.AdvanceId):
+    a = advance.accept(uow.s, p.advance_id)
+    bill = uow.s.get(Bill, a.bill_id)
+    trace("merchant_app", f"Merchant accepted {a.id}")
+    return [notify(f"merchant:{a.store_id}", "Supplier Advance", f"{a.lender} paid {inr(a.amount)} to {bill.distributor} ✓")]
+
+
+@handles("advance_decline")
+def on_advance_decline(uow: UnitOfWork, p: sc.AdvanceId):
+    advance.decline(uow.s, p.advance_id)
+
+
+@handles("advance_day")
+async def on_advance_day(uow: UnitOfWork, p: sc.AdvanceDay):
+    effects = []
+    for _ in range(p.days):
+        effects = await daily.run_day(uow)  # only the last morning's briefing is spoken
+    return effects

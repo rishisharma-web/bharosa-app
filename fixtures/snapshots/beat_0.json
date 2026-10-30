@@ -61,16 +61,43 @@
       "pending_confirm": 0,
       "customers_owing": 33
     },
-    "briefing": null,
+    "briefing": {
+      "date": "2026-10-26",
+      "lang": "hi-IN",
+      "text": "सुप्रभात, Lakshmi Stores। कल की UPI बिक्री ₹9,290। इस हफ्ते ₹9,950 उधार वापस आने की उम्मीद। 15 ग्राहकों का ₹24,360 बकाया। शुक्रवार को Sharma Traders को ₹18,000 देने हैं, ₹9,200 कम पड़ेंगे।",
+      "text_en": "Good morning, Lakshmi Stores. Yesterday's UPI sales ₹9,290. Udhaar collectable this week ₹9,950. 15 customers overdue (₹24,360). Sharma Traders ₹18,000 due Fri: ₹9,200 short.",
+      "summary": {
+        "date": "2026-10-26",
+        "yesterday_sales": 9290,
+        "collectable_this_week": 9950,
+        "overdue_customers": 15,
+        "overdue_amount": 24360,
+        "bills_due": [
+          {
+            "bill_id": "B1",
+            "distributor": "Sharma Traders",
+            "amount": 18000,
+            "due": "2026-10-30",
+            "gap": 9200
+          }
+        ]
+      },
+      "audio_url": null,
+      "source": "template"
+    },
     "due_soon": [
       {
         "bill_id": "B1",
         "distributor": "Sharma Traders",
         "amount": 18000,
         "due": "2026-10-30",
-        "gap": null
+        "remaining": 18000,
+        "paid_by_lender": 0,
+        "status": "due",
+        "gap": 9200
       }
     ],
+    "cash_on_hand": 3200,
     "advance": null,
     "pending_entries": [],
     "pending_matches": [],
@@ -192,7 +219,7 @@
     "history": [
       {
         "type": "entry",
-        "id": 373,
+        "id": 378,
         "store": "Lakshmi Stores",
         "amount": 1800,
         "paid": 0,
@@ -203,7 +230,7 @@
       },
       {
         "type": "repayment",
-        "id": 94,
+        "id": 98,
         "store": "Lakshmi Stores",
         "amount": 830,
         "source": "upi",
@@ -212,7 +239,7 @@
       },
       {
         "type": "entry",
-        "id": 217,
+        "id": 221,
         "store": "Lakshmi Stores",
         "amount": 380,
         "paid": 380,
@@ -223,7 +250,7 @@
       },
       {
         "type": "entry",
-        "id": 66,
+        "id": 68,
         "store": "Lakshmi Stores",
         "amount": 450,
         "paid": 450,

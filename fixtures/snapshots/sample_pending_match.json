@@ -1,5 +1,5 @@
 {
-  "now": "2026-10-26T09:02:30+05:30",
+  "now": "2026-10-26T09:00:30+05:30",
   "lang": "hi-IN",
   "demo": {
     "beat": 0,
@@ -8,24 +8,7 @@
   },
   "soundbox": {
     "store_id": "S1",
-    "top": {
-      "band": "amber",
-      "text": "Caution: ₹1,800 overdue for 19 days. Safe limit today ₹200. Give ₹200 on credit, collect ₹140 now (UPI or cash).",
-      "ms": 1.0,
-      "reasons": [
-        "₹1,800 overdue for 19 days → limit ×0.6",
-        "Score 680 → base ₹3,350",
-        "Already owes ₹1,800"
-      ],
-      "customer_id": "C_RAMESH",
-      "customer": "Ramesh Kumar",
-      "requested": 340,
-      "safe_limit": 200,
-      "credit_now": 200,
-      "collect_now": 140,
-      "entry_id": 968,
-      "override": false
-    },
+    "top": null,
     "front": {
       "mode": "amount",
       "amount": 500,
@@ -41,7 +24,7 @@
       "vpa": "lakshmistores@ptyes",
       "advance_blocked": false
     },
-    "today_collection": 1120,
+    "today_collection": 980,
     "collection_7d": [
       {
         "date": "2026-10-20",
@@ -69,39 +52,56 @@
       },
       {
         "date": "2026-10-26",
-        "amount": 1120
+        "amount": 980
       }
     ],
     "udhaar": {
-      "outstanding": 45200,
-      "verified": 38200,
+      "outstanding": 45000,
+      "verified": 38000,
       "unverified": 7000,
       "overdue": 24360,
-      "pending_confirm": 1,
+      "pending_confirm": 0,
       "customers_owing": 33
     },
-    "briefing": null,
+    "briefing": {
+      "date": "2026-10-26",
+      "lang": "hi-IN",
+      "text": "सुप्रभात, Lakshmi Stores। कल की UPI बिक्री ₹9,290। इस हफ्ते ₹9,950 उधार वापस आने की उम्मीद। 15 ग्राहकों का ₹24,360 बकाया। शुक्रवार को Sharma Traders को ₹18,000 देने हैं, ₹9,200 कम पड़ेंगे।",
+      "text_en": "Good morning, Lakshmi Stores. Yesterday's UPI sales ₹9,290. Udhaar collectable this week ₹9,950. 15 customers overdue (₹24,360). Sharma Traders ₹18,000 due Fri: ₹9,200 short.",
+      "summary": {
+        "date": "2026-10-26",
+        "yesterday_sales": 9290,
+        "collectable_this_week": 9950,
+        "overdue_customers": 15,
+        "overdue_amount": 24360,
+        "bills_due": [
+          {
+            "bill_id": "B1",
+            "distributor": "Sharma Traders",
+            "amount": 18000,
+            "due": "2026-10-30",
+            "gap": 9200
+          }
+        ]
+      },
+      "audio_url": null,
+      "source": "template"
+    },
     "due_soon": [
       {
         "bill_id": "B1",
         "distributor": "Sharma Traders",
         "amount": 18000,
         "due": "2026-10-30",
-        "gap": null
+        "remaining": 18000,
+        "paid_by_lender": 0,
+        "status": "due",
+        "gap": 9200
       }
     ],
+    "cash_on_hand": 3200,
     "advance": null,
-    "pending_entries": [
-      {
-        "entry_id": 967,
-        "customer_id": "C_PRIYA",
-        "customer": "Priya Nair",
-        "amount": 340,
-        "requested_amount": 340,
-        "token": "2860cb47dceb4927b42a71e8226d5119",
-        "expires_at": "2026-10-26T09:10:30+05:30"
-      }
-    ],
+    "pending_entries": [],
     "pending_matches": [
       {
         "pending_id": 1,
@@ -113,13 +113,12 @@
           {
             "id": "C_RAMESH",
             "name": "Ramesh Kumar",
-            "outstanding": 2000,
+            "outstanding": 1800,
             "open_entries": [
-              1800,
-              200
+              1800
             ],
             "similarity": 1.0,
-            "amount_gap": 300
+            "amount_gap": 1300
           },
           {
             "id": "C_1035",
@@ -278,8 +277,8 @@
       {
         "store": "Lakshmi Stores",
         "store_id": "S1",
-        "amount": 2000,
-        "verified": 2000,
+        "amount": 1800,
+        "verified": 1800,
         "oldest_overdue_days": 19
       }
     ],
@@ -290,18 +289,7 @@
     "history": [
       {
         "type": "entry",
-        "id": 968,
-        "store": "Lakshmi Stores",
-        "amount": 200,
-        "paid": 0,
-        "state": "verified",
-        "verified": true,
-        "ts": "2026-10-26T09:01:00+05:30",
-        "due": "2026-11-25"
-      },
-      {
-        "type": "entry",
-        "id": 373,
+        "id": 378,
         "store": "Lakshmi Stores",
         "amount": 1800,
         "paid": 0,
@@ -312,7 +300,7 @@
       },
       {
         "type": "repayment",
-        "id": 94,
+        "id": 98,
         "store": "Lakshmi Stores",
         "amount": 830,
         "source": "upi",
@@ -321,7 +309,7 @@
       },
       {
         "type": "entry",
-        "id": 217,
+        "id": 221,
         "store": "Lakshmi Stores",
         "amount": 380,
         "paid": 380,
@@ -332,7 +320,7 @@
       },
       {
         "type": "entry",
-        "id": 66,
+        "id": 68,
         "store": "Lakshmi Stores",
         "amount": 450,
         "paid": 450,
@@ -349,17 +337,20 @@
   },
   "trace_tail": [
     {
-      "ts": "2026-10-26T09:02:00+05:30",
-      "node": "router",
-      "label": "customer_confirm",
+      "ts": "2026-10-26T09:00:30+05:30",
+      "node": "db",
+      "label": "World seeded",
       "detail": {
-        "event_id": 4
+        "customers": 110,
+        "entries": 974,
+        "repayments": 561,
+        "seconds": 0.38
       },
-      "ms": 5.1,
+      "ms": 380.0,
       "source": null
     },
     {
-      "ts": "2026-10-26T09:02:30+05:30",
+      "ts": "2026-10-26T09:00:30+05:30",
       "node": "upi",
       "label": "₹500 from 9876500000@ptyes",
       "detail": {
@@ -371,7 +362,7 @@
       "source": null
     },
     {
-      "ts": "2026-10-26T09:02:30+05:30",
+      "ts": "2026-10-26T09:00:30+05:30",
       "node": "reconcile",
       "label": "rule3: unclear payer",
       "detail": {
@@ -382,7 +373,7 @@
       "source": null
     },
     {
-      "ts": "2026-10-26T09:02:30+05:30",
+      "ts": "2026-10-26T09:00:30+05:30",
       "node": "recon_agent",
       "label": "Best guess C_RAMESH (0.80)",
       "detail": {
@@ -395,7 +386,7 @@
       "source": "template"
     },
     {
-      "ts": "2026-10-26T09:02:30+05:30",
+      "ts": "2026-10-26T09:00:30+05:30",
       "node": "validator",
       "label": "Confidence 0.80 < 0.85: ask merchant",
       "detail": {
@@ -405,7 +396,7 @@
       "source": null
     },
     {
-      "ts": "2026-10-26T09:02:30+05:30",
+      "ts": "2026-10-26T09:00:30+05:30",
       "node": "soundbox",
       "label": "Front screen: amount",
       "detail": null,
@@ -413,7 +404,7 @@
       "source": null
     },
     {
-      "ts": "2026-10-26T09:02:30+05:30",
+      "ts": "2026-10-26T09:00:30+05:30",
       "node": "soundbox",
       "label": "Speak (hi-IN): ₹500 प्राप्त हुए।",
       "detail": null,
@@ -421,13 +412,13 @@
       "source": null
     },
     {
-      "ts": "2026-10-26T09:02:30+05:30",
+      "ts": "2026-10-26T09:00:30+05:30",
       "node": "router",
       "label": "upi_payment",
       "detail": {
-        "event_id": 5
+        "event_id": 1
       },
-      "ms": 19.12,
+      "ms": 15.33,
       "source": null
     }
   ]

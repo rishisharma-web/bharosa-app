@@ -241,4 +241,8 @@ def apply_repayment(s: Session, store_id: str, customer_id: str, amount: int, so
             reason = "settled on time" if (now.date() - e.due_date).days <= 0 else "settled late"
             score.apply_delta(s, customer_id, settlement_delta(e, now.date(), source), f"{reason} ({source})",
                               ref=f"settle:{e.id}", store_id=store_id)
+
+    from app.core import advance  # local: advance → forecast → ledger would otherwise be circular
+
+    advance.route_split(s, rep)
     return rep

@@ -11,9 +11,9 @@ from sse_starlette.sse import EventSourceResponse
 
 from app import clock, db
 from app.config import get_settings
-from app.core import ledger, risk, score as sc
+from app.core import advance, forecast, ledger, risk, score as sc
 from app.events.router import EventError, fire
-from app.models import Consent, Customer, Entry, Repayment, ScoreEvent, Store, StoreCustomer
+from app.models import Advance, Bill, Consent, Customer, Entry, Repayment, ScoreEvent, Store, StoreCustomer
 from app.realtime import broadcaster, trace as tr
 from app.realtime.snapshot import INDICATOR_AMOUNT, build_snapshot
 
@@ -171,3 +171,37 @@ def health():
         "db": settings.db_path if ok_db else "unavailable",
         "sim_now": clock.iso(clock.now()),
     }
+
+
+@router.get("/forecast")
+def get_forecast(store_id: str = "S1"):
+    with db.session() as s:
+        return forecast.forecast(s, store_id)
+
+
+@router.get("/advances/eligibility")
+def advance_eligibility(store_id: str = "S1", bill_id: str = "B1"):
+    try:
+        with db.session() as s:
+            return advance.eligibility(s, store_id, bill_id)
+    except EventError as e:
+        raise HTTPException(e.status, e.message)
+
+
+@router.get("/advances/{advance_id}")
+def advance_detail(advance_id: str):
+    """Supplier Advance detail: terms, state and the split repayment ledger."""
+    with db.session() as s:
+        a = s.get(Advance, advance_id)
+        if a is None:
+            raise HTTPException(404, f"unknown advance {advance_id}")
+        bill = s.get(Bill, a.bill_id)
+        return {
+            "id": a.id, "state": a.state, "lender": a.lender, "amount": a.amount, "fee": a.fee,
+            "total_due": a.total_due, "repaid": a.repaid, "split_rate": a.split_rate,
+            "backstop": a.backstop_date.isoformat() if a.backstop_date else None,
+            "paid_to": bill.distributor, "bill_id": bill.id, "bill_amount": bill.amount,
+            "bill_due": bill.due_date.isoformat(), "created_at": clock.iso(a.created_at),
+            "accepted_at": clock.iso(a.accepted_at),
+            "splits": advance.splits(s, a.id) if a.accepted_at else [],
+        }

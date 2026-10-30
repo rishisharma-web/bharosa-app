@@ -9,7 +9,7 @@ from datetime import date, timedelta
 from sqlmodel import Session, select
 
 from app import clock, state
-from app.core import ledger, risk, score as sc
+from app.core import forecast, ledger, risk, score as sc
 from app.models import (
     Advance, Bill, Customer, Entry, Mandate, Message, PendingMatch, Repayment, RiskAlert, Sale, ScoreEvent, Store,
     StoreCustomer,
@@ -93,8 +93,9 @@ def _merchant(s: Session, store: Store) -> dict:
     disputed = s.exec(select(Entry).where(Entry.store_id == store.id, Entry.state == "disputed")).all()
     names = _names(s, {e.customer_id for e in [*proposed, *disputed]})
 
-    bills = s.exec(select(Bill).where(Bill.store_id == store.id, Bill.status == "due",
+    bills = s.exec(select(Bill).where(Bill.store_id == store.id, Bill.status != "paid",
                                       Bill.due_date <= today + timedelta(days=7)).order_by(Bill.due_date)).all()
+    gaps = {g["bill_id"]: g["gap"] for g in forecast.forecast(s, store.id)["gaps"]} if bills else {}
     advance = s.exec(select(Advance).where(Advance.store_id == store.id, Advance.state != "declined")
                      .order_by(Advance.created_at.desc())).first()
     pms = s.exec(select(PendingMatch).where(PendingMatch.store_id == store.id, PendingMatch.resolved == False)  # noqa: E712
@@ -115,10 +116,12 @@ def _merchant(s: Session, store: Store) -> dict:
         "briefing": state.get(s, "briefing"),
         "due_soon": [
             {"bill_id": b.id, "distributor": b.distributor, "amount": b.amount, "due": b.due_date.isoformat(),
-             "gap": None}  # filled by the forecaster milestone
+             "remaining": b.amount - b.paid_by_lender - b.paid_by_store, "paid_by_lender": b.paid_by_lender,
+             "status": b.status, "gap": gaps.get(b.id, 0)}
             for b in bills
         ],
-        "advance": _advance(advance),
+        "cash_on_hand": store.cash_on_hand,
+        "advance": _advance(s, advance),
         "pending_entries": [
             {"entry_id": e.id, "customer_id": e.customer_id, "customer": names.get(e.customer_id), "amount": e.amount,
              "requested_amount": e.requested_amount, "token": e.confirm_token,
@@ -145,13 +148,14 @@ def _merchant(s: Session, store: Store) -> dict:
     }
 
 
-def _advance(a: Advance | None) -> dict | None:
+def _advance(s: Session, a: Advance | None) -> dict | None:
     if a is None:
         return None
+    distributor = s.get(Bill, a.bill_id).distributor
     return {
         "id": a.id, "state": a.state, "bill_id": a.bill_id, "amount": a.amount, "fee": a.fee,
         "total_due": a.total_due, "repaid": a.repaid, "split_rate": a.split_rate, "lender": a.lender,
-        "backstop": a.backstop_date.isoformat() if a.backstop_date else None,
+        "backstop": a.backstop_date.isoformat() if a.backstop_date else None, "paid_to": distributor,
     }
 
 
