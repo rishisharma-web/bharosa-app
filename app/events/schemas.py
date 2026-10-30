@@ -20,7 +20,7 @@ class UdhaarSpoken(_P):
     store_id: str
     text: Optional[str] = None
     customer_id: Optional[str] = None
-    amount: Optional[int] = Amount
+    amount: Optional[int] = Field(default=None, ge=1, le=50_000)
     lang: Optional[Lang] = None
 
     @model_validator(mode="after")
@@ -31,7 +31,21 @@ class UdhaarSpoken(_P):
 
 
 class GuardrailOverride(_P):
-    entry_id: int
+    """Give the full requested amount despite the guardrail.
+
+    Amber: `entry_id` of the proposed (reduced) entry. Red: no entry exists (credit_now
+    was 0), so send `store_id`, `customer_id` and `amount` and a proposed entry is created.
+    """
+    entry_id: Optional[int] = None
+    store_id: Optional[str] = None
+    customer_id: Optional[str] = None
+    amount: Optional[int] = Field(default=None, ge=1, le=50_000)
+
+    @model_validator(mode="after")
+    def _target(self):
+        if self.entry_id is None and not (self.store_id and self.customer_id and self.amount):
+            raise ValueError("provide entry_id, or store_id, customer_id and amount")
+        return self
 
 
 class CustomerConfirm(_P):
@@ -55,7 +69,7 @@ class NewCustomer(_P):
     store_id: str
     name: str = Field(min_length=1, max_length=60)
     mobile: str = Field(pattern=r"^[6-9]\d{9}$")
-    amount: Optional[int] = Amount  # optional pending udhaar to raise right after creation
+    amount: Optional[int] = Field(default=None, ge=1, le=50_000)  # optional pending udhaar to raise right after creation
 
 
 class UpiPayment(_P):
@@ -71,7 +85,7 @@ class CashReported(_P):
     store_id: str
     text: Optional[str] = None
     customer_id: Optional[str] = None
-    amount: Optional[int] = Amount
+    amount: Optional[int] = Field(default=None, ge=1, le=50_000)
 
     @model_validator(mode="after")
     def _text_or_intent(self):

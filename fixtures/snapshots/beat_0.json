@@ -82,7 +82,8 @@
         "name": "Pradeep Saxena",
         "outstanding": 3760,
         "verified": 3020,
-        "band": null,
+        "band": "red",
+        "safe_limit": 0,
         "score": 574,
         "score_band": "Good",
         "overdue_days": 45
@@ -92,7 +93,8 @@
         "name": "Latha Joshi",
         "outstanding": 3700,
         "verified": 3330,
-        "band": null,
+        "band": "red",
+        "safe_limit": 0,
         "score": 633,
         "score_band": "Good",
         "overdue_days": 40
@@ -102,7 +104,8 @@
         "name": "Lalitha Patil",
         "outstanding": 3640,
         "verified": 2430,
-        "band": null,
+        "band": "red",
+        "safe_limit": 0,
         "score": 433,
         "score_band": "Building",
         "overdue_days": 50
@@ -112,7 +115,8 @@
         "name": "Archana Iyer",
         "outstanding": 3560,
         "verified": 2700,
-        "band": null,
+        "band": "red",
+        "safe_limit": 0,
         "score": 371,
         "score_band": "Building",
         "overdue_days": 49
@@ -122,7 +126,8 @@
         "name": "Vikram Rao",
         "outstanding": 2600,
         "verified": 2600,
-        "band": null,
+        "band": "red",
+        "safe_limit": 0,
         "score": 420,
         "score_band": "Building",
         "overdue_days": 41
@@ -132,7 +137,8 @@
         "name": "Jyothi Khan",
         "outstanding": 2230,
         "verified": 1280,
-        "band": null,
+        "band": "red",
+        "safe_limit": 0,
         "score": 392,
         "score_band": "Building",
         "overdue_days": 44
@@ -142,7 +148,8 @@
         "name": "Nasreen Bhat",
         "outstanding": 2200,
         "verified": 2200,
-        "band": null,
+        "band": "red",
+        "safe_limit": 0,
         "score": 489,
         "score_band": "Building",
         "overdue_days": 48
@@ -152,7 +159,8 @@
         "name": "Sudha Acharya",
         "outstanding": 2010,
         "verified": 2010,
-        "band": null,
+        "band": "green",
+        "safe_limit": 900,
         "score": 623,
         "score_band": "Good",
         "overdue_days": 0

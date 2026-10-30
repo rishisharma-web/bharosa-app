@@ -9,7 +9,7 @@ from datetime import date, timedelta
 from sqlmodel import Session, select
 
 from app import clock, state
-from app.core import ledger, score as sc
+from app.core import ledger, risk, score as sc
 from app.models import (
     Advance, Bill, Customer, Entry, Mandate, Message, PendingMatch, Repayment, RiskAlert, Sale, ScoreEvent, Store,
 )
@@ -17,6 +17,7 @@ from app.realtime import trace as tr
 
 MERCHANT_STORE = "S1"
 DEMO_TOTAL_BEATS = 7
+INDICATOR_AMOUNT = 340  # the Udhaar Book risk dot shows the band for a typical ₹340 sale (spec 11.7)
 
 
 def _ordinal(n: int) -> str:
@@ -75,15 +76,16 @@ def _merchant(s: Session, store: Store) -> dict:
     week = _collections_by_day(s, store.id, today - timedelta(days=6), today)
 
     top = sorted(per_cust.items(), key=lambda kv: (-kv[1].outstanding, -kv[1].oldest_overdue_days))[:8]
-    customers_top = [
-        {
+    feats = risk.load_features_bulk(s, store.id, [cid for cid, _ in top])
+    customers_top = []
+    for cid, t in top:
+        r = risk.compute(feats[cid], INDICATOR_AMOUNT)
+        customers_top.append({
             "id": cid, "name": customers[cid].name, "outstanding": t.outstanding, "verified": t.verified,
-            "band": None,  # guardrail band for a ₹340 sale; filled once the risk engine lands
+            "band": r.band, "safe_limit": r.safe_limit,
             "score": customers[cid].score, "score_band": sc.band(customers[cid].score),
             "overdue_days": t.oldest_overdue_days,
-        }
-        for cid, t in top
-    ]
+        })
 
     proposed = s.exec(select(Entry).where(Entry.store_id == store.id, Entry.state == "proposed")
                       .order_by(Entry.created_at)).all()

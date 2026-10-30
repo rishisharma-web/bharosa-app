@@ -5,16 +5,17 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
+from sqlalchemy import func
 from sqlmodel import select
 from sse_starlette.sse import EventSourceResponse
 
 from app import clock, db
 from app.config import get_settings
-from app.core import ledger, score as sc
+from app.core import ledger, risk, score as sc
 from app.events.router import EventError, fire
-from app.models import Customer, StoreCustomer
+from app.models import Consent, Customer, Entry, Repayment, ScoreEvent, Store, StoreCustomer
 from app.realtime import broadcaster, trace as tr
-from app.realtime.snapshot import build_snapshot
+from app.realtime.snapshot import INDICATOR_AMOUNT, build_snapshot
 
 router = APIRouter(prefix="/api")
 
@@ -71,17 +72,86 @@ def get_trace(limit: int = 100):
 
 @router.get("/customers")
 def list_customers(store_id: str = "S1"):
+    """Udhaar Book list: everyone at this store with balance, score band and the ₹340 risk dot."""
     today = clock.today()
     with db.session() as s:
         rows = s.exec(select(Customer).join(StoreCustomer, StoreCustomer.customer_id == Customer.id)
                       .where(StoreCustomer.store_id == store_id).order_by(Customer.name)).all()
         per = ledger.totals_by_customer(ledger.open_entries(s, store_id), today)
-        return [
-            {"id": c.id, "name": c.name, "score": c.score, "score_band": sc.band(c.score),
-             "outstanding": per[c.id].outstanding if c.id in per else 0,
-             "overdue_days": per[c.id].oldest_overdue_days if c.id in per else 0}
-            for c in rows
-        ]
+        feats = risk.load_features_bulk(s, store_id, [c.id for c in rows])
+        last_paid = dict(s.exec(select(Repayment.customer_id, func.max(Repayment.created_at))
+                                .where(Repayment.store_id == store_id).group_by(Repayment.customer_id)).all())
+        out = []
+        for c in rows:
+            t = per.get(c.id)
+            r = risk.compute(feats[c.id], INDICATOR_AMOUNT)
+            out.append({
+                "id": c.id, "name": c.name, "score": c.score, "score_band": sc.band(c.score),
+                "outstanding": t.outstanding if t else 0, "verified": t.verified if t else 0,
+                "overdue_days": t.oldest_overdue_days if t else 0,
+                "band": r.band, "safe_limit": r.safe_limit, "last_paid": clock.iso(last_paid.get(c.id)),
+            })
+        return out
+
+
+@router.get("/customers/{customer_id}")
+def customer_detail(customer_id: str, store_id: str = "S1", amount: int = INDICATOR_AMOUNT):
+    """Merchant's view of one customer: this store's entries only, risk reasons, score history."""
+    with db.session() as s:
+        c = s.get(Customer, customer_id)
+        if c is None or s.get(StoreCustomer, (store_id, customer_id)) is None:
+            raise HTTPException(404, f"{customer_id} is not a customer of {store_id}")
+        today = clock.today()
+        entries = s.exec(select(Entry).where(Entry.store_id == store_id, Entry.customer_id == customer_id)
+                         .order_by(Entry.created_at.desc())).all()
+        reps = s.exec(select(Repayment).where(Repayment.store_id == store_id, Repayment.customer_id == customer_id)
+                      .order_by(Repayment.created_at.desc())).all()
+        hist = s.exec(select(ScoreEvent).where(ScoreEvent.customer_id == customer_id)
+                      .order_by(ScoreEvent.created_at.desc()).limit(20)).all()
+        t = ledger.totals([e for e in entries if e.state in ledger.OPEN_STATES], today)
+        r = risk.evaluate(s, store_id, customer_id, max(1, amount))
+        return {
+            "id": c.id, "name": c.name, "mobile": c.mobile, "score": c.score, "score_band": sc.band(c.score),
+            "outstanding": t.outstanding, "verified": t.verified, "overdue": t.overdue,
+            "oldest_overdue_days": t.oldest_overdue_days,
+            "risk": {"amount": r.amount, "band": r.band, "safe_limit": r.safe_limit, "credit_now": r.credit_now,
+                     "collect_now": r.collect_now, "reasons": r.reasons, "ms": r.ms},
+            "entries": [
+                {"id": e.id, "amount": e.amount, "paid": e.paid_amount, "remaining": ledger.remaining(e),
+                 "state": e.state, "verified": e.verified_at is not None, "override": e.override,
+                 "created_at": clock.iso(e.created_at), "due_date": e.due_date.isoformat(),
+                 "overdue_days": ledger.overdue_days(e, today)}
+                for e in entries
+            ],
+            "repayments": [
+                {"id": rp.id, "amount": rp.amount, "source": rp.source, "matched_by": rp.matched_by,
+                 "created_at": clock.iso(rp.created_at)}
+                for rp in reps
+            ],
+            "score_history": [
+                {"delta": h.delta, "score_after": h.score_after, "reason": h.reason, "ts": clock.iso(h.created_at)}
+                for h in hist
+            ],
+        }
+
+
+@router.get("/confirm/{token}")
+def confirm_sheet(token: str):
+    """Data for the customer's Confirm sheet after scanning the Soundbox QR."""
+    with db.session() as s:
+        e = s.exec(select(Entry).where(Entry.confirm_token == token)).first()
+        if e is None:
+            raise HTTPException(404, "unknown confirmation code")
+        store, c = s.get(Store, e.store_id), s.get(Customer, e.customer_id)
+        first_time = s.exec(select(Consent.id).where(
+            Consent.customer_id == c.id, Consent.type == "data_share", Consent.revoked_at == None)).first() is None  # noqa: E711
+        return {
+            "token": token, "entry_id": e.id, "state": e.state, "store": store.name, "store_id": store.id,
+            "customer_id": c.id, "customer": c.name, "amount": e.amount, "label": "Groceries",
+            "date": clock.iso(e.created_at), "due_date": e.due_date.isoformat(),
+            "expires_at": clock.iso(e.token_expires_at), "first_time": first_time,
+            "disputed_before": e.disputed_from_amount is not None,
+        }
 
 
 @router.get("/health")

@@ -28,18 +28,37 @@ def test():
 
 
 def snapshot():
+    """Sample snapshots for frontend work, captured after running real events."""
+    import asyncio
+
     from app import clock, db
+    from app.events import handlers  # noqa: F401  (registers handlers)
+    from app.events.router import fire
     from app.realtime.snapshot import build_snapshot
     from app.sim.seed import seed as do_seed
 
-    do_seed()
-    with db.session() as s:
-        clock.load(s)
-        snap = build_snapshot(s)
-    out = ROOT / "fixtures" / "snapshots" / "beat_0.json"
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(snap, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"wrote {out}")
+    out_dir = ROOT / "fixtures" / "snapshots"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    def dump(name: str) -> dict:
+        with db.session() as s:
+            snap = build_snapshot(s)
+        (out_dir / f"{name}.json").write_text(json.dumps(snap, indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"wrote fixtures/snapshots/{name}.json")
+        return snap
+
+    async def steps():
+        do_seed()
+        with db.session() as s:
+            clock.load(s)
+        dump("beat_0")
+        await fire("udhaar_spoken", {"store_id": "S1", "customer_id": "C_PRIYA", "amount": 340})
+        await fire("udhaar_spoken", {"store_id": "S1", "customer_id": "C_RAMESH", "amount": 340})
+        snap = dump("beat_1_guardrail_amber")
+        await fire("customer_confirm", {"token": snap["soundbox"]["front"]["token"], "device_id": "dev-ramesh"})
+        dump("beat_2_confirmed")
+
+    asyncio.run(steps())
 
 
 if __name__ == "__main__":

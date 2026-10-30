@@ -16,6 +16,7 @@ from sqlmodel import Session
 
 from app import clock, db
 from app.config import get_settings
+from app.errors import EventError  # noqa: F401  (re-exported for handlers and routes)
 from app.events.effects import Effect, toast
 from app.events.schemas import NO_TICK, SCHEMAS
 from app.models import Event
@@ -25,15 +26,14 @@ LOCK = asyncio.Lock()
 
 Handler = Callable[["UnitOfWork", Any], "list[Effect] | None | Awaitable[list[Effect] | None]"]
 HANDLERS: dict[str, Handler] = {}
+# Housekeeping that must see the current sim time before any top-level event is handled
+# (e.g. lazily expiring confirm tokens). Hooks take the UnitOfWork.
+BEFORE_EACH: list[Callable[["UnitOfWork"], None]] = []
 
 
-class EventError(Exception):
-    """An error with an HTTP status, raised for bad input or a rule violation in a handler."""
-
-    def __init__(self, message: str, status: int = 409):
-        super().__init__(message)
-        self.message = message
-        self.status = status
+def before_each(fn):
+    BEFORE_EACH.append(fn)
+    return fn
 
 
 def handles(event_type: str):
@@ -66,6 +66,9 @@ class UnitOfWork:
 
         if event_type not in NO_TICK:
             clock.tick(get_settings().event_tick_s)
+        if not self._parents:
+            for hook in BEFORE_EACH:
+                hook(self)
         ev = Event(ts=clock.now(), type=event_type, payload=model.model_dump(mode="json"), parent_id=self.event_id)
         self.s.add(ev)
         self.s.flush()
