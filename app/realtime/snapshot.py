@@ -9,7 +9,7 @@ from datetime import date, timedelta
 from sqlmodel import Session, select
 
 from app import clock, state
-from app.core import forecast, ledger, risk, score as sc
+from app.core import forecast, integrity, ledger, risk, score as sc
 from app.models import (
     Advance, Bill, Customer, Entry, Mandate, Message, PendingMatch, Repayment, RiskAlert, Sale, ScoreEvent, Store,
     StoreCustomer,
@@ -247,7 +247,9 @@ def _history(s: Session, stores: dict[str, Store], customer_id: str, limit: int 
 def _risk_console(s: Session, stores: dict[str, Store]) -> dict:
     alerts = s.exec(select(RiskAlert).order_by(RiskAlert.created_at.desc())).all()
     return {"alerts": [
-        {"id": a.id, "store": stores[a.store_id].name, "store_id": a.store_id, "risk": a.risk, "rules": a.rules,
+        {"id": a.id, "store": stores[a.store_id].name, "store_id": a.store_id, "risk": a.risk,
+         "rules": [r["id"] for r in a.rules], "rule_details": a.rules, "summary": integrity.summary(a.rules),
+         "advance_blocked": stores[a.store_id].advance_blocked,
          "entry_count": len(a.entry_ids or []), "ts": clock.iso(a.created_at)}
         for a in alerts
     ]}

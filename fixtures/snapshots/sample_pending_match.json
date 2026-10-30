@@ -342,11 +342,11 @@
       "label": "World seeded",
       "detail": {
         "customers": 110,
-        "entries": 974,
-        "repayments": 561,
-        "seconds": 0.38
+        "entries": 1004,
+        "repayments": 591,
+        "seconds": 0.59
       },
-      "ms": 380.0,
+      "ms": 590.0,
       "source": null
     },
     {
@@ -418,7 +418,7 @@
       "detail": {
         "event_id": 1
       },
-      "ms": 15.33,
+      "ms": 17.66,
       "source": null
     }
   ]

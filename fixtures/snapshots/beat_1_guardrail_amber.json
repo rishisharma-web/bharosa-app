@@ -11,7 +11,7 @@
     "top": {
       "band": "amber",
       "text": "Caution: ₹1,800 overdue for 19 days. Safe limit today ₹200. Give ₹200 on credit, collect ₹140 now (UPI or cash).",
-      "ms": 0.83,
+      "ms": 1.73,
       "reasons": [
         "₹1,800 overdue for 19 days → limit ×0.6",
         "Score 680 → base ₹3,350",
@@ -23,20 +23,20 @@
       "safe_limit": 200,
       "credit_now": 200,
       "collect_now": 140,
-      "entry_id": 976,
+      "entry_id": 1006,
       "override": false
     },
     "front": {
       "mode": "confirm_qr",
-      "entry_id": 976,
+      "entry_id": 1006,
       "customer_id": "C_RAMESH",
       "amount": 200,
-      "qr_payload": "bharosa://confirm/bd69768d39b04911a310d94e3b5b7837",
-      "token": "bd69768d39b04911a310d94e3b5b7837",
+      "qr_payload": "bharosa://confirm/f94a6709a74e46d9863710b347089dda",
+      "token": "f94a6709a74e46d9863710b347089dda",
       "expires_at": "2026-10-26T09:11:00+05:30",
       "pay_amount": 140,
-      "pay_qr": "upi://pay?pa=lakshmistores@ptyes&pn=Lakshmi%20Stores&am=140&cu=INR&tr=SALE-976",
-      "sale_ref": "SALE-976"
+      "pay_qr": "upi://pay?pa=lakshmistores@ptyes&pn=Lakshmi%20Stores&am=140&cu=INR&tr=SALE-1006",
+      "sale_ref": "SALE-1006"
     },
     "last_alert": null
   },
@@ -127,21 +127,21 @@
     "advance": null,
     "pending_entries": [
       {
-        "entry_id": 975,
+        "entry_id": 1005,
         "customer_id": "C_PRIYA",
         "customer": "Priya Nair",
         "amount": 340,
         "requested_amount": 340,
-        "token": "56200cdde2ef4cd1a6eb773044ba7eb8",
+        "token": "28e157958cdb426ba235fc2137223317",
         "expires_at": "2026-10-26T09:10:30+05:30"
       },
       {
-        "entry_id": 976,
+        "entry_id": 1006,
         "customer_id": "C_RAMESH",
         "customer": "Ramesh Kumar",
         "amount": 200,
         "requested_amount": 340,
-        "token": "bd69768d39b04911a310d94e3b5b7837",
+        "token": "f94a6709a74e46d9863710b347089dda",
         "expires_at": "2026-10-26T09:11:00+05:30"
       }
     ],
@@ -260,8 +260,8 @@
     "credit_balance": [],
     "pending_confirms": [
       {
-        "token": "bd69768d39b04911a310d94e3b5b7837",
-        "entry_id": 976,
+        "token": "f94a6709a74e46d9863710b347089dda",
+        "entry_id": 1006,
         "store": "Lakshmi Stores",
         "store_id": "S1",
         "amount": 200,
@@ -328,7 +328,7 @@
       "detail": {
         "event_id": 1
       },
-      "ms": 4.98,
+      "ms": 6.85,
       "source": null
     },
     {
@@ -354,15 +354,15 @@
           "Already owes ₹1,800"
         ]
       },
-      "ms": 0.83,
+      "ms": 1.73,
       "source": null
     },
     {
       "ts": "2026-10-26T09:01:00+05:30",
       "node": "ledger",
-      "label": "Entry #976 proposed ₹200",
+      "label": "Entry #1006 proposed ₹200",
       "detail": {
-        "entry_id": 976,
+        "entry_id": 1006,
         "customer_id": "C_RAMESH",
         "amount": 200,
         "requested": 340
@@ -401,7 +401,7 @@
       "detail": {
         "event_id": 2
       },
-      "ms": 2.59,
+      "ms": 5.02,
       "source": null
     }
   ]

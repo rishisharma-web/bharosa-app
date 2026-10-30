@@ -2,7 +2,7 @@
 
 close yesterday's cash → expire unscanned entries → mark defaults → pay bills due today →
 advance backstop → promises past their date → salary-day mandate sweeps → forecast →
-(integrity nightly, with the integrity milestone) → morning briefing.
+integrity nightly → morning briefing.
 
 In Demo Mode no organic customer activity is simulated between days, so every number
 after `advance_day` is a consequence of scripted events and mandates only.
@@ -15,7 +15,7 @@ from sqlmodel import select
 from app import clock
 from app.adapters import soundbox
 from app.adapters.payments import DistributorAdapter
-from app.core import briefing, forecast, ledger, score
+from app.core import briefing, forecast, integrity, ledger, score
 from app.core.money import inr
 from app.models import Advance, Bill, Entry, Mandate, Promise, Repayment, Sale, Store
 from app.realtime.trace import trace
@@ -110,6 +110,8 @@ async def run_day(uow) -> list:
         fc = forecast.forecast(s, store.id)
         trace("forecast", f"{store.name}: 14-day forecast, {len(fc['gaps'])} gap(s)",
               {"gaps": fc["gaps"]})
+    for store in s.exec(select(Store)).all():
+        integrity.check(s, store.id, "nightly")
     b = briefing.refresh(s, "S1")
     soundbox.display(s, "S1", front=soundbox.IDLE_FRONT)
     effects.append(soundbox.play("S1", b["text"], b["lang"]))

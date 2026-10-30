@@ -141,10 +141,11 @@ def test_entry_bookkeeping_consistent(world):
 def test_s2_has_a_realistic_baseline(world):
     """Integrity R2 compares a day's credit with the 30-day average; S2 needs real history."""
     s, _ = world
-    lo = clock.datetime_floor(date(2026, 9, 26))
-    recent = sum(e.amount for e in s.exec(select(Entry).where(
-        Entry.store_id == "S2", Entry.verified_at != None, Entry.created_at >= lo)).all())  # noqa: E711
-    assert recent / 30 * 3 > 8_000  # the injected ring's ₹8,000 must not look like a burst
+    for start in (date(2026, 9, 25), date(2026, 10, 2)):  # R2's window on Mon 26 Oct and on Sun 1 Nov
+        lo, hi = clock.datetime_floor(start), clock.datetime_floor(start + timedelta(days=30))
+        recent = sum(e.amount for e in s.exec(select(Entry).where(
+            Entry.store_id == "S2", Entry.verified_at >= lo, Entry.verified_at < hi)).all())
+        assert recent / 30 * 3 > 8_000  # the injected ring's ₹8,000 must not look like a burst
 
 
 def test_world_is_deterministic():

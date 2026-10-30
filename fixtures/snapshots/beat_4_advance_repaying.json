@@ -11,7 +11,7 @@
     "top": {
       "band": "amber",
       "text": "Caution: ₹1,800 overdue for 19 days. Safe limit today ₹200. Give ₹200 on credit, collect ₹140 now (UPI or cash).",
-      "ms": 0.83,
+      "ms": 1.73,
       "reasons": [
         "₹1,800 overdue for 19 days → limit ×0.6",
         "Score 680 → base ₹3,350",
@@ -23,7 +23,7 @@
       "safe_limit": 200,
       "credit_now": 200,
       "collect_now": 140,
-      "entry_id": 976,
+      "entry_id": 1006,
       "override": false
     },
     "front": {
@@ -130,12 +130,12 @@
     },
     "pending_entries": [
       {
-        "entry_id": 975,
+        "entry_id": 1005,
         "customer_id": "C_PRIYA",
         "customer": "Priya Nair",
         "amount": 340,
         "requested_amount": 340,
-        "token": "56200cdde2ef4cd1a6eb773044ba7eb8",
+        "token": "28e157958cdb426ba235fc2137223317",
         "expires_at": "2026-10-26T09:10:30+05:30"
       }
     ],
@@ -267,7 +267,7 @@
     "history": [
       {
         "type": "entry",
-        "id": 976,
+        "id": 1006,
         "store": "Lakshmi Stores",
         "amount": 200,
         "paid": 0,
@@ -345,7 +345,7 @@
       "detail": {
         "event_id": 6
       },
-      "ms": 15.87,
+      "ms": 25.94,
       "source": null
     },
     {
@@ -399,7 +399,7 @@
       "detail": {
         "event_id": 7
       },
-      "ms": 2.39,
+      "ms": 3.03,
       "source": null
     }
   ]

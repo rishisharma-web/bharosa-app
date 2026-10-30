@@ -7,14 +7,14 @@ from sqlmodel import Session, select
 
 from app import clock, state
 from app.adapters import soundbox, upi
-from app.core import advance, forecast, ledger, mandates, messages, reconcile, risk, score
+from app.core import advance, forecast, integrity, ledger, mandates, messages, reconcile, risk, score
 from app.core.money import inr
 from app.events import schemas as sc
 from app.events.effects import notify
 from app.events.router import EventError, UnitOfWork, before_each, handles
 from app.models import Bill, Consent, Customer, Entry, PendingMatch, Sale, Store, StoreCustomer
 from app.realtime.snapshot import window_label
-from app.sim import daily
+from app.sim import daily, fraud
 from app.realtime.trace import trace
 
 
@@ -167,6 +167,8 @@ def on_customer_confirm(uow: UnitOfWork, p: sc.CustomerConfirm):
     # The customer disputed, the shop stood by its amount, and the customer then confirmed it.
     if e.disputed_from_amount is not None and e.amount >= e.disputed_from_amount:
         score.apply_delta(s, c.id, -15, "dispute resolved against customer", ref=f"entry:{e.id}", store_id=store.id)
+
+    integrity.check(s, store.id, f"confirm entry #{e.id}")
 
     front = soundbox.current(s).get("front") or {}
     if front.get("entry_id") == e.id:
@@ -413,3 +415,17 @@ async def on_advance_day(uow: UnitOfWork, p: sc.AdvanceDay):
     for _ in range(p.days):
         effects = await daily.run_day(uow)  # only the last morning's briefing is spoken
     return effects
+
+
+# ---------------------------------------------------------------- integrity (flow E)
+
+@handles("inject_fraud_ring")
+def on_inject_fraud_ring(uow: UnitOfWork, p: sc.InjectFraudRing):
+    s = uow.s
+    fraud.inject(s, p.store_id)
+    alert = integrity.check(s, p.store_id, "fraud ring injected")
+    if alert is None:
+        return []
+    store = s.get(Store, p.store_id)
+    return [notify("overview", f"{store.name}: {integrity.summary(alert.rules)}",
+                   f"Risk {alert.risk:.1f} · Supplier Advance blocked")]

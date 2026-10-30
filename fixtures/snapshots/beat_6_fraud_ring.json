@@ -1,0 +1,458 @@
+{
+  "now": "2026-11-01T09:05:00+05:30",
+  "lang": "hi-IN",
+  "demo": {
+    "beat": 0,
+    "total": 7,
+    "caption": ""
+  },
+  "soundbox": {
+    "store_id": "S1",
+    "top": {
+      "band": "amber",
+      "text": "Caution: ₹1,800 overdue for 19 days. Safe limit today ₹200. Give ₹200 on credit, collect ₹140 now (UPI or cash).",
+      "ms": 1.73,
+      "reasons": [
+        "₹1,800 overdue for 19 days → limit ×0.6",
+        "Score 680 → base ₹3,350",
+        "Already owes ₹1,800"
+      ],
+      "customer_id": "C_RAMESH",
+      "customer": "Ramesh Kumar",
+      "requested": 340,
+      "safe_limit": 200,
+      "credit_now": 200,
+      "collect_now": 140,
+      "entry_id": 1006,
+      "override": false
+    },
+    "front": {
+      "mode": "idle"
+    },
+    "last_alert": "₹2,000 received from Ramesh"
+  },
+  "merchant": {
+    "store": {
+      "id": "S1",
+      "name": "Lakshmi Stores",
+      "area": "Jayanagar, Bengaluru",
+      "vpa": "lakshmistores@ptyes",
+      "advance_blocked": false
+    },
+    "today_collection": 11000,
+    "collection_7d": [
+      {
+        "date": "2026-10-26",
+        "amount": 9590
+      },
+      {
+        "date": "2026-10-27",
+        "amount": 10950
+      },
+      {
+        "date": "2026-10-28",
+        "amount": 11340
+      },
+      {
+        "date": "2026-10-29",
+        "amount": 10980
+      },
+      {
+        "date": "2026-10-30",
+        "amount": 11010
+      },
+      {
+        "date": "2026-10-31",
+        "amount": 10770
+      },
+      {
+        "date": "2026-11-01",
+        "amount": 11000
+      }
+    ],
+    "udhaar": {
+      "outstanding": 34540,
+      "verified": 27200,
+      "unverified": 7340,
+      "overdue": 27290,
+      "pending_confirm": 0,
+      "customers_owing": 25
+    },
+    "briefing": {
+      "date": "2026-11-01",
+      "lang": "hi-IN",
+      "text": "सुप्रभात, Lakshmi Stores। कल की UPI बिक्री ₹10,770। इस हफ्ते ₹0 उधार वापस आने की उम्मीद। 16 ग्राहकों का ₹27,290 बकाया।",
+      "text_en": "Good morning, Lakshmi Stores. Yesterday's UPI sales ₹10,770. Udhaar collectable this week ₹0. 16 customers overdue (₹27,290).",
+      "summary": {
+        "date": "2026-11-01",
+        "yesterday_sales": 10770,
+        "collectable_this_week": 0,
+        "overdue_customers": 16,
+        "overdue_amount": 27290,
+        "bills_due": []
+      },
+      "audio_url": null,
+      "source": "template"
+    },
+    "due_soon": [],
+    "cash_on_hand": 1600,
+    "advance": {
+      "id": "A1",
+      "state": "repaying",
+      "bill_id": "B1",
+      "amount": 9200,
+      "fee": 138,
+      "total_due": 9338,
+      "repaid": 2200,
+      "split_rate": 0.2,
+      "lender": "Partner NBFC",
+      "backstop": "2026-11-29",
+      "paid_to": "Sharma Traders"
+    },
+    "pending_entries": [],
+    "pending_matches": [],
+    "disputes": [],
+    "drafts": [],
+    "customers_top": [
+      {
+        "id": "C_1055",
+        "name": "Pradeep Saxena",
+        "outstanding": 3760,
+        "verified": 3020,
+        "band": "red",
+        "safe_limit": 0,
+        "score": 574,
+        "score_band": "Good",
+        "overdue_days": 51
+      },
+      {
+        "id": "C_1032",
+        "name": "Latha Joshi",
+        "outstanding": 3700,
+        "verified": 3330,
+        "band": "red",
+        "safe_limit": 0,
+        "score": 633,
+        "score_band": "Good",
+        "overdue_days": 46
+      },
+      {
+        "id": "C_1039",
+        "name": "Lalitha Patil",
+        "outstanding": 3640,
+        "verified": 2430,
+        "band": "red",
+        "safe_limit": 0,
+        "score": 433,
+        "score_band": "Building",
+        "overdue_days": 56
+      },
+      {
+        "id": "C_1052",
+        "name": "Archana Iyer",
+        "outstanding": 3560,
+        "verified": 2700,
+        "band": "red",
+        "safe_limit": 0,
+        "score": 371,
+        "score_band": "Building",
+        "overdue_days": 55
+      },
+      {
+        "id": "C_VIKRAM",
+        "name": "Vikram Rao",
+        "outstanding": 2600,
+        "verified": 2600,
+        "band": "red",
+        "safe_limit": 0,
+        "score": 420,
+        "score_band": "Building",
+        "overdue_days": 47
+      },
+      {
+        "id": "C_1014",
+        "name": "Jyothi Khan",
+        "outstanding": 2230,
+        "verified": 1280,
+        "band": "red",
+        "safe_limit": 0,
+        "score": 392,
+        "score_band": "Building",
+        "overdue_days": 50
+      },
+      {
+        "id": "C_1037",
+        "name": "Nasreen Bhat",
+        "outstanding": 2200,
+        "verified": 2200,
+        "band": "red",
+        "safe_limit": 0,
+        "score": 489,
+        "score_band": "Building",
+        "overdue_days": 54
+      },
+      {
+        "id": "C_1019",
+        "name": "Deepa Khan",
+        "outstanding": 1990,
+        "verified": 1390,
+        "band": "red",
+        "safe_limit": 0,
+        "score": 444,
+        "score_band": "Building",
+        "overdue_days": 39
+      }
+    ]
+  },
+  "customer": {
+    "id": "C_RAMESH",
+    "name": "Ramesh Kumar",
+    "mobile": "9845012345",
+    "vpa": "ramesh.k@ptyes",
+    "lang": "hi-IN",
+    "score": 692,
+    "score_band": "Good",
+    "score_delta_7d": 12,
+    "dues": [],
+    "credit_balance": [],
+    "pending_confirms": [],
+    "mandates": [
+      {
+        "id": 9,
+        "store": "Lakshmi Stores",
+        "store_id": "S1",
+        "cap": 3000,
+        "window": "1st–5th",
+        "status": "active"
+      }
+    ],
+    "messages": [],
+    "history": [
+      {
+        "type": "repayment",
+        "id": 600,
+        "store": "Lakshmi Stores",
+        "amount": 2000,
+        "source": "mandate",
+        "state": "auto_paid",
+        "ts": "2026-11-01T09:04:30+05:30"
+      },
+      {
+        "type": "entry",
+        "id": 1006,
+        "store": "Lakshmi Stores",
+        "amount": 200,
+        "paid": 200,
+        "state": "settled",
+        "verified": true,
+        "ts": "2026-10-26T09:01:00+05:30",
+        "due": "2026-11-25"
+      },
+      {
+        "type": "entry",
+        "id": 378,
+        "store": "Lakshmi Stores",
+        "amount": 1800,
+        "paid": 1800,
+        "state": "settled",
+        "verified": true,
+        "ts": "2026-09-07T10:30:00+05:30",
+        "due": "2026-10-07"
+      },
+      {
+        "type": "repayment",
+        "id": 98,
+        "store": "Lakshmi Stores",
+        "amount": 830,
+        "source": "upi",
+        "state": "paid",
+        "ts": "2026-09-02T19:10:00+05:30"
+      },
+      {
+        "type": "entry",
+        "id": 221,
+        "store": "Lakshmi Stores",
+        "amount": 380,
+        "paid": 380,
+        "state": "settled",
+        "verified": true,
+        "ts": "2026-08-22T18:05:00+05:30",
+        "due": "2026-09-21"
+      },
+      {
+        "type": "entry",
+        "id": 68,
+        "store": "Lakshmi Stores",
+        "amount": 450,
+        "paid": 450,
+        "state": "settled",
+        "verified": true,
+        "ts": "2026-08-10T11:20:00+05:30",
+        "due": "2026-09-09"
+      }
+    ],
+    "rewards": []
+  },
+  "risk_console": {
+    "alerts": [
+      {
+        "id": 1,
+        "store": "Sai Kirana",
+        "store_id": "S2",
+        "risk": 1.0,
+        "rules": [
+          "R1",
+          "R3",
+          "R4",
+          "R5"
+        ],
+        "rule_details": [
+          {
+            "id": "R1",
+            "name": "Shared device",
+            "detail": "4 customers confirmed from device dev-7f3a91"
+          },
+          {
+            "id": "R3",
+            "name": "Round amounts",
+            "detail": "4 of 4 new entries are multiples of ₹500"
+          },
+          {
+            "id": "R4",
+            "name": "Instant confirms",
+            "detail": "new customers confirmed in a median 8 s"
+          },
+          {
+            "id": "R5",
+            "name": "Money cycle",
+            "detail": "4 customers repaid with money the shop sent them"
+          }
+        ],
+        "summary": "possible fake-udhaar ring (shared device, round amounts, instant confirms, money cycle)",
+        "advance_blocked": true,
+        "entry_count": 4,
+        "ts": "2026-11-01T09:05:00+05:30"
+      }
+    ]
+  },
+  "trace_tail": [
+    {
+      "ts": "2026-11-01T09:04:30+05:30",
+      "node": "munim_agent",
+      "label": "Morning briefing composed",
+      "detail": {
+        "summary": {
+          "date": "2026-11-01",
+          "yesterday_sales": 10770,
+          "collectable_this_week": 0,
+          "overdue_customers": 16,
+          "overdue_amount": 27290,
+          "bills_due": []
+        }
+      },
+      "ms": null,
+      "source": "template"
+    },
+    {
+      "ts": "2026-11-01T09:04:30+05:30",
+      "node": "soundbox",
+      "label": "Front screen: idle",
+      "detail": null,
+      "ms": null,
+      "source": null
+    },
+    {
+      "ts": "2026-11-01T09:04:30+05:30",
+      "node": "soundbox",
+      "label": "Speak (hi-IN): सुप्रभात, Lakshmi Stores। कल की UPI बिक्री ₹10,770",
+      "detail": null,
+      "ms": null,
+      "source": null
+    },
+    {
+      "ts": "2026-11-01T09:04:30+05:30",
+      "node": "router",
+      "label": "advance_day",
+      "detail": {
+        "event_id": 8
+      },
+      "ms": 617.03,
+      "source": null
+    },
+    {
+      "ts": "2026-11-01T09:05:00+05:30",
+      "node": "upi",
+      "label": "Sai Kirana: 4 new customers, ₹2,000 each, P2P out and back",
+      "detail": {
+        "customers": [
+          "C_F01",
+          "C_F02",
+          "C_F03",
+          "C_F04"
+        ]
+      },
+      "ms": null,
+      "source": null
+    },
+    {
+      "ts": "2026-11-01T09:05:00+05:30",
+      "node": "integrity",
+      "label": "S2 risk 1.0 (R1, R3, R4, R5)",
+      "detail": {
+        "reason": "fraud ring injected",
+        "store_id": "S2",
+        "risk": 1.0,
+        "entry_ids": [
+          1007,
+          1008,
+          1009,
+          1010
+        ],
+        "rules": [
+          {
+            "id": "R1",
+            "name": "Shared device",
+            "detail": "4 customers confirmed from device dev-7f3a91"
+          },
+          {
+            "id": "R3",
+            "name": "Round amounts",
+            "detail": "4 of 4 new entries are multiples of ₹500"
+          },
+          {
+            "id": "R4",
+            "name": "Instant confirms",
+            "detail": "new customers confirmed in a median 8 s"
+          },
+          {
+            "id": "R5",
+            "name": "Money cycle",
+            "detail": "4 customers repaid with money the shop sent them"
+          }
+        ]
+      },
+      "ms": null,
+      "source": null
+    },
+    {
+      "ts": "2026-11-01T09:05:00+05:30",
+      "node": "integrity",
+      "label": "Sai Kirana: entries flagged, Supplier Advance blocked",
+      "detail": {
+        "alert_id": 1
+      },
+      "ms": null,
+      "source": null
+    },
+    {
+      "ts": "2026-11-01T09:05:00+05:30",
+      "node": "router",
+      "label": "inject_fraud_ring",
+      "detail": {
+        "event_id": 18
+      },
+      "ms": 26.62,
+      "source": null
+    }
+  ]
+}

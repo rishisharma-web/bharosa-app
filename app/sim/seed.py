@@ -45,6 +45,7 @@ ELIGIBLE_SCORE = 550
 MANDATE_CAP = 3_000
 N_MANDATES = 8
 S2_MIN_30D_VERIFIED_CREDIT = 96_000  # ₹3,200/day → R2 threshold ₹9,600 > the ₹8,000 fraud ring
+S2_BASELINE_FROM = date(2026, 10, 3)
 
 STORES = [
     dict(id="S1", name="Lakshmi Stores", area="Jayanagar, Bengaluru", vpa="lakshmistores@ptyes", lang="hi-IN",
@@ -358,7 +359,9 @@ def _named(w: World) -> None:
 
 
 def _s2_top_up(rng: random.Random, w: World, s2: list[GCust]) -> None:
-    lo = HISTORY_END - timedelta(days=29)
+    # The fraud beat may run any day from Mon 26 Oct to Sun 1 Nov, and the demo adds no organic
+    # activity, so R2's 30-day window can start as late as 2 Oct. Build the baseline inside it.
+    lo = S2_BASELINE_FROM
 
     def recent_verified() -> int:
         return sum(e.amount for e in w.entries

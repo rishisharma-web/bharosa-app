@@ -11,7 +11,7 @@
     "top": {
       "band": "amber",
       "text": "Caution: ₹1,800 overdue for 19 days. Safe limit today ₹200. Give ₹200 on credit, collect ₹140 now (UPI or cash).",
-      "ms": 0.83,
+      "ms": 1.73,
       "reasons": [
         "₹1,800 overdue for 19 days → limit ×0.6",
         "Score 680 → base ₹3,350",
@@ -23,7 +23,7 @@
       "safe_limit": 200,
       "credit_now": 200,
       "collect_now": 140,
-      "entry_id": 976,
+      "entry_id": 1006,
       "override": false
     },
     "front": {
@@ -230,7 +230,7 @@
     "history": [
       {
         "type": "repayment",
-        "id": 570,
+        "id": 600,
         "store": "Lakshmi Stores",
         "amount": 2000,
         "source": "mandate",
@@ -239,7 +239,7 @@
       },
       {
         "type": "entry",
-        "id": 976,
+        "id": 1006,
         "store": "Lakshmi Stores",
         "amount": 200,
         "paid": 200,
@@ -299,24 +299,6 @@
   "trace_tail": [
     {
       "ts": "2026-11-01T09:04:30+05:30",
-      "node": "soundbox",
-      "label": "Speak (hi-IN): Ramesh से ₹2,000 प्राप्त हुए।",
-      "detail": null,
-      "ms": null,
-      "source": null
-    },
-    {
-      "ts": "2026-11-01T09:04:30+05:30",
-      "node": "router",
-      "label": "salary_credited",
-      "detail": {
-        "event_id": 17
-      },
-      "ms": 9.99,
-      "source": null
-    },
-    {
-      "ts": "2026-11-01T09:04:30+05:30",
       "node": "forecast",
       "label": "Lakshmi Stores: 14-day forecast, 0 gap(s)",
       "detail": {
@@ -331,6 +313,34 @@
       "label": "Sai Kirana: 14-day forecast, 0 gap(s)",
       "detail": {
         "gaps": []
+      },
+      "ms": null,
+      "source": null
+    },
+    {
+      "ts": "2026-11-01T09:04:30+05:30",
+      "node": "integrity",
+      "label": "S1 risk 0.0",
+      "detail": {
+        "reason": "nightly",
+        "store_id": "S1",
+        "risk": 0,
+        "entry_ids": [],
+        "rules": []
+      },
+      "ms": null,
+      "source": null
+    },
+    {
+      "ts": "2026-11-01T09:04:30+05:30",
+      "node": "integrity",
+      "label": "S2 risk 0.0",
+      "detail": {
+        "reason": "nightly",
+        "store_id": "S2",
+        "risk": 0,
+        "entry_ids": [],
+        "rules": []
       },
       "ms": null,
       "source": null
@@ -375,7 +385,7 @@
       "detail": {
         "event_id": 8
       },
-      "ms": 369.75,
+      "ms": 617.03,
       "source": null
     }
   ]

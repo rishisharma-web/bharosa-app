@@ -69,6 +69,8 @@ def snapshot():
         dump("beat_4_advance_repaying")
         await fire("advance_day", {"days": 6})
         dump("beat_5_salary_day")
+        await fire("inject_fraud_ring", {"store_id": "S2"})
+        dump("beat_6_fraud_ring")
 
         do_seed()
         with db.session() as s:
