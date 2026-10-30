@@ -1,4 +1,5 @@
-"""Environment settings. Every tunable that may differ between laptops lives here."""
+"""Environment settings (v2 spec §13.1). The Sarvam key is read here and nowhere else is it printed."""
+from datetime import date, datetime, time
 from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -7,27 +8,41 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
+    demo_date: date = date(2026, 10, 31)
+    public_base_url: str = "http://localhost:8000"
+    demo_otp: str = "123456"
+    admin_key: str = "change-me"
+    db_path: str = "bharosa.db"
+
+    sarvam_enabled: bool = False
     sarvam_api_key: str = ""
     sarvam_chat_model: str = "sarvam-105b"
+    sarvam_stt_model: str = "saaras:v3"
     sarvam_tts_model: str = "bulbul:v3"
-    sarvam_tts_speaker_hi: str = ""
-    sarvam_tts_speaker_kn: str = ""
-
-    llm_mode: str = "auto"  # auto | live | replay | record | template
-    llm_timeout_s: float = 8.0
-    fallback_llm_base_url: str = ""
-    fallback_llm_api_key: str = ""
-    fallback_llm_model: str = ""
-
-    db_path: str = "bharosa.db"
-    seed: int = 42
-
-    # Every world-changing event advances the sim clock by this many seconds, so that
-    # time windows (10-minute confirm expiry, 24 h integrity rules) behave realistically
-    # while staying deterministic.
-    event_tick_s: int = 30
+    sarvam_tts_speaker: str = "shubh"
+    sarvam_timeout_s: float = 8.0
 
 
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def today() -> date:
+    """The fixed demo date. There is no clock that moves (spec §3.1)."""
+    return get_settings().demo_date
+
+
+def now() -> datetime:
+    """Demo date with the real time of day, so 15-minute expiries work in real time."""
+    return datetime.combine(today(), datetime.now().time().replace(microsecond=0))
+
+
+def iso(dt: datetime | date | None) -> str | None:
+    if dt is None:
+        return None
+    return dt.isoformat()
+
+
+def start_of_day(d: date) -> datetime:
+    return datetime.combine(d, time(0, 0))

@@ -1,11 +1,33 @@
-"""Salary-day Auto-pay (spec 5.2 B4): mandate creation and the mandate executor."""
+"""Salary-week auto-pay (v2 spec §4.9): set up and scheduled, never executed in the prototype.
+
+Compliant design (UPI AutoPay): the customer approves a mandate with a cap; each month the
+merchant side triggers the debit on the collection day, after a pre-debit notice at least 24 h
+before, for the exact verified dues (never more than the cap). The customer can skip a month.
+"""
+from datetime import date, timedelta
+
 from sqlmodel import Session, select
 
-from app import clock
-from app.adapters.payments import MandateAdapter
-from app.core import ledger, score
+from app.config import now, today
+from app.core import activity, payments
+from app.core.money import inr
 from app.errors import EventError
-from app.models import Consent, Mandate, Promise, Repayment
+from app.models import Customer, Mandate, Store
+
+DEFAULT_CAP = 3_000
+DEFAULT_DAY = 2
+
+
+def verified_dues(s: Session, store_id: str, customer_id: str) -> int:
+    return sum(e.amount - e.paid for e in payments.open_entries(s, store_id, customer_id))
+
+
+def next_collection(day: int) -> date:
+    t = today()
+    if t.day < day:
+        return t.replace(day=day)
+    first_next = (t.replace(day=1) + timedelta(days=32)).replace(day=1)
+    return first_next.replace(day=day)
 
 
 def active(s: Session, customer_id: str, store_id: str | None = None) -> list[Mandate]:
@@ -15,39 +37,27 @@ def active(s: Session, customer_id: str, store_id: str | None = None) -> list[Ma
     return list(s.exec(q).all())
 
 
-def create(s: Session, customer_id: str, store_id: str, cap: int, start_day: int, end_day: int) -> Mandate:
+def schedule(s: Session, m: Mandate) -> dict:
+    when = next_collection(m.collection_day)
+    dues = verified_dues(s, m.store_id, m.customer_id)
+    return {"mandate_id": m.id, "store": s.get(Store, m.store_id).name, "store_id": m.store_id, "cap": m.cap,
+            "collection_day": m.collection_day, "next_collection": when.isoformat(),
+            "notice_on": (when - timedelta(days=1)).isoformat(), "amount_now": min(dues, m.cap),
+            "verified_dues": dues}
+
+
+def create(s: Session, customer_id: str, store_id: str, cap: int, collection_day: int) -> Mandate:
+    if not (500 <= cap <= 15_000):
+        raise EventError("Cap must be between ₹500 and ₹15,000", 422)
+    if not (1 <= collection_day <= 28):
+        raise EventError("Collection day must be between 1 and 28", 422)
     if active(s, customer_id, store_id):
-        raise EventError("auto-pay is already active for this store", 409)
-    now = clock.now()
-    m = Mandate(customer_id=customer_id, store_id=store_id, cap=cap, window_start_day=start_day,
-                window_end_day=end_day, status="active", created_at=now)
+        raise EventError("Auto-pay is already set up for this shop", 409)
+    m = Mandate(customer_id=customer_id, store_id=store_id, cap=cap, collection_day=collection_day, created_at=now())
     s.add(m)
     s.flush()
-    MandateAdapter.create(m)
-    s.add(Consent(customer_id=customer_id, store_id=store_id, type="payment_mandate", granted_at=now))
-    score.apply_delta(s, customer_id, 5, "auto-pay set up", ref=f"mandate:{store_id}", store_id=store_id)
+    sch = schedule(s, m)
+    name = s.get(Customer, customer_id).name
+    activity.log(s, store_id, "payment", f"{name} set up salary-week auto-pay: up to {inr(cap)}, "
+                                         f"next collection {date.fromisoformat(sch['next_collection']):%a %d %b}")
     return m
-
-
-def verified_dues(s: Session, store_id: str, customer_id: str) -> int:
-    """A mandate only ever clears dues the customer has confirmed."""
-    return sum(ledger.remaining(e) for e in ledger.open_entries(s, store_id, customer_id) if e.verified_at)
-
-
-def execute(s: Session, m: Mandate) -> Repayment | None:
-    """Debit min(verified dues, cap) if today is inside the mandate window."""
-    today = clock.today()
-    if not (m.window_start_day <= today.day <= m.window_end_day):
-        return None
-    amount = min(verified_dues(s, m.store_id, m.customer_id), m.cap)
-    if amount <= 0:
-        return None
-    MandateAdapter.execute(m, amount)
-    rep = ledger.apply_repayment(s, m.store_id, m.customer_id, amount, "mandate", matched_by="mandate")
-    score.apply_delta(s, m.customer_id, 3, "auto-pay executed", ref=f"mandate-pay:{rep.id}", store_id=m.store_id)
-    for p in s.exec(select(Promise).where(Promise.customer_id == m.customer_id, Promise.store_id == m.store_id,
-                                          Promise.status == "open")).all():
-        if verified_dues(s, m.store_id, m.customer_id) == 0 or amount >= p.amount:
-            p.status = "kept"
-            s.add(p)
-    return rep

@@ -1,19 +1,15 @@
-"""Bharosa Score (spec 7.4): range 300–900, start 600, network-wide.
+"""Bharosa Score (v2 spec §4.1): computed live from repayment history across all stores. Never stored.
 
-Every change goes through `apply_delta`, which clamps, writes a ScoreEvent (the
-audit trail behind "recent changes" and score_delta_7d) and traces it.
+    score = clamp(300, 900, 600 + 15 × on-time − 10 × late − 2 × max overdue days − 60 × written off)
 """
+from dataclasses import dataclass, field
+
 from sqlmodel import Session, select
 
-from app import clock
-from app.models import Customer, ScoreEvent
-from app.realtime.trace import trace
+from app.config import today
+from app.models import Entry
 
-MIN_SCORE, MAX_SCORE, START_SCORE = 300, 900, 600
-
-
-def clamp(score: int) -> int:
-    return max(MIN_SCORE, min(MAX_SCORE, score))
+OPEN_STATES = ("verified", "partly_paid")
 
 
 def band(score: int) -> str:
@@ -26,30 +22,50 @@ def band(score: int) -> str:
     return "Building"
 
 
-def rewards(score: int) -> list[str]:
-    out = []
-    if score >= 700:
-        out.append("Higher limits at all Paytm stores")
-    if score >= 750:
-        out.append("Partner offer: 2% cashback on groceries")
-    return out
+def overdue_days(e: Entry) -> int:
+    if e.state not in OPEN_STATES:
+        return 0
+    return max(0, (today() - e.due_date).days)
 
 
-def apply_delta(s: Session, customer_id: str, delta: int, reason: str, ref: str | None = None,
-                store_id: str | None = None) -> int | None:
-    """Change a customer's score (clamped) and log it. With `ref`, a (reason, ref) pair applies once.
+@dataclass
+class Score:
+    value: int
+    band: str
+    breakdown: list[dict] = field(default_factory=list)
 
-    Returns the applied delta, or None if it was a duplicate.
-    """
-    if ref is not None and s.exec(select(ScoreEvent.id).where(
-            ScoreEvent.customer_id == customer_id, ScoreEvent.reason == reason, ScoreEvent.ref == ref)).first():
-        return None
-    c = s.get(Customer, customer_id)
-    before = c.score
-    c.score = clamp(before + delta)
-    s.add(c)
-    s.add(ScoreEvent(customer_id=customer_id, store_id=store_id, delta=c.score - before, score_after=c.score,
-                     reason=reason, ref=ref, created_at=clock.now()))
-    trace("score", f"{c.name.split()[0]} {before} → {c.score} ({reason})",
-          {"customer_id": customer_id, "delta": c.score - before, "reason": reason})
-    return c.score - before
+    def to_dict(self) -> dict:
+        return {"score": self.value, "band": self.band, "breakdown": self.breakdown}
+
+
+def _plural(n: int, word: str) -> str:
+    return f"{n} {word}{'' if n == 1 else 's'}"
+
+
+def compute(entries: list[Entry]) -> Score:
+    on_time = sum(1 for e in entries if e.state == "settled" and e.settled_at.date() <= e.due_date)
+    late = sum(1 for e in entries if e.state == "settled" and e.settled_at.date() > e.due_date)
+    written_off = sum(1 for e in entries if e.state == "written_off")
+    max_od = max((overdue_days(e) for e in entries), default=0)
+    lines = [{"label": "Starting score", "points": 600}]
+    if on_time:
+        lines.append({"label": f"{_plural(on_time, 'on-time repayment')}", "points": 15 * on_time})
+    if late:
+        lines.append({"label": f"{_plural(late, 'late repayment')}", "points": -10 * late})
+    if max_od:
+        lines.append({"label": f"Overdue for {max_od} days now", "points": -2 * max_od})
+    if written_off:
+        lines.append({"label": f"{_plural(written_off, 'unpaid udhaar written off')}", "points": -60 * written_off})
+    raw = sum(x["points"] for x in lines)
+    value = max(300, min(900, raw))
+    if value != raw:
+        lines.append({"label": "Kept within 300–900", "points": value - raw})
+    return Score(value, band(value), lines)
+
+
+def customer_entries(s: Session, customer_id: str) -> list[Entry]:
+    return list(s.exec(select(Entry).where(Entry.customer_id == customer_id)).all())
+
+
+def for_customer(s: Session, customer_id: str) -> Score:
+    return compute(customer_entries(s, customer_id))
