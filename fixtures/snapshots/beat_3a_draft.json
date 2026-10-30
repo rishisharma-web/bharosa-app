@@ -4,14 +4,15 @@
   "demo": {
     "beat": 0,
     "total": 7,
-    "caption": ""
+    "caption": "Morning: Bharosa briefs Lakshmi Stores in Hindi.",
+    "awaiting": null
   },
   "soundbox": {
     "store_id": "S1",
     "top": {
       "band": "amber",
       "text": "Caution: ₹1,800 overdue for 19 days. Safe limit today ₹200. Give ₹200 on credit, collect ₹140 now (UPI or cash).",
-      "ms": 1.15,
+      "ms": 1.24,
       "reasons": [
         "₹1,800 overdue for 19 days → limit ×0.6",
         "Score 680 → base ₹3,350",
@@ -123,7 +124,7 @@
         "customer": "Priya Nair",
         "amount": 340,
         "requested_amount": 340,
-        "token": "577057e1f40d47de8842f45c3ef1cdff",
+        "token": "99d6705ce3384de6900cb9ab5f64500b",
         "expires_at": "2026-10-26T09:10:30+05:30"
       }
     ],
@@ -376,7 +377,7 @@
       "detail": {
         "event_id": 4
       },
-      "ms": 18.82,
+      "ms": 15.54,
       "source": null
     },
     {
@@ -408,7 +409,7 @@
       "detail": {
         "event_id": 5
       },
-      "ms": 5.61,
+      "ms": 6.31,
       "source": null
     }
   ]

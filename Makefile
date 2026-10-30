@@ -4,4 +4,5 @@ seed:     ; $(PY) tasks.py seed
 run:      ; $(PY) tasks.py run
 test:     ; $(PY) tasks.py test
 snapshot: ; $(PY) tasks.py snapshot
-.PHONY: seed run test snapshot
+smoke:    ; $(PY) tasks.py smoke
+.PHONY: seed run test snapshot smoke

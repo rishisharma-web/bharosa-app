@@ -4,14 +4,15 @@
   "demo": {
     "beat": 0,
     "total": 7,
-    "caption": ""
+    "caption": "Morning: Bharosa briefs Lakshmi Stores in Hindi.",
+    "awaiting": null
   },
   "soundbox": {
     "store_id": "S1",
     "top": {
       "band": "amber",
       "text": "Caution: ₹1,800 overdue for 19 days. Safe limit today ₹200. Give ₹200 on credit, collect ₹140 now (UPI or cash).",
-      "ms": 1.15,
+      "ms": 1.24,
       "reasons": [
         "₹1,800 overdue for 19 days → limit ×0.6",
         "Score 680 → base ₹3,350",
@@ -31,8 +32,8 @@
       "entry_id": 1006,
       "customer_id": "C_RAMESH",
       "amount": 200,
-      "qr_payload": "bharosa://confirm/72f24d24be3445d3b6962d0bf821a212",
-      "token": "72f24d24be3445d3b6962d0bf821a212",
+      "qr_payload": "bharosa://confirm/2ae21810a24e4149a8fa6c2f0827edb0",
+      "token": "2ae21810a24e4149a8fa6c2f0827edb0",
       "expires_at": "2026-10-26T09:11:00+05:30",
       "pay_amount": 140,
       "pay_qr": "upi://pay?pa=lakshmistores@ptyes&pn=Lakshmi%20Stores&am=140&cu=INR&tr=SALE-1006",
@@ -132,7 +133,7 @@
         "customer": "Priya Nair",
         "amount": 340,
         "requested_amount": 340,
-        "token": "577057e1f40d47de8842f45c3ef1cdff",
+        "token": "99d6705ce3384de6900cb9ab5f64500b",
         "expires_at": "2026-10-26T09:10:30+05:30"
       },
       {
@@ -141,7 +142,7 @@
         "customer": "Ramesh Kumar",
         "amount": 200,
         "requested_amount": 340,
-        "token": "72f24d24be3445d3b6962d0bf821a212",
+        "token": "2ae21810a24e4149a8fa6c2f0827edb0",
         "expires_at": "2026-10-26T09:11:00+05:30"
       }
     ],
@@ -262,7 +263,7 @@
     "credit_balance": [],
     "pending_confirms": [
       {
-        "token": "72f24d24be3445d3b6962d0bf821a212",
+        "token": "2ae21810a24e4149a8fa6c2f0827edb0",
         "entry_id": 1006,
         "store": "Lakshmi Stores",
         "store_id": "S1",
@@ -330,7 +331,7 @@
       "detail": {
         "event_id": 1
       },
-      "ms": 7.91,
+      "ms": 6.17,
       "source": null
     },
     {
@@ -356,7 +357,7 @@
           "Already owes ₹1,800"
         ]
       },
-      "ms": 1.15,
+      "ms": 1.24,
       "source": null
     },
     {
@@ -403,7 +404,7 @@
       "detail": {
         "event_id": 2
       },
-      "ms": 3.6,
+      "ms": 3.75,
       "source": null
     }
   ]

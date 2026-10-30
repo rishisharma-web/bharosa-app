@@ -4,14 +4,15 @@
   "demo": {
     "beat": 0,
     "total": 7,
-    "caption": ""
+    "caption": "Morning: Bharosa briefs Lakshmi Stores in Hindi.",
+    "awaiting": null
   },
   "soundbox": {
     "store_id": "S1",
     "top": {
       "band": "amber",
       "text": "Caution: ₹1,800 overdue for 19 days. Safe limit today ₹200. Give ₹200 on credit, collect ₹140 now (UPI or cash).",
-      "ms": 1.15,
+      "ms": 1.24,
       "reasons": [
         "₹1,800 overdue for 19 days → limit ×0.6",
         "Score 680 → base ₹3,350",
@@ -247,14 +248,14 @@
         }
       ],
       "source": "template",
-      "ms": 53.9,
+      "ms": 55.3,
       "steps": [
         {
           "tool": "get_forecast",
           "args": {
             "days": 14
           },
-          "ms": 14.7,
+          "ms": 14.3,
           "result": {
             "today": "2026-10-26",
             "cash_on_hand": 3200,
@@ -334,7 +335,7 @@
           "args": {
             "until_date": "2026-10-29"
           },
-          "ms": 13.8,
+          "ms": 15.0,
           "result": {
             "until": "2026-10-29",
             "total": 800,
@@ -355,7 +356,7 @@
           "args": {
             "bill_id": "B1"
           },
-          "ms": 20.1,
+          "ms": 20.2,
           "result": {
             "eligible": true,
             "bill_id": "B1",
@@ -381,7 +382,7 @@
           "args": {
             "top_n": 5
           },
-          "ms": 3.1,
+          "ms": 3.6,
           "result": {
             "count": 15,
             "items": [
@@ -643,7 +644,7 @@
       "detail": {
         "event_id": 11
       },
-      "ms": 606.83,
+      "ms": 544.97,
       "source": null
     },
     {
@@ -718,7 +719,7 @@
       "detail": {
         "event_id": 21
       },
-      "ms": 23.93,
+      "ms": 21.77,
       "source": null
     }
   ]

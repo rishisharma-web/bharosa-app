@@ -1,20 +1,35 @@
-"""Demo and admin endpoints (spec 10). Beat stepping arrives with the demo-script milestone."""
-from fastapi import APIRouter
+"""Demo and admin endpoints (spec 10)."""
+from fastapi import APIRouter, HTTPException
 
-from app import state
-from app.adapters import soundbox
-from app.events.effects import caption
-from app.events.router import unit_of_work
-from app.sim.seed import seed
+from app.errors import EventError
+from app.sim import demo_script
 
 router = APIRouter(prefix="/api/demo")
 
 
 @router.post("/reset")
 async def reset():
-    async with unit_of_work() as uow:
-        stats = seed()  # rebuilds tables in its own transaction, resets the clock, writes the briefing
-        b = state.get(uow.s, "briefing")
-        uow.effects += [caption("Demo reset: Mon 26 Oct, 09:00 at Lakshmi Stores."),
-                        soundbox.play("S1", b["text"], b["lang"])]
-    return {"ok": True, **stats}
+    return {"ok": True, **(await demo_script.reset())}
+
+
+@router.get("/script")
+def script():
+    return demo_script.script()
+
+
+@router.post("/next")
+async def next_beat(fast: bool = False):
+    """Run the next beat (or finish the current one's presenter steps). Returns the caption."""
+    try:
+        return await demo_script.next_beat(fast=fast)
+    except EventError as e:
+        raise HTTPException(e.status, e.message)
+
+
+@router.post("/goto/{beat}")
+async def goto(beat: int):
+    """Reset, then run beats up to N (for rehearsal)."""
+    try:
+        return await demo_script.goto(beat)
+    except EventError as e:
+        raise HTTPException(e.status, e.message)

@@ -10,7 +10,8 @@ DEFAULTS: dict[str, Any] = {
     "lang": "hi-IN",
     "focus_customer": "C_RAMESH",
     "demo_beat": 0,
-    "demo_caption": "",
+    "demo_caption": "Morning: Bharosa briefs Lakshmi Stores in Hindi.",
+    "demo_resume": None,
     "soundbox": {
         "store_id": "S1",
         "top": None,

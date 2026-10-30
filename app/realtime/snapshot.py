@@ -42,6 +42,7 @@ def build_snapshot(s: Session) -> dict:
             "beat": state.get(s, "demo_beat"),
             "total": DEMO_TOTAL_BEATS,
             "caption": state.get(s, "demo_caption"),
+            "awaiting": state.get(s, "demo_awaiting"),  # presenter step the beat is waiting for
         },
         "soundbox": state.get(s, "soundbox"),
         "merchant": _merchant(s, stores[MERCHANT_STORE]),

@@ -3,7 +3,8 @@
     python tasks.py seed       rebuild bharosa.db from the seed
     python tasks.py run        start the server on http://localhost:8000
     python tasks.py test       run the test suite
-    python tasks.py snapshot   write fixtures/snapshots/beat_0.json (sample data for the UI)
+    python tasks.py snapshot   write fixtures/snapshots/*.json (sample data for the UI)
+    python tasks.py smoke      run demo beats 0–6 headless and check the contract numbers
 """
 import json
 import subprocess
@@ -91,9 +92,13 @@ def snapshot():
     asyncio.run(steps())
 
 
+def smoke():
+    sys.exit(subprocess.call([sys.executable, "scripts/smoke_demo.py", *sys.argv[2:]], cwd=ROOT))
+
+
 if __name__ == "__main__":
-    tasks = {"seed": seed, "run": run, "test": test, "snapshot": snapshot}
-    if len(sys.argv) != 2 or sys.argv[1] not in tasks:
+    tasks = {"seed": seed, "run": run, "test": test, "snapshot": snapshot, "smoke": smoke}
+    if len(sys.argv) < 2 or sys.argv[1] not in tasks:
         print(__doc__)
         sys.exit(1)
     tasks[sys.argv[1]]()

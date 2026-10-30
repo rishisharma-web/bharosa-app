@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlmodel import select
 
 from app import clock, db
-from app.api import routes_agents, routes_core, routes_demo
+from app.api import routes_agents, routes_core, routes_demo, routes_overview
 from app.events import handlers  # noqa: F401  (registers event handlers)
 from app.models import Store
 
@@ -33,6 +33,7 @@ app = FastAPI(title="Bharosa", lifespan=lifespan)
 app.include_router(routes_core.router)
 app.include_router(routes_demo.router)
 app.include_router(routes_agents.router)
+app.include_router(routes_overview.router)
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 
