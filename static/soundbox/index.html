@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Soundbox · Bharosa</title>
+<link rel="stylesheet" href="/static/shared/tokens.css">
+<link rel="stylesheet" href="/static/shared/base.css">
+<link rel="stylesheet" href="/static/soundbox/soundbox.css">
+<script src="/static/vendor/qrcode.min.js"></script>
+<script src="/static/shared/format.js"></script>
+<script src="/static/shared/api.js"></script>
+<script src="/static/soundbox/soundbox.js"></script>
+<script defer src="/static/vendor/alpine.min.js"></script>
+</head>
+<body x-data="soundbox" x-cloak>
+<div class="sb-page">
+  <div class="sbx">
+    <div class="sbx-logo"><span class="wordmark small-mark">Pay<span>tm</span></span> AI Soundbox</div>
+
+    <!-- top display: faces the shopkeeper -->
+    <div class="topdisp" :class="top?.band || 'idle'">
+      <div class="led"></div>
+      <template x-if="!top"><div class="idle-text" x-text="store ? store + ' · ready' : ''"></div></template>
+      <template x-if="top">
+        <div>
+          <div class="band" x-text="F.bandWord(top.band) + ' · ' + top.customer + ' · ' + F.inr(top.amount)"></div>
+          <div class="txt" x-text="top.text"></div>
+          <div class="meta"><span class="ms" x-show="top.ms !== undefined" x-text="top.ms + ' ms'"></span>
+            <a href="#" class="why" @click.prevent="why = !why">Why?</a></div>
+          <ul class="reasons" x-show="why"><template x-for="r in top.reasons || []"><li x-text="r"></li></template></ul>
+        </div>
+      </template>
+    </div>
+
+    <!-- front screen: faces the customer -->
+    <div class="front">
+      <template x-if="front.mode === 'idle'">
+        <div>
+          <div class="lbl" x-text="store + ' · Scan to pay'"></div>
+          <div class="qr-box qr-md" x-html="F.qr('upi://pay?pa=' + vpa + '&pn=' + encodeURIComponent(store))"></div>
+          <div class="lbl" x-text="front.message || 'Any UPI app'"></div>
+        </div>
+      </template>
+      <template x-if="front.mode === 'confirm_qr' || front.mode === 'share_qr'">
+        <div>
+          <div class="msg" x-text="front.message"></div>
+          <a :href="front.qr_url" target="_blank" class="qr-box qr-lg" title="Scan with the customer app" x-html="F.qr(front.qr_url)"></a>
+          <div class="pay-now" x-show="front.collect_now" x-text="F.inr(front.collect_now) + ' to pay now'"></div>
+          <div class="lbl">Scan with your Paytm app</div>
+        </div>
+      </template>
+      <template x-if="front.mode === 'pay_full'">
+        <div>
+          <div class="msg" x-text="front.message"></div>
+          <div class="qr-box qr-md" x-html="F.qr('upi://pay?pa=' + vpa + '&pn=' + encodeURIComponent(store) + '&am=' + front.amount)"></div>
+        </div>
+      </template>
+      <template x-if="front.mode === 'done'">
+        <div><div class="tick">✓</div><div class="done-text" x-text="front.message"></div></div>
+      </template>
+    </div>
+
+    <div class="sbx-bottom">
+      <div class="speaker" :class="speaking && 'on'">🔊</div>
+      <span class="small muted" x-show="aiEnabled">Voice on</span>
+    </div>
+  </div>
+
+  <div class="actions" x-show="top && top.band !== 'waiting' && front.mode === 'idle'">
+    <button class="btn btn-primary" @click="accept(false)" :disabled="busy">Use suggestion</button>
+    <button class="btn btn-danger" @click="accept(true)" :disabled="busy || top?.band === 'green'">Override</button>
+    <button class="btn btn-ghost" @click="clear()">Clear</button>
+  </div>
+  <div class="actions" x-show="top && top.band === 'waiting'">
+    <button class="btn btn-secondary" @click="accept(false)" :disabled="busy">Continue with starter limit</button>
+    <button class="btn btn-ghost" @click="clear()">Clear</button>
+  </div>
+  <div class="actions" x-show="front.mode !== 'idle' && top?.band !== 'waiting'">
+    <button class="btn btn-ghost" @click="clear()">Clear</button>
+  </div>
+
+  <div class="panel">
+    <div class="chips"><template x-for="p in presets" :key="p.label"><button class="chip" @click="say(p)" x-text="p.label"></button></template></div>
+    <form class="row" style="margin-top:10px" @submit.prevent="sayText()">
+      <input class="input" x-model="text" placeholder="What the shopkeeper said…">
+      <button type="button" class="btn btn-secondary mic" x-show="aiEnabled" @click="toggleMic()" :class="recording && 'rec'" x-text="recording ? '■' : '🎙'" title="Speak"></button>
+      <button class="btn btn-primary" :disabled="busy">Send</button>
+    </form>
+    <div class="small muted" style="margin-top:8px" x-show="transcript" x-text="'Heard: “' + transcript + '”'"></div>
+    <div class="small muted" style="margin-top:8px">On a real AI Soundbox, the Paytm Button captures this by voice.</div>
+  </div>
+  <div class="toast" :class="toast?.error && 'error'" x-show="toast" x-transition x-text="toast?.text"></div>
+  <div class="footer-note">Concept prototype · Team MerchantMavericks</div>
+</div>
+</body>
+</html>

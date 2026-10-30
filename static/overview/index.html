@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bharosa · Overview</title>
+<link rel="stylesheet" href="/static/shared/tokens.css">
+<link rel="stylesheet" href="/static/shared/base.css">
+<link rel="stylesheet" href="/static/overview/overview.css">
+</head>
+<body>
+<main class="ov">
+  <!-- 1 -->
+  <section class="hero">
+    <div class="wordmark light">Bharosa <span>on Paytm</span></div>
+    <h1>Udhaar, from a cost into a growth engine.</h1>
+    <p class="sub">Every kirana gives credit on trust. Bharosa makes it safe, verified and self-collecting, on the Soundbox the merchant already has and the Paytm app the customer already uses.</p>
+    <div class="pillars">
+      <div><b>Sell more, safely</b><span>A safe limit for every request · Portable Trust for new customers · a predicted monthly basket for regulars</span></div>
+      <div><b>Get paid without chasing</b><span>Customers confirm in their own app · reminders that understand replies · compliant salary-week auto-pay</span></div>
+      <div><b>Stock up without cash</b><span>A Diwali stock plan funded by a Stock Advance, paid straight to the distributor and repaid from 20% of repayments</span></div>
+    </div>
+  </section>
+
+  <!-- 2 -->
+  <section><h2>The flow</h2>
+    <ol class="flow">
+      <li><b>Ask</b><span>The shopkeeper says “Ramesh 340” to the Soundbox</span></li>
+      <li><b>Check</b><span>Bharosa Score + overdue + network exposure → safe limit in milliseconds</span></li>
+      <li><b>Decide</b><span>Give ₹200 on credit, collect ₹140 now</span></li>
+      <li><b>Confirm</b><span>The customer scans and confirms in their own Paytm app</span></li>
+      <li><b>Collect</b><span>Reminders, promises and salary-week auto-pay</span></li>
+      <li><b>Grow</b><span>A weekly plan: festive stock, overdue follow-ups, monthly baskets</span></li>
+    </ol>
+  </section>
+
+  <!-- 3 -->
+  <section><h2>AI where the world is messy. Code where money moves.</h2>
+    <div class="two">
+      <table><tr><th>AI does (Sarvam)</th></tr>
+        <tr><td>Understands the shopkeeper's Hindi, Kannada or Hinglish (Counter Agent)</td></tr>
+        <tr><td>Writes reminders and reads customers' replies (Recovery Agent)</td></tr>
+        <tr><td>Words the weekly plan and answers questions with read-only tools (Growth Agent)</td></tr>
+        <tr><td>Speech to text and one spoken line on the Soundbox</td></tr></table>
+      <table><tr><th>Code does (always)</th></tr>
+        <tr><td>Bharosa Score, safe limits, network exposure cap</td></tr>
+        <tr><td>Ledger, payments, FIFO allocation, the 20% lender split</td></tr>
+        <tr><td>Stock Advance sizing, auto-pay schedules, basket prediction</td></tr>
+        <tr><td>Every validator that checks what the AI proposed</td></tr></table>
+    </div>
+    <ol class="rules"><li>The AI proposes; code decides.</li><li>No AI output changes money, limits or scores without a validator.</li>
+      <li>Every AI answer can fall back to a rule or template.</li><li>Merchants never see other shops' data.</li><li>Every decision is logged, with its source.</li></ol>
+  </section>
+
+  <!-- 4 -->
+  <section><h2>Who carries which risk</h2>
+    <div class="cards3">
+      <div><b>The shop</b><span>Udhaar risk stays with the shop, as today, but is capped before goods leave the counter.</span></div>
+      <div><b>The lender</b><span>Lends against verified receivables only, paid directly to the distributor, repaid automatically from 20% of collections.</span></div>
+      <div><b>The customer</b><span>Shares their score only with consent, sees exactly what a shop sees, and can revoke it.</span></div>
+    </div>
+    <p class="note"><b>Protections:</b> a network exposure cap (what a customer owes across all Paytm shops limits new credit), a new-shop discount (40% of the network limit, at most ₹1,500), and a shared-device check on confirmations.</p>
+  </section>
+
+  <!-- 5 -->
+  <section><h2>Fraud rings, explained</h2>
+    <p>A dishonest shop can invent “customers”, record round-number udhaar for them, confirm it from one phone and send money back and forth so the fakes look like good payers. The goal: inflate verified receivables to borrow more. Bharosa looks for the tell-tale shape: many customers confirmed from the same device, round amounts, instant confirmations by brand-new customers, and money that leaves the shop and comes straight back. In this prototype a confirmation from a phone already used by another customer at the same shop is flagged and kept out of advance eligibility.</p>
+  </section>
+
+  <!-- 6 -->
+  <section><h2>Works on every Paytm Soundbox</h2>
+    <div class="two-cards">
+      <div><b>Classic Soundbox</b><span>Printed QR + speaker + the merchant app. The customer scans the shop QR; the Paytm app finds the waiting request.</span></div>
+      <div><b>AI Soundbox</b><span>Voice in, a top display for the shopkeeper, and a dynamic QR on the customer-facing screen.</span></div>
+    </div>
+    <p class="note">In this prototype the customer web app plays the Paytm app. In production these would be standard Paytm/UPI QR codes read by the Paytm app.</p>
+  </section>
+
+  <!-- 7 -->
+  <section><h2>Compliant salary-week auto-pay</h2>
+    <p>UPI AutoPay: the customer approves a mandate with a cap. Each month, the day before collection, Bharosa sends a pre-debit notice with the exact verified dues; the customer can skip that month. On the collection day the merchant side triggers the debit (under ₹15,000 needs no re-authentication), and the lender split applies. The prototype sets up and shows the schedule; it does not move money.</p>
+  </section>
+
+  <!-- 8 -->
+  <section><h2>Stack · prototype vs production</h2>
+    <table class="wide"><tr><th>Concern</th><th>Prototype</th><th>Production</th></tr>
+      <tr><td>Backend</td><td>FastAPI, SQLite, one process</td><td>Same code; Postgres, queue, idempotent consumers</td></tr>
+      <tr><td>Apps</td><td>Five web apps, Alpine.js, live “changed” pings</td><td>Paytm for Business, the Paytm app, Soundbox firmware</td></tr>
+      <tr><td>AI</td><td>Sarvam chat, speech-to-text, text-to-speech, off by default</td><td>Same, with evaluation sets and monitoring</td></tr>
+      <tr><td>Payments</td><td>Simulated UPI, credit line on UPI, AutoPay schedule</td><td>Paytm UPI, partner credit lines, UPI AutoPay mandates</td></tr>
+      <tr><td>Lending</td><td>Simulated Partner NBFC</td><td>Paytm lending partners; scoring via a licensed partner</td></tr>
+      <tr><td>Phones</td><td>QR over an HTTPS tunnel</td><td>Standard Paytm/UPI QR codes</td></tr></table>
+  </section>
+
+  <!-- 9 -->
+  <section class="team"><h2>Team MerchantMavericks</h2><p>Sujay Mohanty · Sukruth N · Rishi Sharma</p>
+    <p class="muted small">Paytm Build for India AI Hackathon, Bengaluru · Track 1: Merchant Growth AI. All names, shops, the lender and the distributor are fictional.</p></section>
+  <div class="footer-note">Concept prototype · Team MerchantMavericks</div>
+</main>
+</body>
+</html>

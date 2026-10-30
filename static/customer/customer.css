@@ -1,0 +1,20 @@
+.page-h { margin: 6px 4px 10px; font-size: 18px; }
+.eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--amber); }
+.card.action { border: 1.5px solid #FFD9A0; background: #FFFBF2; cursor: pointer; }
+.score-num { text-align: center; font-size: 34px; font-weight: 800; color: var(--ink); margin-top: -46px; }
+.red { color: var(--red); } .green { color: var(--green); }
+.autopay { background: var(--green-bg); border-radius: 14px; padding: 4px 12px; margin-top: 8px; }
+.chat { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; }
+.bubble { max-width: 86%; padding: 9px 12px; border-radius: 16px; font-size: 14px; line-height: 1.4; }
+.bubble.from-shop { align-self: flex-start; background: var(--bg); color: var(--ink); border-bottom-left-radius: 5px; }
+.bubble.from-me { align-self: flex-end; background: var(--navy); color: #fff; border-bottom-right-radius: 5px; }
+.bubble .ts { display: block; font-size: 10px; opacity: .6; margin-top: 3px; }
+.bubble .acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.paynow { background: var(--bg); border-radius: 14px; padding: 10px 12px; margin-top: 12px; }
+.method { display: flex; align-items: center; gap: 8px; padding: 8px 0 0; font-size: 14px; }
+.method input { width: 18px; height: 18px; accent-color: var(--navy); }
+.mandate { background: var(--bg); border-radius: 14px; padding: 4px 12px; margin-top: 10px; }
+.mandate .cap { width: 120px; padding: 6px 8px; text-align: right; }
+.pin { display: flex; gap: 12px; justify-content: center; margin: 10px 0 14px; }
+.pin i { width: 13px; height: 13px; border-radius: 50%; background: var(--ink); }
+.reader { width: 100%; min-height: 260px; border-radius: 16px; overflow: hidden; background: #000; }

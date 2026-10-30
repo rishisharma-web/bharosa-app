@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#042E6F">
+<title>Paytm · Bharosa</title>
+<link rel="stylesheet" href="/static/shared/tokens.css">
+<link rel="stylesheet" href="/static/shared/base.css">
+<link rel="stylesheet" href="/static/customer/customer.css">
+<script src="/static/shared/format.js"></script>
+<script src="/static/shared/api.js"></script>
+<script src="/static/customer/customer.js"></script>
+<script defer src="/static/vendor/html5-qrcode.min.js"></script>
+<script defer src="/static/vendor/alpine.min.js"></script>
+</head>
+<body x-data="customerApp" x-cloak>
+
+<!-- ============================================= LOGIN -->
+<template x-if="!me && ready">
+  <div class="login">
+    <div class="wordmark">Pay<span>tm</span></div>
+    <h2 style="margin-top:22px" x-text="otpSent ? 'Enter OTP' : 'Enter mobile number'"></h2>
+    <form @submit.prevent="otpSent ? verify() : startOtp()" style="margin-top:14px">
+      <input class="input" x-show="!otpSent" x-model="phone" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number" autocomplete="tel">
+      <input class="input" x-show="otpSent" x-model="otp" inputmode="numeric" maxlength="6" placeholder="6-digit OTP" autocomplete="one-time-code">
+      <button class="btn btn-primary btn-block" style="margin-top:12px" x-text="otpSent ? 'Verify' : 'Continue'"></button>
+    </form>
+    <div class="demo-note" x-show="otpSent">Demo OTP: 123456 (no SMS is sent)</div>
+    <p class="small muted center" style="margin-top:22px">Or scan a login QR from the presenter screen.</p>
+    <div class="toast error" x-show="toast" x-text="toast?.text"></div>
+  </div>
+</template>
+
+<!-- ============================================= APP -->
+<template x-if="me">
+<div class="shell">
+  <div class="app-head">
+    <div class="avatar cyan" x-text="F.initials(me.name)"></div>
+    <div class="grow"><div class="title" x-text="me.name"></div><div class="sub">Paytm · Bharosa</div></div>
+    <button class="icon-btn" @click="tab='messages'; loadMessages()" title="Messages">🔔<i x-show="home?.action_needed"></i></button>
+  </div>
+
+  <!-- HOME -->
+  <div x-show="tab==='home'">
+    <template x-if="home?.action_needed">
+      <div class="card action" @click="act(home.action_needed)">
+        <div class="eyebrow">Action needed</div>
+        <div class="card-title" x-text="home.action_needed.title"></div>
+        <div class="small" style="margin-top:2px" x-text="home.action_needed.body"></div>
+        <button class="btn btn-primary btn-sm" style="margin-top:10px" x-text="home.action_needed.button"></button>
+      </div>
+    </template>
+
+    <div class="card">
+      <div class="row between"><span class="card-title">Bharosa Score</span>
+        <span class="pill" :class="F.scorePill(home?.score.band)" x-text="home?.score.band"></span></div>
+      <div x-html="F.gauge(home?.score.score || 600)"></div>
+      <div class="score-num num" x-text="home?.score.score"></div>
+      <div class="row between" style="margin-top:8px">
+        <a href="#" class="link" @click.prevent="tab='score'">See how it's calculated</a>
+        <a href="#" class="link small" @click.prevent="tab='score'" x-text="'Shared with ' + (home?.shares.length || 0) + ' shop' + ((home?.shares.length === 1) ? '' : 's') + ' · Manage'"></a>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">My dues</div>
+      <template x-for="d in home?.dues || []" :key="d.store_id">
+        <div class="list-item">
+          <div class="grow"><div class="name" x-text="d.store"></div>
+            <div class="small" :class="d.overdue_days ? 'red' : 'muted'" x-text="d.overdue_days ? d.overdue_days + ' days overdue' : 'On time'"></div></div>
+          <b class="num" x-text="F.inr(d.amount)"></b>
+          <button class="btn btn-primary btn-sm" x-show="d.amount && !d.is_network" @click="openPay(d)">Pay</button>
+        </div>
+      </template>
+      <div class="empty" x-show="!(home?.dues || []).length">Nothing due. Nice!</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Salary-week auto-pay</div>
+      <template x-for="m in home?.mandates || []" :key="m.mandate_id">
+        <div class="autopay">
+          <div class="kv"><span x-text="m.store"></span><span class="pill pill-green">Active</span></div>
+          <div class="kv"><span>Next collection</span><b x-text="F.dayDate(m.next_collection)"></b></div>
+          <div class="kv"><span>Amount</span><b x-text="'your verified dues (now ' + F.inr(m.amount_now) + '), up to ' + F.inr(m.cap)"></b></div>
+          <div class="kv"><span>Notice</span><b x-text="F.dayDate(m.notice_on) + ' · you can skip a month'"></b></div>
+        </div>
+      </template>
+      <div x-show="!(home?.mandates || []).length">
+        <div class="small muted" style="margin:4px 0 10px">Clear your verified dues automatically in salary week. You get a notice a day before and can skip any month.</div>
+        <button class="btn btn-secondary btn-block" @click="openAutopay()" :disabled="!payableStore()">Set up auto-pay</button>
+      </div>
+    </div>
+    <div class="footer-note">Concept prototype · Team MerchantMavericks</div>
+  </div>
+
+  <!-- DUES -->
+  <div x-show="tab==='dues'">
+    <h3 class="page-h">My dues</h3>
+    <div class="card"><template x-for="d in home?.dues || []" :key="d.store_id">
+      <div class="list-item"><div class="grow"><div class="name" x-text="d.store"></div>
+        <div class="small muted" x-text="(d.overdue_days ? d.overdue_days + ' days overdue' : 'On time') + (d.credit_balance ? ' · credit ' + F.inr(d.credit_balance) : '')"></div></div>
+        <b class="num" x-text="F.inr(d.amount)"></b>
+        <button class="btn btn-primary btn-sm" x-show="d.amount && !d.is_network" @click="openPay(d)">Pay</button></div>
+    </template><div class="empty" x-show="!(home?.dues || []).length">Nothing due.</div></div>
+    <h3 class="page-h">Monthly baskets</h3>
+    <div class="card"><template x-for="b in home?.baskets || []" :key="b.id">
+      <div class="list-item"><div class="grow"><div class="name" x-text="b.store"></div><div class="small muted" x-text="b.items.length + ' items'"></div></div>
+        <b class="num" x-text="F.inr(b.value)"></b><span class="pill" :class="F.statePill(b.state)" x-text="F.stateWord(b.state)"></span></div>
+    </template><div class="empty" x-show="!(home?.baskets || []).length">No basket offers yet.</div></div>
+  </div>
+
+  <!-- SCORE -->
+  <div x-show="tab==='score'">
+    <h3 class="page-h">My Bharosa Score</h3>
+    <div class="card"><div x-html="F.gauge(home?.score.score || 600)"></div><div class="score-num num" x-text="home?.score.score"></div>
+      <div class="center"><span class="pill" :class="F.scorePill(home?.score.band)" x-text="home?.score.band"></span></div></div>
+    <div class="card"><div class="card-title">How it's calculated</div>
+      <template x-for="b in home?.score.breakdown || []"><div class="kv"><span x-text="b.label"></span>
+        <b :class="b.points < 0 ? 'red' : (b.points > 0 && b.label !== 'Starting score' ? 'green' : '')" x-text="(b.points > 0 && b.label !== 'Starting score' ? '+' : '') + b.points"></b></div></template>
+      <div class="kv"><span><b>Score</b></span><b x-text="home?.score.score"></b></div>
+    </div>
+    <div class="card"><div class="card-title">Shared with</div>
+      <div class="small muted" style="margin:4px 0 8px">Shops see your score band and a suggested limit. Never your other shops or amounts.</div>
+      <template x-for="sh in home?.shares || []" :key="sh.store_id"><div class="list-item"><div class="grow name" x-text="sh.store"></div>
+        <button class="btn btn-ghost btn-sm" @click="revoke(sh.store_id)">Stop sharing</button></div></template>
+      <div class="empty" x-show="!(home?.shares || []).length">Not shared with any shop.</div></div>
+  </div>
+
+  <!-- MESSAGES -->
+  <div x-show="tab==='messages'">
+    <h3 class="page-h">Messages</h3>
+    <template x-for="th in threads" :key="th.store_id">
+      <div class="card">
+        <div class="card-title" x-text="th.store + ' via Paytm'"></div>
+        <div class="chat">
+          <template x-for="m in th.messages" :key="m.id">
+            <div class="bubble" :class="m.direction === 'out' ? 'from-shop' : 'from-me'">
+              <span x-text="m.text"></span>
+              <div class="acts" x-show="m.actions.length"><template x-for="a in m.actions"><button class="btn btn-secondary btn-sm" @click="msgAction(a)" x-text="a.label"></button></template></div>
+              <span class="ts" x-text="F.time(m.ts)"></span>
+            </div>
+          </template>
+        </div>
+        <form class="row" @submit.prevent="reply(th.store_id)">
+          <input class="input" x-model="replyText[th.store_id]" placeholder="Write a reply…">
+          <button class="btn btn-primary" :disabled="busy">Send</button>
+        </form>
+      </div>
+    </template>
+    <div class="empty" x-show="!threads.length">No messages.</div>
+  </div>
+
+  <button class="fab" @click="openScanner()">⌗ Scan QR</button>
+  <nav class="bottom-nav">
+    <button :class="tab==='home' && 'on'" @click="tab='home'"><span>🏠</span>Home</button>
+    <button :class="tab==='dues' && 'on'" @click="tab='dues'"><span>₹</span>Dues</button>
+    <button :class="tab==='score' && 'on'" @click="tab='score'"><span>⭐</span>Score</button>
+    <button :class="tab==='messages' && 'on'" @click="tab='messages'; loadMessages()"><span>💬</span>Messages</button>
+  </nav>
+</div>
+</template>
+
+<!-- ============================================= SHEETS -->
+<div class="sheet-backdrop" x-show="sheet" @click.self="closeSheet()">
+  <div class="sheet">
+    <div class="grab"></div>
+
+    <template x-if="sheet === 'scan'">
+      <div><h3>Scan QR</h3><div class="small muted" style="margin:4px 0 10px">Point at the QR on the shop's Soundbox.</div>
+        <div id="reader" class="reader"></div>
+        <button class="btn btn-ghost btn-block" @click="closeSheet()">Cancel</button></div>
+    </template>
+
+    <template x-if="sheet === 'notice'">
+      <div class="center"><h3 x-text="notice"></h3><button class="btn btn-primary btn-block" style="margin-top:16px" @click="closeSheet()">OK</button></div>
+    </template>
+
+    <template x-if="sheet === 'share' && req">
+      <div>
+        <h3 x-text="'Share your Bharosa Score with ' + req.store + '?'"></h3>
+        <p class="small">They'll see your score band and a suggested limit. They will never see your other shops or amounts.</p>
+        <div class="row" style="margin-top:14px"><button class="btn btn-primary grow" @click="share('share')" :disabled="busy">Share</button>
+          <button class="btn btn-outline" @click="share('decline')" :disabled="busy">Not now</button></div>
+      </div>
+    </template>
+
+    <template x-if="sheet === 'confirm' && req">
+      <div>
+        <div class="row"><div class="avatar" x-text="F.initials(req.store)"></div><div><h3 x-text="req.store"></h3>
+          <div class="small muted" x-text="'Udhaar · due ' + F.date(req.due_date)"></div></div></div>
+        <div class="big num" style="margin:14px 0 2px" x-text="F.inr(req.credit_now)"></div><div class="small muted">on credit</div>
+        <template x-if="req.collect_now">
+          <div class="paynow">
+            <div class="row between"><b x-text="'Pay ' + F.inr(req.collect_now) + ' now'"></b></div>
+            <label class="method"><input type="radio" value="upi" x-model="payMethod"> UPI</label>
+            <label class="method"><input type="radio" value="credit_line" x-model="payMethod"> Credit line on UPI <span class="muted small">(Partner Bank)</span></label>
+          </div>
+        </template>
+        <div x-show="!disputing" class="row" style="margin-top:16px">
+          <button class="btn btn-primary grow" @click="confirm()" :disabled="busy || (req.collect_now && !payMethod)"
+                  x-text="req.collect_now ? 'Pay ' + F.inr(req.collect_now) + ' & confirm' : 'Confirm'"></button>
+          <button class="btn btn-outline" @click="disputing = true">Dispute</button>
+        </div>
+        <div x-show="disputing" style="margin-top:14px">
+          <div class="chips"><template x-for="r in ['Wrong amount', 'I didn\'t take this']"><button class="chip" :class="reason === r && 'on'" @click="reason = r" x-text="r"></button></template></div>
+          <div class="row" style="margin-top:12px"><button class="btn btn-danger grow" @click="dispute()" :disabled="!reason || busy">Send dispute</button>
+            <button class="btn btn-ghost" @click="disputing = false">Back</button></div>
+        </div>
+      </div>
+    </template>
+
+    <template x-if="sheet === 'pay' && payTo">
+      <div><h3 x-text="'Pay ' + payTo.store"></h3>
+        <div class="small muted" x-text="'You owe ' + F.inr(payTo.amount)"></div>
+        <input class="input num" type="number" min="1" :max="payTo.amount" x-model.number="payAmount" style="margin-top:12px">
+        <div class="chips" style="margin-top:8px"><button class="chip" @click="payAmount = payTo.amount">Full amount</button></div>
+        <button class="btn btn-primary btn-block" style="margin-top:14px" @click="pay()" :disabled="busy || !(payAmount > 0)" x-text="'Pay ' + F.inr(payAmount) + ' by UPI'"></button></div>
+    </template>
+
+    <template x-if="sheet === 'autopay'">
+      <div><h3>Salary-week auto-pay</h3>
+        <div class="small muted">UPI AutoPay · only dues you have confirmed · notice a day before · skip any month</div>
+        <div class="mandate">
+          <div class="kv"><span>Pay to</span><b x-text="autopay.store"></b></div>
+          <div class="kv"><span>Up to (per month)</span><b><input class="input num cap" type="number" step="500" min="500" x-model.number="autopay.cap"></b></div>
+          <div class="kv"><span>Collection day</span><b><select class="input cap" x-model.number="autopay.collection_day"><template x-for="d in [1,2,3,4,5]"><option :value="d" x-text="F.ordinal(d) + ' of the month'" :selected="d === autopay.collection_day"></option></template></select></b></div>
+          <div class="kv"><span>Frequency</span><b>Monthly, as presented</b></div>
+        </div>
+        <div class="small muted center" style="margin-top:12px">Enter UPI PIN</div><div class="pin"><i></i><i></i><i></i><i></i></div>
+        <button class="btn btn-primary btn-block" @click="activateAutopay()" :disabled="busy">Activate</button></div>
+    </template>
+
+    <template x-if="sheet === 'basket' && basket">
+      <div><h3 x-text="'Your monthly basket at ' + basket.store"></h3>
+        <div class="small muted" x-text="F.inr(basket.value) + ' · ' + basket.items.length + ' items · pay on credit'"></div>
+        <div style="margin-top:10px"><template x-for="it in basket.items"><div class="kv"><span x-text="it.qty + ' × ' + it.name"></span><b x-text="F.inr(it.qty * it.price)"></b></div></template></div>
+        <div class="row" style="margin-top:14px"><button class="btn btn-primary grow" @click="basketDecision('accept')" :disabled="busy">Accept</button>
+          <button class="btn btn-outline" @click="basketDecision('decline')" :disabled="busy">Not now</button></div></div>
+    </template>
+  </div>
+</div>
+<div class="toast" :class="toast?.error && 'error'" x-show="toast && me" x-transition x-text="toast?.text"></div>
+</body>
+</html>

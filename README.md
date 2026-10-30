@@ -1,221 +1,195 @@
 # Bharosa on Paytm
 
-**Team MerchantMavericks** · Paytm Build for India AI Hackathon · Track 1: Merchant Growth AI
+**Team MerchantMavericks** · Sujay Mohanty · Sukruth N · Rishi Sharma
+Paytm Build for India AI Hackathon, Bengaluru · Track 1: Merchant Growth AI
 
-Every kirana gives udhaar (goods on credit) with no checks, no collections and no funding. Bharosa is a
-credit layer on top of Paytm's existing rails: the **Soundbox** at the counter, the **Paytm for Business**
-app for the shopkeeper and the **Paytm app** for the customer.
+Bharosa turns udhaar (informal shop credit) from a cost into a growth engine for Paytm merchants:
+**sell more, safely** (a safe credit limit; customers carry their Bharosa Score to a new shop with consent;
+a predicted monthly basket), **get paid without chasing** (customers confirm credit by scanning a QR in their
+own app; reminders that understand replies; compliant salary-week auto-pay) and **stock up without cash**
+(a Diwali stock plan funded by a Stock Advance paid straight to the distributor, repaid from 20% of repayments).
 
-> *AI where the world is messy (language, conversations, unclear payments). Code where money moves.*
+> *AI proposes, code decides.* No AI output changes money, limits or scores without a validator.
+> With AI switched off (the default) everything works on rules and templates.
 
-This repository is a complete working prototype: a Python backend (FastAPI) and a single-page browser UI.
-Paytm's rails (UPI, AutoPay, the lender, the distributor, the Soundbox device) are simulated behind adapters
-with production-shaped interfaces. The full design is in [`bharosa-arch-e2e.md`](bharosa-arch-e2e.md).
+The full specification is [`bharosa-arch-v2.md`](bharosa-arch-v2.md).
 
 ---
 
 ## 1. Run it from scratch
 
-You need **Python 3.11 or newer** and a modern browser (Chrome or Edge recommended). No Node, no database
-server, no internet connection (all browser libraries are bundled in `static/vendor/`).
+Needs **Python 3.11+** and Chrome or Edge. No Node, no database server.
 
-### Windows (PowerShell)
-
+**Windows (PowerShell)**
 ```powershell
 cd bharosa-app
 py -3.11 -m venv .venv
 .venv\Scripts\python -m pip install -r requirements.txt
+copy .env.example .env          # then set ADMIN_KEY in .env
 .venv\Scripts\python tasks.py run
 ```
 
-### macOS / Linux
-
+**macOS / Linux**
 ```bash
 cd bharosa-app
 python3.11 -m venv .venv
 .venv/bin/python -m pip install -r requirements.txt
+cp .env.example .env            # then set ADMIN_KEY in .env
 .venv/bin/python tasks.py run
 ```
 
-Then open **http://localhost:8000**.
+Open **http://localhost:8000/demo**. The database is created and seeded on first start. Exact tested versions
+are in `requirements.lock.txt` if you ever need them.
 
-On first start the server creates `bharosa.db` (SQLite) and seeds the demo world automatically. Nothing
-else to configure: without an API key every AI agent runs on its deterministic fallback (labelled
-**FALLBACK** in the UI), so the whole demo works offline.
-
-> Exact versions that were tested are pinned in `requirements.lock.txt`
-> (`pip install -r requirements.lock.txt`) if you ever hit a dependency problem.
-> Calling `.venv\Scripts\python` directly avoids PowerShell's script-activation policy.
-
-### Other commands
-
-| Command (`python tasks.py …`) | What it does |
+| Command | What it does |
 |---|---|
-| `run` | Start the server on port 8000 (auto-reloads on code changes) |
-| `seed` | Rebuild `bharosa.db` from scratch |
-| `test` | Run the test suite (121 tests, about 20 s) |
-| `smoke` | Play the whole demo headless and check every number. Add `--url http://localhost:8000` to check a running server (**it resets it**) |
-| `snapshot` | Write one sample UI snapshot per demo beat to `fixtures/snapshots/` |
+| `python tasks.py run` | Start the server on port 8000 (all interfaces) |
+| `python tasks.py seed` | Rebuild the database from the seed |
+| `python tasks.py test` | Run the tests (47, about 15 s) |
+| `python tasks.py smoke` | One real Sarvam call (only when AI is on) |
 
-On macOS/Linux `make run`, `make test`, etc. do the same.
-
----
-
-## 2. The demo world
-
-One shop, round numbers. Everything is defined in [`app/sim/seed.py`](app/sim/seed.py).
-
-**Lakshmi Stores, Jayanagar** · Monday 26 Oct 2026, 09:00
-
-| Customer | Role | Score | Owes | Overdue |
-|---|---|---|---|---|
-| **Priya** | always pays on time | 780 | ₹0 | – |
-| **Ramesh** | the hero | 660 | ₹1,500 | 20 days |
-| **Vikram** | chronic defaulter | 420 | ₹2,500 | 45 days |
-| Meena, Arjun, Kavya | background, salary-day auto-pay | | ₹8,100 together | – |
-| Deepak, Sunita, Imran | background | | ₹5,900 together | Deepak 10 days |
-
-Shop totals: **₹18,000** owed, **₹17,000** verified, **₹7,000** overdue.
-**Sharma Traders**' ₹15,000 bill is due **Friday**; the shop will have ₹10,000 → **₹5,000 short**.
+`make run|seed|test|smoke` does the same on macOS/Linux.
 
 ---
 
-## 3. Presenting the demo (Live Demo tab)
+## 2. The five apps
 
-Three devices side by side: the **Soundbox** (the counter), the **merchant's phone** and the
-**customer's phone** (Ramesh). Under them, the demo bar.
-
-* **Next ▶** runs *one step* and explains it in the panel on the right: **what happened**, **who decided**
-  (code, an AI agent, the customer or the merchant) and **why it matters**. Pause as long as you like.
-* When the bar says **👉 Your turn**, do the step yourself on screen (scan a QR, tap a button). It completes
-  by itself and its explanation appears. Or press **Do it for me ▶**.
-* **Run beat ⏭** plays the rest of a beat without stopping. **◀** restarts the beat.
-* **Reset** (top bar) goes back to Monday 09:00 in about a second.
-* **🔊** turns voice on/off, **⏹ Stop speech** silences it immediately. Until Sarvam text-to-speech is
-  added, the browser's own voice is used (if it has Hindi/Kannada) and the line is always shown as text.
-* **हिं / ಕನ್ನ** switches the Soundbox and briefing language.
-
-### The script
-
-| Beat | Step | Who decides | What you see |
+| App | URL | Who | Login |
 |---|---|---|---|
-| **0 Morning** | Munim's briefing | Code computes, **Munim (AI)** phrases | Hindi briefing: Sharma Traders ₹15,000 Friday, ₹5,000 short |
-| **1 Guardrail** | Priya asks ₹500 | Code (risk formula) | Green, safe limit ₹4,100 |
-| | Vikram asks ₹500 | Code | Red, limit ₹0, collect full payment |
-| | Ramesh asks ₹500 | Code | Amber: **₹400 on credit + ₹100 now**, two QRs on the front screen, "3 ms" |
-| **2 Confirm** | Ramesh pays ₹100 (pay QR) | Code (sale reference) | Recorded as a sale, never touches his old ₹1,500 |
-| | 👉 Click the ₹400 QR, then **Confirm** on Ramesh's phone | **Customer** | Verified receivable; Ramesh owes ₹1,900 |
-| **3 Recovery** | 👉 Tap **Send 3 reminders** on Munim's suggestion | Code picks who, **Recovery Agent (AI)** writes | 3 drafts (Vikram, Ramesh, Deepak) |
-| | 👉 Approve the reminders | **Merchant** | Reminders arrive in the customers' Paytm apps |
-| | Ramesh replies *"Salary 1 tareekh ko aati hai, tab pura de dunga"* | **Recovery Agent (AI)**, checked by code | Promise ₹1,900 on 1 Nov; auto-pay offered |
-| | 👉 On Ramesh's phone: **Set up auto-pay → Activate** | **Customer** | Auto-pay up to ₹3,000, 1st–5th; score 660 → 665 |
-| **4 Advance** | 👉 Tap **Ask Munim** on the Sharma Traders suggestion | **Munim (AI)** with 3 read-only tools | Two options + buttons |
-| | 👉 Tap **Get Supplier Advance** | Code sizes it | ₹5,000 + ₹75 fee = ₹5,075, repaid from 20% of udhaar |
-| | 👉 Tap **Accept** | **Merchant** | Partner NBFC pays Sharma Traders ₹5,000 directly |
-| **5 Salary day** | Six days pass | Code | Auto-pay collects ₹10,000 from 4 customers; ₹2,000 to the lender; Ramesh 665 → 672, owes ₹0 |
-| **6 Fraud ring** | Sai Kirana fakes 4 customers | Code (graph rules) | Risk 1.0: shared device, round amounts, instant confirms, money cycle; advance blocked (see **Overview**) |
+| Presenter screen | `/demo` | The team on stage | Admin key (asked once, kept in the browser) |
+| AI Soundbox simulator | `/soundbox` | The counter (laptop) | None, fixed to Lakshmi Stores |
+| Merchant app | `/merchant` | Lakshmi Stores owner | Phone `9000000001` + OTP |
+| Customer app | `/customer` | Priya `…11`, Ramesh `…12`, Vikram `…13`, Anita `…14` (`90000000xx`) | Phone + OTP, or a login QR |
+| Overview (pitch page) | `/overview` | Anyone | None |
 
-### Where AI is used, and where it is not
+**The OTP is always `123456`** (set by `DEMO_OTP`; no SMS is sent). The presenter screen shows one login QR per
+customer; each works once and they refresh every 9 minutes. The merchant and customer apps use separate
+cookies, so one browser can be logged in as both.
 
-| Agent | Used in | What it does | What checks it |
+**Reset:** the **Reset** button on the presenter screen rebuilds everything in under a second.
+
+---
+
+## 3. The demo world (31 Oct 2026, a fixed date; no clock moves)
+
+| Customer | Bharosa Score | At Lakshmi Stores | Asking ₹340 → |
 |---|---|---|---|
-| **Munim** | Beat 0, Beat 4, Ask Munim | Words the briefing; answers questions using read-only tools | Every ₹ figure must come from a tool result; only 3 action types allowed |
-| **Recovery Agent** | Beat 3 | Writes reminders; reads replies (promise / dispute / plan …) | Exact dues only, no invented amounts; promises and plans must fit policy |
-| **Counter Agent** | Typing free text on the Soundbox ("Ramesh 500 udhaar") | Turns shopkeeper speech into actions | Only this shop's customers; ₹1–50,000; ambiguity → picker |
-| **Reconciliation Agent** | Controls → UPI payment from "Kamala Kumar" | Guesses who sent an unclear payment | Must be one of the candidates; auto-applies only at ≥ 85% |
+| Priya | 780 Strong | nothing owed | **Green**, limit ₹4,100 |
+| Ramesh | 662 Good | ₹1,700, 19 days overdue | **Amber**: ₹200 credit + ₹140 now |
+| Vikram | 438 Building | ₹2,600, 41 days overdue | **Red**: collect in full |
+| Anita (asks ₹2,000) | 770 Strong, from other Paytm shops | new here | ₹500 starter limit, or **₹1,500 + ₹500** if she shares her score |
 
-Limits, balances, debits, the advance and the 20% split, scores and fraud rules are **always plain code**.
-Munim's suggestion cards are shown by code rules; their wording is a template today.
-
-### More to show judges (Controls panel under the demo bar)
-
-* **UPI payment** prefilled as "Kamala Kumar ₹500, remark *Ramesh ka udhaar*": an unclear payer → "Who paid ₹500?" card.
-* **Salary credited**, **+1 day**, **Add bill**, **Inject fraud ring**.
-* Free text on the Soundbox, e.g. `Ramesh ne 300 cash diye` or an unknown name, which opens the new-customer keypad.
-* A dispute: on the Confirm sheet tap **Dispute**, then correct it from the merchant phone.
-
-**Before presenting**, start the server and run `python tasks.py smoke --url http://localhost:8000`.
-It plays every beat and checks every number above (then resets).
+Six read-only regulars owe ₹21,500, so the shop has **₹25,800** outstanding and **₹4,300** overdue.
+Diwali is Sun 8 Nov: last year's Diwali week was 1.6× normal, so the plan is an **₹18,000** order from
+Sharma Traders (+₹27,400 expected sales). The shop will have ₹8,800, so **₹9,200 short** → Stock Advance
+**₹9,200 + ₹138 fee**, repaid from 20% of repayments.
 
 ---
 
-## 4. Optional: connect an LLM
+## 4. Presenting (about 5 minutes; the app does not enforce an order)
 
-Copy `.env.example` to `.env`. The gateway supports any OpenAI-compatible endpoint through
-`FALLBACK_LLM_BASE_URL`, `FALLBACK_LLM_API_KEY`, `FALLBACK_LLM_MODEL`. **The Sarvam provider and Sarvam
-text-to-speech are the planned next step and are not wired yet**; `SARVAM_*` settings are reserved for them.
+1. **Merchant** logs in → Home shows the growth plan (3 actions).
+2. **Soundbox**: tap **Priya 340** (green), then **Ramesh 340** (amber) → **Use suggestion** → a QR appears.
+   On Ramesh's phone: **Scan QR** → Confirm sheet → **Pay ₹140 & confirm** → the laptop updates within a second.
+3. A judge scans **Anita's login QR** → Soundbox **Anita 2000** → the judge scans → **Share** → ₹1,500 credit →
+   pays ₹500 by **Credit line on UPI** → confirm → merchant sees **"New · Paytm network"**.
+4. Merchant approves **Stock up for Diwali** → **Accept** the Stock Advance → "Partner NBFC paid Sharma Traders ₹9,200 ✓".
+5. Merchant approves **Remind 2 overdue customers** → Ramesh replies *"Salary 1 tareekh ko aati hai, tab de dunga"* →
+   "Promised ₹1,900 on 1 Nov" → he taps **Set up salary-week auto-pay** → then **Pay** ₹500 → split **₹400 shop / ₹100 lender**.
+6. Merchant approves the **monthly basket** → Priya accepts → merchant **Orders** → **Mark delivered**.
+7. (AI on) one spoken Kannada line, and one live reply understood by the Recovery Agent.
 
-`LLM_MODE`: `auto` (default: cache, then live, then fallback) · `live` · `record` (save answers to
-`fixtures/llm_cache/` for offline demos) · `replay` (cache only) · `template` (never call an LLM).
+No phone? The presenter screen's right-hand phone frame is the customer app: log it in, and clicking the
+Soundbox QR opens the same request.
 
 ---
 
-## 5. How it is built
+## 5. Real phones (HTTPS tunnel)
 
-```
-Browser (one page: Live Demo · Soundbox · Merchant · Customer · Overview)
-   ▲ SSE /api/stream (snapshot, audio, notifications)      │ POST /api/events, /api/demo/*, /api/agents/munim/ask
-FastAPI ── event router (validate → persist → handle → commit → broadcast, one lock)
-           ├─ agents (propose only):  Counter · Recovery · Reconciliation · Munim  → validators
-           ├─ core (decides):         ledger · risk · reconcile · mandates · forecast · advance · integrity · score
-           ├─ adapters (simulated):   LLM gateway · UPI · AutoPay · lender · distributor · Soundbox
-           └─ sim:                    seed · daily jobs · demo script · comparison
-SQLite (bharosa.db) via SQLModel
+Phone cameras only work on HTTPS. Expose the laptop with a Cloudflare quick tunnel:
+
+```powershell
+winget install --id Cloudflare.cloudflared      # once (macOS: brew install cloudflared)
+cloudflared tunnel --url http://localhost:8000
 ```
 
-* The UI never computes money. It renders the latest **snapshot** pushed by the server.
-* Every action is an **event** (`POST /api/events`), stored in the `events` table.
-* Every step writes a **trace** line (component, label, timing, LIVE/CACHED/FALLBACK). The trace is the
-  audit trail; the **Overview** tab shows it and lights up the architecture diagram.
+Copy the `https://….trycloudflare.com` address into `PUBLIC_BASE_URL` in `.env`, **restart the server**, and open
+the presenter screen through that address. QR codes then point at the tunnel. The laptop needs internet (venue
+Wi-Fi or a hotspot); phones can use mobile data. On the phone: scan the login QR (or log in by phone + OTP),
+then use the app's **Scan QR** button, or the phone's own camera app.
+
+---
+
+## 6. AI (Sarvam), off by default
+
+In `.env` set `SARVAM_ENABLED=true` and `SARVAM_API_KEY=…` (never commit the key; `.env` is git-ignored), restart,
+and run `python tasks.py smoke` once. With AI on:
+
+| Feature | AI off | AI on |
+|---|---|---|
+| Shopkeeper text | Rule parser ("Ramesh 340") | Counter Agent when the rules can't parse it |
+| Mic on the Soundbox | Hidden | Sarvam speech-to-text |
+| Spoken line on the Soundbox | Off | One short Kannada line per event |
+| Reminders / reply reading | Templates / keyword rules | Recovery Agent (validated) |
+| Growth plan wording | Templates | Growth Agent (validated; order stays code) |
+| Ask Munim | "Available when AI is enabled" | Answers from read-only tools |
+| Score, limits, payments, split, advance | Code | **Code (never AI)** |
+
+Every AI call times out after 8 s and falls back to the rule/template result; the activity log shows the source.
+`VERIFY` before relying on it: the Sarvam STT model name and response fields, and a Kannada voice for `bulbul:v3`.
+
+---
+
+## 7. How it is built
 
 ```
 app/
-  main.py            FastAPI app, static files, seed-if-missing
-  events/            schemas (payloads) · router (lock, transaction) · handlers (one per event type)
-  core/              ledger, risk, score, reconcile, mandates, forecast, advance, integrity,
-                     collector, briefing, suggestions, messages, money
-  agents/            base (LLM call + repair + trace) · counter · recovery · recon_agent · munim · prompts/
-  adapters/          llm gateway · soundbox · upi · payments (mandate, lender, distributor)
-  realtime/          snapshot builder · SSE broadcaster · trace
-  sim/               seed (the demo world) · daily jobs · demo_script (beats + explanations) · fraud · compare
-static/              index.html, css/, js/ (Alpine.js), vendor/ (Alpine, Chart.js, QR), img/architecture.svg
-tests/               pytest: contract numbers, flows, agents/validators, demo end to end
-scripts/smoke_demo.py
+  main.py             FastAPI: /api/*, the five apps, /c/r/{token} (a QR request)
+  config.py           .env settings (DEMO_DATE, PUBLIC_BASE_URL, DEMO_OTP, ADMIN_KEY, SARVAM_*)
+  models.py  seed.py  db.py  auth.py  bus.py (one write lock + "changed" pings)  voice.py
+  core/               score · risk · requests (counter + QR bridge) · payments (split) · advance · festive
+                      growth · basket · mandates · messages · activity · money
+  ai/sarvam.py        thin Sarvam client (chat, speech-to-text, text-to-speech)
+  agents/             counter · recovery · growth_agent (rules first, AI second, validators always)
+  api/                auth · soundbox · customer · merchant · voice · admin (stream, activity, reset, health)
+static/
+  shared/             tokens.css · base.css · api.js (fetch + SSE pings) · format.js
+  merchant/ customer/ soundbox/ demo/ overview/    one Alpine.js page each
+  vendor/             Alpine 3.14.1 · qrcode-generator 1.4.4 · html5-qrcode 2.3.8
+tests/                spec §14 contracts (score, risk, requests, split, Diwali, growth, basket, recovery, privacy, AI off, no mock UI)
+scripts/sarvam_smoke.py
 ```
 
-API quick reference: `GET /api/snapshot`, `GET /api/stream`, `POST /api/events`,
-`POST /api/demo/reset|next|run_beat|goto/{beat}`, `GET /api/demo/script`, `POST /api/agents/munim/ask`,
-`GET /api/customers`, `GET /api/forecast`, `GET /api/overview/compare`, `GET /api/health`.
-Interactive docs at **http://localhost:8000/docs**.
+* **Real-time:** after every change the server sends `{"type": "changed", "scopes": ["merchant:S1", "customer:C_RAMESH", …]}`
+  on `/api/stream`. No data travels in the ping; each app refetches its own view.
+* **Privacy:** the merchant API never returns other shops' names, entries or amounts; a customer can only open
+  their own requests; Portable Trust needs the customer's consent and can be revoked.
+* **No mock data:** frontend code contains no names or amounts (`tests/test_no_mock_ui.py`).
+
+API docs: **http://localhost:8000/docs**.
 
 ---
 
-## 6. Troubleshooting
+## 8. Troubleshooting
 
 | Problem | Fix |
 |---|---|
-| `python` not found / wrong version | Install Python 3.11+ from python.org; on Windows use `py -3.11` |
-| Port 8000 is busy | `.venv\Scripts\python -m uvicorn app.main:app --port 8001` and open that port |
-| Page loads but stays empty / "Reconnecting" dot | The server stopped; restart `tasks.py run` and refresh |
-| Numbers look wrong after experimenting | Press **Reset**, or stop the server and run `python tasks.py seed` |
-| `database is locked` | Only one server per `bharosa.db`; close other copies, or delete `bharosa.db` (it is rebuilt on start) |
-| No voice | Click **🔊** (browsers need a click before audio). The browser may have no Hindi/Kannada voice; the text is always shown on screen. Sarvam TTS will replace this |
-| Layout too big | Designed for 1920×1080; use browser zoom (Ctrl −) on smaller screens |
+| Presenter screen asks for an admin key | Enter the `ADMIN_KEY` from `.env` (default `change-me`) |
+| "This request is for another customer" | The phone is logged in as someone else: scan that customer's login QR |
+| "This request has expired" | Requests last 15 minutes: tap the preset again on the Soundbox |
+| Phone camera won't open | It needs HTTPS: use the tunnel (section 5), or the phone's camera app |
+| QR opens `localhost` on the phone | Set `PUBLIC_BASE_URL` to the tunnel address and restart |
+| Port 8000 busy | `.venv\Scripts\python -m uvicorn app.main:app --port 8001` |
+| Numbers look wrong | **Reset** on the presenter screen, or `python tasks.py seed` |
+| Mic button missing | It only appears with AI on |
 
 ---
 
-## 7. Sharing this project as a zip
-
-Leave out the generated folders:
+## 9. Sharing as a zip
 
 ```bash
 git archive --format=zip -o bharosa-app.zip HEAD
 ```
+Or zip the folder **without** `.venv/`, `.env`, `*.db*`, `__pycache__/`, `.pytest_cache/`. The recipient follows section 1.
 
-Or zip the folder manually **without** `.venv/`, `bharosa.db*`, `__pycache__/` and `.pytest_cache/`.
-The recipient follows section 1.
-
----
-
-*Concept prototype · Team MerchantMavericks (Sujay Mohanty · Sukruth N · Rishi Sharma). All names, shops,
-the lender and the distributor are fictional.*
+*Concept prototype · Team MerchantMavericks. All names, shops, the lender and the distributor are fictional.*

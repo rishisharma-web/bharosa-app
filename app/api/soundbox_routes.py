@@ -64,6 +64,7 @@ async def udhaar(body: UdhaarIn):
             raise EventError("Say a name and an amount, e.g. a preset", 422)
         top = req.udhaar(t.s, STORE, cid, amount)
         _scopes(t)
+        t.touch(f"customer:{cid}")  # a share request may now be waiting in their app
         await spoken_line(t, STORE, top["text"], translate=True)
     return top
 
@@ -73,13 +74,16 @@ async def accept(body: AcceptIn):
     async with bus.tx() as t:
         out = req.accept(t.s, STORE, body.override)
         _scopes(t)
+        t.touch(f"customer:{out['customer_id']}")  # the confirm request now waits in their app
     return out
 
 
 @router.post("/clear")
 async def clear():
     async with bus.tx() as t:
-        req.clear(t.s, STORE)
+        cid = req.clear(t.s, STORE)
         _scopes(t)
+        if cid:
+            t.touch(f"customer:{cid}")
     return {"ok": True}
 

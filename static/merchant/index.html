@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#042E6F">
+<title>Paytm for Business · Bharosa</title>
+<link rel="stylesheet" href="/static/shared/tokens.css">
+<link rel="stylesheet" href="/static/shared/base.css">
+<link rel="stylesheet" href="/static/merchant/merchant.css">
+<script src="/static/shared/format.js"></script>
+<script src="/static/shared/api.js"></script>
+<script src="/static/merchant/merchant.js"></script>
+<script defer src="/static/vendor/alpine.min.js"></script>
+</head>
+<body x-data="merchantApp" x-cloak>
+
+<template x-if="!me && ready">
+  <div class="login">
+    <div class="wordmark">Pay<span>tm</span> <span class="biz">for Business</span></div>
+    <h2 style="margin-top:22px" x-text="otpSent ? 'Enter OTP' : 'Enter mobile number'"></h2>
+    <form @submit.prevent="otpSent ? verify() : startOtp()" style="margin-top:14px">
+      <input class="input" x-show="!otpSent" x-model="phone" inputmode="numeric" maxlength="10" placeholder="10-digit mobile number">
+      <input class="input" x-show="otpSent" x-model="otp" inputmode="numeric" maxlength="6" placeholder="6-digit OTP">
+      <button class="btn btn-primary btn-block" style="margin-top:12px" x-text="otpSent ? 'Verify' : 'Continue'"></button>
+    </form>
+    <div class="demo-note" x-show="otpSent">Demo OTP: 123456 (no SMS is sent)</div>
+    <div class="toast error" x-show="toast" x-text="toast?.text"></div>
+  </div>
+</template>
+
+<template x-if="me">
+<div class="shell">
+  <div class="app-head">
+    <div class="avatar" x-text="F.initials(home?.summary.store)"></div>
+    <div class="grow"><div class="title" x-text="home?.summary.store"></div><div class="sub" x-text="home?.summary.area"></div></div>
+    <button class="icon-btn" @click="openActivity()" title="Activity">🔔</button>
+  </div>
+
+  <!-- ===================================== HOME (five sections) -->
+  <div x-show="tab==='home'">
+    <!-- 1 summary -->
+    <div class="card summary">
+      <div class="trio">
+        <div><span>UPI sales today</span><b class="num" x-text="F.inr(home?.summary.upi_sales_today)"></b></div>
+        <div><span>Udhaar outstanding</span><b class="num" x-text="F.inr(home?.summary.outstanding)"></b></div>
+        <div><span>Due this week</span><b class="num" x-text="F.inr(home?.summary.due_this_week)"></b></div>
+      </div>
+    </div>
+
+    <!-- 2 growth plan -->
+    <div class="card plan">
+      <div class="row between"><span class="card-title">This week's growth plan</span>
+        <span class="badge" :class="F.srcBadge(planSource())[1]" x-text="F.srcBadge(planSource())[0]"></span></div>
+      <div class="small muted" style="margin:2px 0 6px" x-text="home?.growth_plan.summary"></div>
+      <template x-for="a in home?.growth_plan.actions || []" :key="a.action_id">
+        <div class="action-row">
+          <div class="rank" x-text="a.rank"></div>
+          <div class="grow">
+            <div class="name" x-text="a.title"></div>
+            <div class="small" x-text="a.why"></div>
+            <div class="small impact" x-text="(a.type === 'festive_stock' ? '+' : '') + F.inr(a.impact) + (a.type === 'festive_stock' ? ' expected sales' : a.type === 'collect_overdue' ? ' overdue' : ' order')"></div>
+            <div class="small outcome" x-show="a.outcome" x-text="a.outcome"></div>
+          </div>
+          <button class="btn btn-primary btn-sm" x-show="a.state === 'proposed'" @click="approve(a.action_id)" :disabled="busy">Approve</button>
+          <span class="pill" x-show="a.state !== 'proposed'" :class="a.state === 'done' ? 'pill-green' : 'pill-navy'" x-text="a.state === 'done' ? 'Done ✓' : 'Approved ✓'"></span>
+        </div>
+      </template>
+    </div>
+
+    <!-- 3 at the counter -->
+    <div class="card">
+      <div class="row between"><span class="card-title">At the counter</span>
+        <span class="small muted" x-text="'New customers won this week: ' + (home?.summary.new_customers_won || 0)"></span></div>
+      <template x-for="(f, i) in home?.counter_feed || []" :key="i">
+        <div class="list-item">
+          <span class="pill" :class="F.bandPill(f.band)" x-text="F.bandWord(f.band)"></span>
+          <div class="grow"><div class="name" x-text="f.customer"></div>
+            <div class="small muted" x-text="F.inr(f.credit) + ' credit' + (f.collect ? ' · ' + F.inr(f.collect) + ' collected' : '')"></div>
+            <div class="tags"><template x-for="t in f.tags"><span class="pill pill-violet" x-text="t"></span></template></div></div>
+          <span class="pill" :class="F.statePill(f.state)" x-text="f.state || ''"></span>
+        </div>
+      </template>
+      <div class="empty" x-show="!(home?.counter_feed || []).length">No counter decisions yet today.</div>
+    </div>
+
+    <!-- 4 stock -->
+    <div class="card stock">
+      <div class="card-title">Stock</div>
+      <template x-if="!stock.bill">
+        <div><div class="small" style="margin-top:4px" x-text="stock.plan?.festival + ' on ' + F.dayDate(stock.plan?.date) + ': last year about ' + stock.plan?.overall_uplift + '× normal sales.'"></div>
+          <div class="kv"><span x-text="'Suggested order · ' + stock.plan?.supplier"></span><b x-text="F.inr(stock.plan?.order_total)"></b></div>
+          <div class="small muted">Approve the festive action in your growth plan to place it.</div></div>
+      </template>
+      <template x-if="stock.bill && (!stock.advance || stock.advance.state === 'declined')">
+        <div><div class="kv"><span x-text="'Order · ' + stock.bill.distributor"></span><b x-text="F.inr(stock.bill.amount)"></b></div>
+          <div class="kv"><span>Due</span><b x-text="F.dayDate(stock.bill.due)"></b></div>
+          <div class="kv" x-show="stock.bill.gap"><span>Short by</span><b class="red" x-text="F.inr(stock.bill.gap)"></b></div></div>
+      </template>
+      <template x-if="stock.advance?.state === 'offered'">
+        <div>
+          <div class="kv"><span x-text="'Order · ' + stock.bill.distributor + ' · due ' + F.dayDate(stock.bill.due)"></span><b x-text="F.inr(stock.bill.amount)"></b></div>
+          <div class="pill pill-red" style="margin:4px 0" x-text="F.inr(stock.bill.gap) + ' short'"></div>
+          <div class="offer">
+            <div class="name">Stock Advance offer</div>
+            <div class="kv"><span x-text="stock.advance.lender + ' pays ' + stock.advance.paid_to"></span><b x-text="F.inr(stock.advance.amount)"></b></div>
+            <div class="kv"><span>Fee</span><b x-text="F.inr(stock.advance.fee)"></b></div>
+            <div class="kv"><span>Repaid from</span><b x-text="Math.round(stock.advance.split_rate * 100) + '% of repayments'"></b></div>
+            <div class="kv"><span>Backstop</span><b x-text="F.date(stock.advance.backstop)"></b></div>
+            <div class="row" style="margin-top:10px"><button class="btn btn-primary grow" @click="advance('accept')" :disabled="busy">Accept</button>
+              <button class="btn btn-outline" @click="advance('decline')" :disabled="busy">Decline</button></div>
+          </div>
+        </div>
+      </template>
+      <template x-if="stock.advance && ['repaying', 'closed'].includes(stock.advance.state)">
+        <div>
+          <div class="paid" x-text="stock.advance.lender + ' paid ' + stock.advance.paid_to + ' ' + F.inr(stock.advance.amount) + ' ✓'"></div>
+          <div class="row between small" style="margin-top:8px"><b class="num" x-text="F.inr(stock.advance.repaid) + ' / ' + F.inr(stock.advance.total_due)"></b>
+            <span class="muted" x-text="Math.round(stock.advance.split_rate * 100) + '% of repayments · backstop ' + F.date(stock.advance.backstop)"></span></div>
+          <div class="progress" style="margin-top:6px"><i :style="'width:' + Math.min(100, 100 * stock.advance.repaid / stock.advance.total_due) + '%'"></i></div>
+        </div>
+      </template>
+    </div>
+
+    <!-- 5 get paid -->
+    <div class="card">
+      <div class="row between"><span class="card-title">Get paid</span><a href="#" class="link" @click.prevent="go('collect')">Collect →</a></div>
+      <div class="trio" style="margin-top:8px">
+        <div><span>Outstanding</span><b class="num" x-text="F.inr(home?.get_paid.outstanding)"></b></div>
+        <div><span>Overdue</span><b class="num red" x-text="F.inr(home?.get_paid.overdue)"></b></div>
+        <div><span>Verified</span><b class="num" x-text="F.inr(home?.get_paid.verified)"></b></div>
+      </div>
+      <div class="small muted" style="margin-top:8px" x-text="(home?.get_paid.promises || 0) + ' promises · ' + (home?.get_paid.replies || 0) + ' replies · ' + (home?.get_paid.autopay || 0) + ' auto-pay schedules'"></div>
+    </div>
+    <div class="footer-note">Concept prototype · Team MerchantMavericks</div>
+  </div>
+
+  <!-- ===================================== UDHAAR BOOK -->
+  <div x-show="tab==='book' && !detail">
+    <h3 class="page-h">Udhaar Book</h3>
+    <input class="input" x-model="q" placeholder="Search customers">
+    <div class="card" style="margin-top:10px">
+      <template x-for="c in bookFiltered()" :key="c.id">
+        <div class="list-item click" @click="openCustomer(c.id)">
+          <span class="pill" :class="F.bandPill(c.band)" x-text="F.bandWord(c.band)"></span>
+          <div class="grow"><div class="name" x-text="c.name"></div>
+            <div class="small muted" x-text="c.score_band + (c.overdue_days ? ' · ' + c.overdue_days + ' days overdue' : '')"></div>
+            <div class="tags"><template x-for="t in c.tags"><span class="pill pill-violet" x-text="t"></span></template></div></div>
+          <b class="num" :class="c.overdue_days && 'red'" x-text="F.inr(c.outstanding)"></b>
+        </div>
+      </template>
+    </div>
+  </div>
+  <div x-show="tab==='book' && detail">
+    <template x-if="detail">
+      <div>
+        <div class="back"><button @click="detail = null">←</button><span x-text="detail.name"></span></div>
+        <div class="card">
+          <div class="row between"><span class="card-title">Why this limit?</span><span class="pill" :class="F.scorePill(detail.score_band)" x-text="detail.score_band"></span></div>
+          <div class="kv"><span>Safe limit today</span><b x-text="F.inr(detail.safe_limit)"></b></div>
+          <ul class="reasons"><template x-for="r in detail.reasons"><li x-text="r"></li></template></ul>
+        </div>
+        <div class="section-label">Entries at this shop</div>
+        <div class="card"><template x-for="e in detail.entries" :key="e.id">
+          <div class="list-item"><div class="grow"><div class="name num" x-text="F.inr(e.amount) + (e.paid ? ' · paid ' + F.inr(e.paid) : '')"></div>
+            <div class="small muted" x-text="F.date(e.created_at) + ' · due ' + F.date(e.due_date) + (e.overdue_days ? ' · ' + e.overdue_days + 'd late' : '') + (e.dispute_reason ? ' · “' + e.dispute_reason + '”' : '')"></div></div>
+            <span class="pill" :class="F.statePill(e.state)" x-text="F.stateWord(e.state)"></span>
+            <button class="btn btn-danger btn-sm" x-show="e.state === 'disputed'" @click="cancelEntry(e.id)">Cancel entry</button></div>
+        </template></div>
+        <div class="section-label" x-show="detail.messages.length">Messages</div>
+        <div class="card" x-show="detail.messages.length"><template x-for="(m, i) in detail.messages" :key="i">
+          <div class="msg" :class="m.direction"><span x-text="m.text"></span></div></template></div>
+      </div>
+    </template>
+  </div>
+
+  <!-- ===================================== COLLECT -->
+  <div x-show="tab==='collect'">
+    <h3 class="page-h">Collect</h3>
+    <div class="card"><div class="card-title">Promises</div>
+      <template x-for="(p, i) in collect.promises" :key="i"><div class="kv"><span x-text="p.customer"></span><b x-text="F.inr(p.amount) + ' · ' + F.date(p.date)"></b></div></template>
+      <div class="empty" x-show="!collect.promises.length">No promises yet.</div></div>
+    <div class="card"><div class="card-title">Auto-pay schedules</div>
+      <template x-for="(s, i) in collect.schedules" :key="i"><div class="kv"><span x-text="s.customer"></span>
+        <b x-text="'next ' + F.dayDate(s.next_collection) + ' · up to ' + F.inr(s.cap)"></b></div></template>
+      <div class="empty" x-show="!collect.schedules.length">No auto-pay set up yet.</div></div>
+    <div class="section-label">Conversations</div>
+    <template x-for="th in collect.threads" :key="th.customer_id">
+      <div class="card"><div class="card-title" x-text="th.customer"></div>
+        <template x-for="(m, i) in th.messages" :key="i">
+          <div class="msg" :class="m.direction"><span x-text="m.text"></span>
+            <div class="small muted" x-show="m.intent" x-text="'Read as: ' + m.intent + (m.escalate ? ' · needs you' : '')"></div>
+            <span class="badge" :class="F.srcBadge(m.source)[1]" x-show="m.direction === 'out'" x-text="F.srcBadge(m.source)[0]"></span></div>
+        </template></div>
+    </template>
+    <div class="empty" x-show="!collect.threads.length">Approve the reminder action in your growth plan to start.</div>
+  </div>
+
+  <!-- ===================================== ORDERS -->
+  <div x-show="tab==='orders'">
+    <h3 class="page-h">Orders</h3>
+    <template x-for="o in orders" :key="o.id">
+      <div class="card"><div class="row between"><span class="name" x-text="o.customer"></span><span class="pill" :class="F.statePill(o.state)" x-text="o.state === 'accepted' ? 'To deliver' : F.stateWord(o.state)"></span></div>
+        <div class="small muted" x-text="F.inr(o.value) + ' · ' + o.items.length + ' items'"></div>
+        <div class="small" style="margin-top:6px" x-text="o.items.map(i => i.qty + '× ' + i.name).join(', ')"></div>
+        <button class="btn btn-primary btn-sm" style="margin-top:10px" x-show="o.state === 'accepted'" @click="delivered(o.id)">Mark delivered</button></div>
+    </template>
+    <div class="empty" x-show="!orders.length">No basket orders yet.</div>
+  </div>
+
+  <!-- ===================================== ASK MUNIM -->
+  <div x-show="tab==='ask'">
+    <h3 class="page-h">Ask Munim</h3>
+    <div class="card" x-show="!home?.ai_enabled"><div class="small">Ask Munim is available when AI is enabled.</div></div>
+    <div x-show="home?.ai_enabled">
+      <template x-for="(t, i) in chat" :key="i">
+        <div class="card"><div class="name" x-text="t.q"></div>
+          <div class="small" style="margin-top:6px" x-show="!t.a"><span class="spinner"></span> thinking…</div>
+          <div class="small" style="margin-top:6px" x-show="t.a" x-text="t.a?.answer"></div>
+          <span class="badge" x-show="t.a" :class="F.srcBadge(t.a?.source)[1]" x-text="F.srcBadge(t.a?.source)[0]"></span></div>
+      </template>
+      <form class="row" @submit.prevent="ask()"><input class="input" x-model="question" placeholder="Ask about your shop…"><button class="btn btn-primary" :disabled="busy">Ask</button></form>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <button :class="tab==='home' && 'on'" @click="go('home')"><span>🏠</span>Home</button>
+    <button :class="tab==='book' && 'on'" @click="go('book')"><span>📒</span>Udhaar Book</button>
+    <button :class="tab==='collect' && 'on'" @click="go('collect')"><span>📨</span>Collect</button>
+    <button :class="tab==='orders' && 'on'" @click="go('orders')"><span>🧺</span>Orders</button>
+    <button :class="tab==='ask' && 'on'" @click="go('ask')"><span>🧮</span>Ask Munim</button>
+  </nav>
+</div>
+</template>
+
+<div class="sheet-backdrop" x-show="activityOpen" @click.self="activityOpen = false">
+  <div class="sheet"><div class="grab"></div><h3>Activity</h3>
+    <template x-for="(a, i) in activity" :key="i"><div class="list-item"><span class="small muted" x-text="F.time(a.ts)"></span>
+      <span class="grow small" x-text="a.text"></span><span class="badge" :class="F.srcBadge(a.source)[1]" x-text="F.srcBadge(a.source)[0]"></span></div></template>
+  </div>
+</div>
+<div class="toast" :class="toast?.error && 'error'" x-show="toast && me" x-transition x-text="toast?.text"></div>
+</body>
+</html>

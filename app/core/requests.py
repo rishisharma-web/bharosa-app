@@ -169,7 +169,7 @@ def _start_confirm(s: Session, store_id: str, customer_id: str, amount: int, ove
                            "tags": [], "state": "Paid in full"})
         sb_put(s, store_id, state)
         activity.log(s, store_id, "guardrail", f"{c.name}: no credit, collect full {inr(amount)}")
-        return {"mode": "pay_full"}
+        return {"mode": "pay_full", "customer_id": c.id}
     t = now()
     e = Entry(store_id=store_id, customer_id=c.id, amount=credit, state="proposed", source="counter", created_at=t,
               due_date=t.date() + timedelta(days=store.due_days), override=override, band=g.band, tags=g.tags)
@@ -183,20 +183,28 @@ def _start_confirm(s: Session, store_id: str, customer_id: str, amount: int, ove
     sb_put(s, store_id, state)
     activity.log(s, store_id, "guardrail", f"{c.name}: {inr(credit)} on credit" +
                  (f", {inr(collect)} now" if collect else "") + (" (override)" if override else ""))
-    return {"mode": "confirm_qr", "token": r.token}
+    return {"mode": "confirm_qr", "token": r.token, "customer_id": c.id}
 
 
-def clear(s: Session, store_id: str) -> None:
+def clear(s: Session, store_id: str) -> str | None:
+    """Reset the counter. A request still on the front screen is withdrawn (its proposed entry
+    expires), so the customer cannot confirm something the shop cancelled. Returns that customer."""
     state = sb_get(s, store_id)
     front = state.get("front") or {}
+    customer_id = None
     if front.get("token"):
         r = s.get(PendingRequest, front["token"])
-        if r and r.status == "open" and r.kind == "share":
-            r.status = "declined"
+        if r and r.status == "open":
+            r.status, customer_id = "declined", r.customer_id
             s.add(r)
+            e = s.get(Entry, r.entry_id) if r.entry_id else None
+            if e and e.state == "proposed":
+                e.state = "expired"
+                s.add(e)
     state.update(top=None, front=dict(IDLE))
     state.pop("pending", None)
     sb_put(s, store_id, state)
+    return customer_id
 
 
 # ---------------------------------------------------------------- customer actions

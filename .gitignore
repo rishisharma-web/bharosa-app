@@ -2,7 +2,8 @@
 __pycache__/
 *.pyc
 .env
-bharosa.db
-bharosa.db-*
+*.db
+*.db-shm
+*.db-wal
 .pytest_cache/
-static/audio/*.wav
+sarvam_tts_test.wav
