@@ -1,0 +1,233 @@
+{
+  "now": "2026-10-26T09:00:00+05:30",
+  "lang": "hi-IN",
+  "demo": {
+    "beat": 0,
+    "total": 7,
+    "caption": ""
+  },
+  "soundbox": {
+    "store_id": "S1",
+    "top": null,
+    "front": {
+      "mode": "idle"
+    },
+    "last_alert": null
+  },
+  "merchant": {
+    "store": {
+      "id": "S1",
+      "name": "Lakshmi Stores",
+      "area": "Jayanagar, Bengaluru",
+      "vpa": "lakshmistores@ptyes",
+      "advance_blocked": false
+    },
+    "today_collection": 980,
+    "collection_7d": [
+      {
+        "date": "2026-10-20",
+        "amount": 11160
+      },
+      {
+        "date": "2026-10-21",
+        "amount": 12050
+      },
+      {
+        "date": "2026-10-22",
+        "amount": 12240
+      },
+      {
+        "date": "2026-10-23",
+        "amount": 11210
+      },
+      {
+        "date": "2026-10-24",
+        "amount": 12290
+      },
+      {
+        "date": "2026-10-25",
+        "amount": 10350
+      },
+      {
+        "date": "2026-10-26",
+        "amount": 980
+      }
+    ],
+    "udhaar": {
+      "outstanding": 45000,
+      "verified": 38000,
+      "unverified": 7000,
+      "overdue": 24360,
+      "pending_confirm": 0,
+      "customers_owing": 33
+    },
+    "briefing": null,
+    "due_soon": [
+      {
+        "bill_id": "B1",
+        "distributor": "Sharma Traders",
+        "amount": 18000,
+        "due": "2026-10-30",
+        "gap": null
+      }
+    ],
+    "advance": null,
+    "pending_entries": [],
+    "pending_matches": [],
+    "disputes": [],
+    "drafts": [],
+    "customers_top": [
+      {
+        "id": "C_1055",
+        "name": "Pradeep Saxena",
+        "outstanding": 3760,
+        "verified": 3020,
+        "band": null,
+        "score": 574,
+        "score_band": "Good",
+        "overdue_days": 45
+      },
+      {
+        "id": "C_1032",
+        "name": "Latha Joshi",
+        "outstanding": 3700,
+        "verified": 3330,
+        "band": null,
+        "score": 633,
+        "score_band": "Good",
+        "overdue_days": 40
+      },
+      {
+        "id": "C_1039",
+        "name": "Lalitha Patil",
+        "outstanding": 3640,
+        "verified": 2430,
+        "band": null,
+        "score": 433,
+        "score_band": "Building",
+        "overdue_days": 50
+      },
+      {
+        "id": "C_1052",
+        "name": "Archana Iyer",
+        "outstanding": 3560,
+        "verified": 2700,
+        "band": null,
+        "score": 371,
+        "score_band": "Building",
+        "overdue_days": 49
+      },
+      {
+        "id": "C_VIKRAM",
+        "name": "Vikram Rao",
+        "outstanding": 2600,
+        "verified": 2600,
+        "band": null,
+        "score": 420,
+        "score_band": "Building",
+        "overdue_days": 41
+      },
+      {
+        "id": "C_1014",
+        "name": "Jyothi Khan",
+        "outstanding": 2230,
+        "verified": 1280,
+        "band": null,
+        "score": 392,
+        "score_band": "Building",
+        "overdue_days": 44
+      },
+      {
+        "id": "C_1037",
+        "name": "Nasreen Bhat",
+        "outstanding": 2200,
+        "verified": 2200,
+        "band": null,
+        "score": 489,
+        "score_band": "Building",
+        "overdue_days": 48
+      },
+      {
+        "id": "C_1051",
+        "name": "Sudha Acharya",
+        "outstanding": 2010,
+        "verified": 2010,
+        "band": null,
+        "score": 623,
+        "score_band": "Good",
+        "overdue_days": 0
+      }
+    ]
+  },
+  "customer": {
+    "id": "C_RAMESH",
+    "name": "Ramesh Kumar",
+    "mobile": "9845012345",
+    "vpa": "ramesh.k@ptyes",
+    "lang": "hi-IN",
+    "score": 680,
+    "score_band": "Good",
+    "score_delta_7d": 0,
+    "dues": [
+      {
+        "store": "Lakshmi Stores",
+        "store_id": "S1",
+        "amount": 1800,
+        "verified": 1800,
+        "oldest_overdue_days": 19
+      }
+    ],
+    "pending_confirms": [],
+    "mandates": [],
+    "messages": [],
+    "history": [
+      {
+        "type": "entry",
+        "id": 373,
+        "store": "Lakshmi Stores",
+        "amount": 1800,
+        "paid": 0,
+        "state": "verified",
+        "verified": true,
+        "ts": "2026-09-07T10:30:00+05:30",
+        "due": "2026-10-07"
+      },
+      {
+        "type": "repayment",
+        "id": 94,
+        "store": "Lakshmi Stores",
+        "amount": 830,
+        "source": "upi",
+        "state": "paid",
+        "ts": "2026-09-02T19:10:00+05:30"
+      },
+      {
+        "type": "entry",
+        "id": 217,
+        "store": "Lakshmi Stores",
+        "amount": 380,
+        "paid": 380,
+        "state": "settled",
+        "verified": true,
+        "ts": "2026-08-22T18:05:00+05:30",
+        "due": "2026-09-21"
+      },
+      {
+        "type": "entry",
+        "id": 66,
+        "store": "Lakshmi Stores",
+        "amount": 450,
+        "paid": 450,
+        "state": "settled",
+        "verified": true,
+        "ts": "2026-08-10T11:20:00+05:30",
+        "due": "2026-09-09"
+      }
+    ],
+    "rewards": []
+  },
+  "risk_console": {
+    "alerts": []
+  },
+  "trace_tail": []
+}
