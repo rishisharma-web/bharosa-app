@@ -7,12 +7,17 @@ from sqlmodel import Session, select
 
 from app import clock, state
 from app.adapters import soundbox, upi
-from app.core import advance, forecast, integrity, ledger, mandates, messages, reconcile, risk, score
+from app.core import (
+    advance, collector, forecast, integrity, ledger, mandates, messages, reconcile, risk, score,
+)
 from app.core.money import inr
 from app.events import schemas as sc
-from app.events.effects import notify
+from app.agents import counter, recon_agent, recovery
+from app.events.effects import notify, toast
 from app.events.router import EventError, UnitOfWork, before_each, handles
-from app.models import Bill, Consent, Customer, Entry, PendingMatch, Sale, Store, StoreCustomer
+from app.models import (
+    Bill, Consent, Customer, Entry, Message, PendingMatch, Promise, Sale, Store, StoreCustomer,
+)
 from app.realtime.snapshot import window_label
 from app.sim import daily, fraud
 from app.realtime.trace import trace
@@ -88,13 +93,42 @@ def on_set_focus_customer(uow: UnitOfWork, p: sc.SetFocusCustomer):
 
 # ---------------------------------------------------------------- credit sale (flow A)
 
+async def _spoken_text(uow: UnitOfWork, store: Store, text: str, lang: str):
+    """Free text from the Soundbox: the Counter Agent proposes, each valid action becomes its own event."""
+    s = uow.s
+    res = await counter.parse(s, store.id, text, lang)
+    effects = []
+    for a in res.data.actions:
+        if a.type == "udhaar" and a.customer_id:
+            await uow.emit("udhaar_spoken", {"store_id": store.id, "customer_id": a.customer_id, "amount": a.amount,
+                                             "text": text, "lang": lang})
+        elif a.type == "cash_repayment" and a.customer_id:
+            await uow.emit("cash_reported", {"store_id": store.id, "customer_id": a.customer_id, "amount": a.amount,
+                                             "text": text})
+        elif len(a.candidate_ids) > 1:
+            names = _names_for(s, a.candidate_ids)
+            soundbox.display(s, store.id, top={
+                "band": "clarify", "text": res.data.clarify_question or f"Which {a.name_heard}?",
+                "intent": a.type, "amount": a.amount,
+                "candidates": [{"id": cid, "name": names[cid]} for cid in a.candidate_ids]})
+        elif a.type == "udhaar" and a.name_heard and a.amount:
+            # Nobody by that name here: first-ever credit, ask the customer for a mobile number.
+            soundbox.display(s, store.id, front={"mode": "new_customer", "name": a.name_heard, "amount": a.amount})
+        else:
+            effects.append(toast(f"Didn't catch that: “{text}”", "warn"))
+    return effects
+
+
+def _names_for(s: Session, ids: list[str]) -> dict[str, str]:
+    return {c.id: c.name for c in s.exec(select(Customer).where(Customer.id.in_(ids))).all()}
+
+
 @handles("udhaar_spoken")
-def on_udhaar_spoken(uow: UnitOfWork, p: sc.UdhaarSpoken):
+async def on_udhaar_spoken(uow: UnitOfWork, p: sc.UdhaarSpoken):
     s = uow.s
     store = _store(s, p.store_id)
     if p.customer_id is None or p.amount is None:
-        raise EventError("free-text sentences need the Counter Agent (not built yet); "
-                         "send customer_id and amount", 501)
+        return await _spoken_text(uow, store, p.text, _lang(s, p.lang))
     c = _store_customer(s, store.id, p.customer_id)
     lang = _lang(s, p.lang)
     trace("soundbox", f"Heard: {messages.first_name(c.name)} {p.amount} udhaar", {"text": p.text})
@@ -231,8 +265,6 @@ async def on_new_customer(uow: UnitOfWork, p: sc.NewCustomer):
 
 # ---------------------------------------------------------------- repayments (flow B)
 
-# The Reconciliation Agent replaces this with an LLM call (which keeps this as its fallback).
-match_payer = reconcile.fallback_match
 
 
 def _payment_received(s: Session, store: Store, amount: int, customer: Customer | None, *,
@@ -265,7 +297,7 @@ def _record_sale(s: Session, store: Store, amount: int, customer_id: str | None,
 
 
 @handles("upi_payment")
-def on_upi_payment(uow: UnitOfWork, p: sc.UpiPayment):
+async def on_upi_payment(uow: UnitOfWork, p: sc.UpiPayment):
     s = uow.s
     store = _store(s, p.store_id)
     trace("upi", f"{inr(p.amount)} from {p.payer_vpa}", {"payer_name": p.payer_name, "remark": p.remark, "ref": p.ref})
@@ -274,8 +306,9 @@ def on_upi_payment(uow: UnitOfWork, p: sc.UpiPayment):
 
     if d.kind == "pending":
         payment = p.model_dump(mode="json")
-        m = match_payer(payment, d.candidates)
-        trace("recon_agent", f"Best guess {m['customer_id']} ({m['confidence']:.2f})", m, source=m.get("source"))
+        m = await recon_agent.match(payment, d.candidates)
+        trace("recon_agent", f"Best guess {m['customer_id']} ({m['confidence']:.2f})", m, ms=m.get("ms"),
+              source=m.get("source"))
         ids = {c["id"] for c in d.candidates}
         if m["customer_id"] in ids and m["confidence"] >= reconcile.AUTO_APPLY_CONFIDENCE:
             d = reconcile.Decision("repayment", "rule3", customer_id=m["customer_id"], matched_by="agent",
@@ -307,12 +340,11 @@ def on_upi_payment(uow: UnitOfWork, p: sc.UpiPayment):
 
 
 @handles("cash_reported")
-def on_cash_reported(uow: UnitOfWork, p: sc.CashReported):
+async def on_cash_reported(uow: UnitOfWork, p: sc.CashReported):
     s = uow.s
     store = _store(s, p.store_id)
     if p.customer_id is None or p.amount is None:
-        raise EventError("free-text sentences need the Counter Agent (not built yet); "
-                         "send customer_id and amount", 501)
+        return await _spoken_text(uow, store, p.text, _lang(s))
     c = _store_customer(s, store.id, p.customer_id)
     trace("soundbox", f"Heard: {messages.first_name(c.name)} {p.amount} cash diye", {"text": p.text})
     ledger.apply_repayment(s, store.id, c.id, p.amount, "cash", matched_by="merchant", remark=p.text)
@@ -429,3 +461,89 @@ def on_inject_fraud_ring(uow: UnitOfWork, p: sc.InjectFraudRing):
     store = s.get(Store, p.store_id)
     return [notify("overview", f"{store.name}: {integrity.summary(alert.rules)}",
                    f"Risk {alert.risk:.1f} · Supplier Advance blocked")]
+
+
+# ---------------------------------------------------------------- recovery (flow C)
+
+def _pay_action(store: Store, amount: int) -> dict:
+    return {"type": "pay", "label": f"Pay {inr(amount)} now", "amount": amount, "store_id": store.id}
+
+
+@handles("nudges_requested")
+async def on_nudges_requested(uow: UnitOfWork, p: sc.NudgesRequested):
+    s = uow.s
+    store = _store(s, p.store_id)
+    picked = collector.pick(s, store.id, p.customer_ids)
+    trace("router", f"Collector policy picked {len(picked)} customer(s)", {"ids": [c.id for c, _ in picked]})
+    if not picked:
+        return [toast("No one is due for a reminder right now", "info")]
+    for c, t in picked:
+        res = await recovery.draft_nudge(c.name, c.lang, t.outstanding, t.oldest_overdue_days, c.persona, store.name)
+        s.add(Message(store_id=store.id, customer_id=c.id, direction="out", text=res.data.message, lang=res.data.lang,
+                      status="draft", created_at=clock.now(),
+                      agent_output={"agent": "recovery_draft", "source": res.source, "dues": t.outstanding,
+                                    "ui_actions": [_pay_action(store, t.outstanding)]}))
+    return [notify(f"merchant:{store.id}", "Reminders ready", f"Approve {len(picked)} reminder(s)",
+                   {"label": "Review"})]
+
+
+@handles("nudges_approved")
+def on_nudges_approved(uow: UnitOfWork, p: sc.NudgesApproved):
+    s = uow.s
+    msgs = s.exec(select(Message).where(Message.id.in_(p.message_ids))).all()
+    if len(msgs) != len(set(p.message_ids)):
+        raise EventError("unknown message id", 404)
+    effects = []
+    for m in msgs:
+        if m.status != "draft":
+            raise EventError(f"message {m.id} is already {m.status}", 409)
+        m.status = "sent"
+        link = s.get(StoreCustomer, (m.store_id, m.customer_id))
+        link.last_nudge_at = clock.now()
+        s.add_all([m, link])
+        store = s.get(Store, m.store_id)
+        effects.append(notify(f"customer:{m.customer_id}", f"{store.name} via Paytm", m.text,
+                              {"label": "Open", "message_id": m.id}))
+    trace("merchant_app", f"Merchant approved {len(msgs)} reminder(s)")
+    return effects
+
+
+@handles("customer_reply")
+async def on_customer_reply(uow: UnitOfWork, p: sc.CustomerReply):
+    s = uow.s
+    c = _store_customer(s, p.store_id, p.customer_id)
+    store = s.get(Store, p.store_id)
+    today = clock.today()
+    s.add(Message(store_id=store.id, customer_id=c.id, direction="in", text=p.text, lang=c.lang, status="received",
+                  created_at=clock.now()))
+    s.flush()
+    dues = sum(ledger.remaining(e) for e in ledger.open_entries(s, store.id, c.id))
+    has_mandate = bool(mandates.active(s, c.id, store.id))
+    res = await recovery.interpret_reply(p.text, c.name, dues, today, has_mandate, store.name, c.lang)
+    out = res.data
+
+    if out.promise:
+        for old in s.exec(select(Promise).where(Promise.customer_id == c.id, Promise.store_id == store.id,
+                                                Promise.status == "open")).all():
+            old.status = "replaced"
+            s.add(old)
+        s.add(Promise(customer_id=c.id, store_id=store.id, amount=out.promise.amount, date=out.promise.date,
+                      created_at=clock.now()))
+        trace("validator", f"Promise accepted: {inr(out.promise.amount)} by {out.promise.date:%d %b}")
+
+    actions = []
+    if out.suggest_mandate:
+        actions.append({"type": "setup_autopay", "label": "Set up auto-pay", "store_id": store.id,
+                        "cap": 3000, "window_start_day": 1, "window_end_day": 5})
+    if dues > 0 and out.intent not in ("dispute",):
+        actions.append(_pay_action(store, dues))
+    clock.tick(5)  # the reply lands a moment after the customer's message
+    s.add(Message(store_id=store.id, customer_id=c.id, direction="out", text=out.reply_message, lang=c.lang,
+                  status="sent", created_at=clock.now(),
+                  agent_output={"agent": "recovery_reply", "source": res.source, **out.model_dump(mode="json"),
+                                "ui_actions": actions}))
+    effects = [notify(f"customer:{c.id}", f"{store.name} via Paytm", out.reply_message)]
+    if out.escalate:
+        effects.append(notify(f"merchant:{store.id}", f"{messages.first_name(c.name)} needs your attention",
+                              f"“{p.text}” ({out.intent})", {"label": "Open", "customer_id": c.id}))
+    return effects

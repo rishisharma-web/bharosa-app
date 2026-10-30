@@ -33,7 +33,8 @@ def snapshot():
 
     from app import clock, db
     from app.events import handlers  # noqa: F401  (registers handlers)
-    from app.events.router import fire
+    from app.agents import munim
+    from app.events.router import fire, unit_of_work
     from app.realtime.snapshot import build_snapshot
     from app.sim.seed import seed as do_seed
 
@@ -60,9 +61,17 @@ def snapshot():
                                    "amount": 140, "ref": front["sale_ref"]})
         await fire("customer_confirm", {"token": front["token"], "device_id": "dev-ramesh"})
         dump("beat_2_confirmed")
+        await fire("nudges_requested", {"store_id": "S1", "customer_ids": ["C_RAMESH"]})
+        snap = dump("beat_3a_draft")
+        await fire("nudges_approved", {"message_ids": [snap["merchant"]["drafts"][0]["message_id"]]})
+        await fire("customer_reply", {"customer_id": "C_RAMESH", "store_id": "S1",
+                                      "text": "Salary 1 tareekh ko aati hai, tab pura de dunga"})
+        dump("beat_3b_reply")
         await fire("mandate_created", {"customer_id": "C_RAMESH", "store_id": "S1", "cap": 3000,
                                        "window_start_day": 1, "window_end_day": 5})
         dump("beat_3_mandate")
+        async with unit_of_work() as uow:
+            await munim.ask(uow.s, "S1", "Friday ko Sharma ko 18,000 kaise dunga?", "hi-IN")
         await fire("offer_advance", {"store_id": "S1", "bill_id": "B1"})
         snap = dump("beat_4_offer")
         await fire("advance_accept", {"advance_id": snap["merchant"]["advance"]["id"]})

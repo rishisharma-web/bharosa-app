@@ -167,7 +167,8 @@
           "customer_id": "C_RAMESH",
           "confidence": 0.8,
           "reason": "closest name match (1.00)",
-          "source": "template"
+          "source": "template",
+          "ms": 0.1
         }
       }
     ],
@@ -262,7 +263,9 @@
         "score_band": "Good",
         "overdue_days": 0
       }
-    ]
+    ],
+    "threads": [],
+    "munim_last": null
   },
   "customer": {
     "id": "C_RAMESH",
@@ -344,9 +347,9 @@
         "customers": 110,
         "entries": 1004,
         "repayments": 591,
-        "seconds": 0.59
+        "seconds": 0.5
       },
-      "ms": 590.0,
+      "ms": 500.0,
       "source": null
     },
     {
@@ -380,9 +383,10 @@
         "customer_id": "C_RAMESH",
         "confidence": 0.8,
         "reason": "closest name match (1.00)",
-        "source": "template"
+        "source": "template",
+        "ms": 0.1
       },
-      "ms": null,
+      "ms": 0.1,
       "source": "template"
     },
     {
@@ -418,7 +422,7 @@
       "detail": {
         "event_id": 1
       },
-      "ms": 17.66,
+      "ms": 20.53,
       "source": null
     }
   ]

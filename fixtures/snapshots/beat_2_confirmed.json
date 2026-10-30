@@ -11,7 +11,7 @@
     "top": {
       "band": "amber",
       "text": "Caution: ₹1,800 overdue for 19 days. Safe limit today ₹200. Give ₹200 on credit, collect ₹140 now (UPI or cash).",
-      "ms": 1.73,
+      "ms": 1.15,
       "reasons": [
         "₹1,800 overdue for 19 days → limit ×0.6",
         "Score 680 → base ₹3,350",
@@ -123,7 +123,7 @@
         "customer": "Priya Nair",
         "amount": 340,
         "requested_amount": 340,
-        "token": "28e157958cdb426ba235fc2137223317",
+        "token": "577057e1f40d47de8842f45c3ef1cdff",
         "expires_at": "2026-10-26T09:10:30+05:30"
       }
     ],
@@ -219,7 +219,9 @@
         "score_band": "Good",
         "overdue_days": 0
       }
-    ]
+    ],
+    "threads": [],
+    "munim_last": null
   },
   "customer": {
     "id": "C_RAMESH",
@@ -327,7 +329,7 @@
       "detail": {
         "event_id": 3
       },
-      "ms": 3.83,
+      "ms": 4.81,
       "source": null
     },
     {
@@ -380,7 +382,7 @@
       "detail": {
         "event_id": 4
       },
-      "ms": 15.79,
+      "ms": 18.82,
       "source": null
     }
   ]

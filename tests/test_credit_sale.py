@@ -131,7 +131,7 @@ def test_new_customer_gets_starter_limit(fresh):
 
 def test_unknown_or_foreign_customer_rejected(fresh):
     assert ev(fresh, "udhaar_spoken", store_id="S1", customer_id="C_2001", amount=100).status_code == 404
-    assert ev(fresh, "udhaar_spoken", store_id="S1", text="Ramesh 340 udhaar").status_code == 501
+    assert ev(fresh, "udhaar_spoken", store_id="S1", text="Ramesh 340 udhaar").status_code == 200  # Counter Agent
 
 
 def test_customer_detail_privacy_and_reasons(fresh):

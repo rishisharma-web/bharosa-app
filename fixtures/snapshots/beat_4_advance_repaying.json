@@ -1,5 +1,5 @@
 {
-  "now": "2026-10-26T09:03:30+05:30",
+  "now": "2026-10-26T09:05:05+05:30",
   "lang": "hi-IN",
   "demo": {
     "beat": 0,
@@ -11,7 +11,7 @@
     "top": {
       "band": "amber",
       "text": "Caution: ₹1,800 overdue for 19 days. Safe limit today ₹200. Give ₹200 on credit, collect ₹140 now (UPI or cash).",
-      "ms": 1.73,
+      "ms": 1.15,
       "reasons": [
         "₹1,800 overdue for 19 days → limit ×0.6",
         "Score 680 → base ₹3,350",
@@ -135,7 +135,7 @@
         "customer": "Priya Nair",
         "amount": 340,
         "requested_amount": 340,
-        "token": "28e157958cdb426ba235fc2137223317",
+        "token": "577057e1f40d47de8842f45c3ef1cdff",
         "expires_at": "2026-10-26T09:10:30+05:30"
       }
     ],
@@ -231,7 +231,224 @@
         "score_band": "Good",
         "overdue_days": 0
       }
-    ]
+    ],
+    "threads": [
+      {
+        "customer_id": "C_RAMESH",
+        "customer": "Ramesh Kumar",
+        "escalated": false,
+        "intent": "promise",
+        "last_text": "Dhanyavaad Ramesh ji! 1 Nov ko ₹2,000 ka vaada note kar liya hai. Salary-day auto-pay set kar dein, to yaad rakhne ki zaroorat nahi padegi?",
+        "last_direction": "out",
+        "last_status": "sent",
+        "ts": "2026-10-26T09:03:35+05:30",
+        "promise": {
+          "amount": 2000,
+          "date": "2026-11-01",
+          "status": "open",
+          "label": "Promised ₹2,000 on 1 Nov"
+        }
+      }
+    ],
+    "munim_last": {
+      "question": "Friday ko Sharma ko 18,000 kaise dunga?",
+      "answer": "Shukravar ko Sharma Traders ko ₹18,000 dene hain. Tab tak aapke paas lagbhag ₹8,800 honge, yaani ₹9,200 kam. Usse pehle sirf ₹800 udhaar wapas aane ki ummeed hai (Suresh). Do raaste: 1) overdue customers ko reminder bhejein; 2) Partner NBFC se ₹9,200 Supplier Advance lein (fee ₹138), jo seedha Sharma Traders ko jayega aur udhaar wapsi ke 20% se chukega.",
+      "actions": [
+        {
+          "type": "send_nudges",
+          "params": {
+            "customer_ids": [
+              "C_1052",
+              "C_1039",
+              "C_VIKRAM",
+              "C_1055",
+              "C_1014"
+            ]
+          },
+          "label": "Send 5 reminders"
+        },
+        {
+          "type": "offer_advance",
+          "params": {
+            "bill_id": "B1"
+          },
+          "label": "Get Supplier Advance"
+        }
+      ],
+      "source": "template",
+      "ms": 53.9,
+      "steps": [
+        {
+          "tool": "get_forecast",
+          "args": {
+            "days": 14
+          },
+          "ms": 14.7,
+          "result": {
+            "today": "2026-10-26",
+            "cash_on_hand": 3200,
+            "gaps": [
+              {
+                "bill_id": "B1",
+                "distributor": "Sharma Traders",
+                "due": "2026-10-30",
+                "amount": 18000,
+                "available": 8800,
+                "gap": 9200,
+                "flagged_on": "2026-10-29"
+              }
+            ],
+            "days": [
+              {
+                "date": "2026-10-26",
+                "cash": 4400
+              },
+              {
+                "date": "2026-10-27",
+                "cash": 6400
+              },
+              {
+                "date": "2026-10-28",
+                "cash": 7600
+              },
+              {
+                "date": "2026-10-29",
+                "cash": 8800
+              },
+              {
+                "date": "2026-10-30",
+                "cash": -7850
+              },
+              {
+                "date": "2026-10-31",
+                "cash": -6650
+              },
+              {
+                "date": "2026-11-01",
+                "cash": 5550
+              },
+              {
+                "date": "2026-11-02",
+                "cash": 6750
+              },
+              {
+                "date": "2026-11-03",
+                "cash": 7950
+              },
+              {
+                "date": "2026-11-04",
+                "cash": 9150
+              },
+              {
+                "date": "2026-11-05",
+                "cash": 10350
+              },
+              {
+                "date": "2026-11-06",
+                "cash": 11550
+              },
+              {
+                "date": "2026-11-07",
+                "cash": 12750
+              },
+              {
+                "date": "2026-11-08",
+                "cash": 13950
+              }
+            ]
+          }
+        },
+        {
+          "tool": "list_collectable_dues",
+          "args": {
+            "until_date": "2026-10-29"
+          },
+          "ms": 13.8,
+          "result": {
+            "until": "2026-10-29",
+            "total": 800,
+            "items": [
+              {
+                "customer_id": "C_SURESH",
+                "name": "Suresh Gowda",
+                "amount": 800,
+                "date": "2026-10-27",
+                "probability": 0.89,
+                "basis": "history"
+              }
+            ]
+          }
+        },
+        {
+          "tool": "check_advance_eligibility",
+          "args": {
+            "bill_id": "B1"
+          },
+          "ms": 20.1,
+          "result": {
+            "eligible": true,
+            "bill_id": "B1",
+            "distributor": "Sharma Traders",
+            "due": "2026-10-30",
+            "gap": 9200,
+            "v_eligible": 25600,
+            "cap": 10240,
+            "amount": 9200,
+            "fee": 138,
+            "total_due": 9338,
+            "split_rate": 0.2,
+            "lender": "Partner NBFC",
+            "backstop": "2026-11-29",
+            "reasons": [
+              "Cash short by ₹9,200 before Sharma Traders's bill",
+              "Verified udhaar from good customers ₹25,600 → cap ₹10,240"
+            ]
+          }
+        },
+        {
+          "tool": "list_overdue",
+          "args": {
+            "top_n": 5
+          },
+          "ms": 3.1,
+          "result": {
+            "count": 15,
+            "items": [
+              {
+                "customer_id": "C_1052",
+                "name": "Archana Iyer",
+                "overdue": 3560,
+                "days": 49
+              },
+              {
+                "customer_id": "C_1039",
+                "name": "Lalitha Patil",
+                "overdue": 3450,
+                "days": 50
+              },
+              {
+                "customer_id": "C_VIKRAM",
+                "name": "Vikram Rao",
+                "overdue": 2600,
+                "days": 41
+              },
+              {
+                "customer_id": "C_1055",
+                "name": "Pradeep Saxena",
+                "overdue": 2330,
+                "days": 45
+              },
+              {
+                "customer_id": "C_1014",
+                "name": "Jyothi Khan",
+                "overdue": 2230,
+                "days": 44
+              }
+            ]
+          }
+        }
+      ]
+    }
   },
   "customer": {
     "id": "C_RAMESH",
@@ -263,7 +480,57 @@
         "status": "active"
       }
     ],
-    "messages": [],
+    "messages": [
+      {
+        "id": 1,
+        "store": "Lakshmi Stores",
+        "store_id": "S1",
+        "direction": "out",
+        "text": "Namaste Ramesh ji, Lakshmi Stores par aapka ₹2,000 udhaar baaki hai (19 din se). Suvidha ho to Paytm par 'Pay now' dabakar chuka dein. Dhanyavaad!",
+        "ts": "2026-10-26T09:02:30+05:30",
+        "actions": [
+          {
+            "type": "pay",
+            "label": "Pay ₹2,000 now",
+            "amount": 2000,
+            "store_id": "S1"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "store": "Lakshmi Stores",
+        "store_id": "S1",
+        "direction": "in",
+        "text": "Salary 1 tareekh ko aati hai, tab pura de dunga",
+        "ts": "2026-10-26T09:03:30+05:30",
+        "actions": []
+      },
+      {
+        "id": 3,
+        "store": "Lakshmi Stores",
+        "store_id": "S1",
+        "direction": "out",
+        "text": "Dhanyavaad Ramesh ji! 1 Nov ko ₹2,000 ka vaada note kar liya hai. Salary-day auto-pay set kar dein, to yaad rakhne ki zaroorat nahi padegi?",
+        "ts": "2026-10-26T09:03:35+05:30",
+        "actions": [
+          {
+            "type": "setup_autopay",
+            "label": "Set up auto-pay",
+            "store_id": "S1",
+            "cap": 3000,
+            "window_start_day": 1,
+            "window_end_day": 5
+          },
+          {
+            "type": "pay",
+            "label": "Pay ₹2,000 now",
+            "amount": 2000,
+            "store_id": "S1"
+          }
+        ]
+      }
+    ],
     "history": [
       {
         "type": "entry",
@@ -326,7 +593,7 @@
   },
   "trace_tail": [
     {
-      "ts": "2026-10-26T09:03:00+05:30",
+      "ts": "2026-10-26T09:04:35+05:30",
       "node": "advance",
       "label": "Offer ₹9,200 + fee ₹138 = ₹9,338, split 20%",
       "detail": {
@@ -339,17 +606,17 @@
       "source": null
     },
     {
-      "ts": "2026-10-26T09:03:00+05:30",
+      "ts": "2026-10-26T09:04:35+05:30",
       "node": "router",
       "label": "offer_advance",
       "detail": {
-        "event_id": 6
+        "event_id": 9
       },
-      "ms": 25.94,
+      "ms": 21.55,
       "source": null
     },
     {
-      "ts": "2026-10-26T09:03:30+05:30",
+      "ts": "2026-10-26T09:05:05+05:30",
       "node": "advance",
       "label": "A1 offered → accepted",
       "detail": null,
@@ -357,7 +624,7 @@
       "source": null
     },
     {
-      "ts": "2026-10-26T09:03:30+05:30",
+      "ts": "2026-10-26T09:05:05+05:30",
       "node": "lender",
       "label": "Partner NBFC paid ₹9,200 to Sharma Traders ✓",
       "detail": {
@@ -367,7 +634,7 @@
       "source": null
     },
     {
-      "ts": "2026-10-26T09:03:30+05:30",
+      "ts": "2026-10-26T09:05:05+05:30",
       "node": "distributor",
       "label": "Sharma Traders: ₹9,200 received from Partner NBFC",
       "detail": {
@@ -377,7 +644,7 @@
       "source": null
     },
     {
-      "ts": "2026-10-26T09:03:30+05:30",
+      "ts": "2026-10-26T09:05:05+05:30",
       "node": "advance",
       "label": "A1 disbursed → repaying; store pays the remaining ₹8,800 on 30 Oct",
       "detail": null,
@@ -385,7 +652,7 @@
       "source": null
     },
     {
-      "ts": "2026-10-26T09:03:30+05:30",
+      "ts": "2026-10-26T09:05:05+05:30",
       "node": "merchant_app",
       "label": "Merchant accepted A1",
       "detail": null,
@@ -393,13 +660,13 @@
       "source": null
     },
     {
-      "ts": "2026-10-26T09:03:30+05:30",
+      "ts": "2026-10-26T09:05:05+05:30",
       "node": "router",
       "label": "advance_accept",
       "detail": {
-        "event_id": 7
+        "event_id": 10
       },
-      "ms": 3.03,
+      "ms": 2.4,
       "source": null
     }
   ]

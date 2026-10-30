@@ -12,8 +12,9 @@ from app import clock, state
 from app.core import forecast, integrity, ledger, risk, score as sc
 from app.models import (
     Advance, Bill, Customer, Entry, Mandate, Message, PendingMatch, Repayment, RiskAlert, Sale, ScoreEvent, Store,
-    StoreCustomer,
+    StoreCustomer, Promise,
 )
+from app.core.money import inr
 from app.realtime import trace as tr
 
 MERCHANT_STORE = "S1"
@@ -145,7 +146,34 @@ def _merchant(s: Session, store: Store) -> dict:
             for m in drafts
         ],
         "customers_top": customers_top,
+        "threads": _threads(s, store.id),
+        "munim_last": state.get(s, "munim_last"),
     }
+
+
+def _threads(s: Session, store_id: str) -> list[dict]:
+    """Collect screen: one row per customer with recovery messages, newest first."""
+    msgs = s.exec(select(Message).where(Message.store_id == store_id).order_by(Message.created_at, Message.id)).all()
+    if not msgs:
+        return []
+    names = _names(s, {m.customer_id for m in msgs})
+    promises = {p.customer_id: p for p in s.exec(select(Promise).where(
+        Promise.store_id == store_id, Promise.status.in_(("open", "kept", "broken")))
+        .order_by(Promise.created_at)).all()}
+    out: dict[str, dict] = {}
+    for m in msgs:
+        ag = m.agent_output or {}
+        row = out.setdefault(m.customer_id, {"customer_id": m.customer_id, "customer": names.get(m.customer_id),
+                                             "escalated": False, "intent": None})
+        row.update({"last_text": m.text, "last_direction": m.direction, "last_status": m.status,
+                    "ts": clock.iso(m.created_at)})
+        if ag.get("agent") == "recovery_reply":
+            row["intent"], row["escalated"] = ag.get("intent"), bool(ag.get("escalate"))
+    for cid, row in out.items():
+        p = promises.get(cid)
+        row["promise"] = ({"amount": p.amount, "date": p.date.isoformat(), "status": p.status,
+                           "label": f"Promised {inr(p.amount)} on {p.date.day} {p.date:%b}"} if p else None)
+    return sorted(out.values(), key=lambda r: r["ts"], reverse=True)
 
 
 def _advance(s: Session, a: Advance | None) -> dict | None:

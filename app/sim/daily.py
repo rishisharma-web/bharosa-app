@@ -15,7 +15,8 @@ from sqlmodel import select
 from app import clock
 from app.adapters import soundbox
 from app.adapters.payments import DistributorAdapter
-from app.core import briefing, forecast, integrity, ledger, score
+from app.agents import munim
+from app.core import forecast, integrity, ledger, score
 from app.core.money import inr
 from app.models import Advance, Bill, Entry, Mandate, Promise, Repayment, Sale, Store
 from app.realtime.trace import trace
@@ -112,7 +113,7 @@ async def run_day(uow) -> list:
               {"gaps": fc["gaps"]})
     for store in s.exec(select(Store)).all():
         integrity.check(s, store.id, "nightly")
-    b = briefing.refresh(s, "S1")
+    b = await munim.compose_briefing(s, "S1")
     soundbox.display(s, "S1", front=soundbox.IDLE_FRONT)
     effects.append(soundbox.play("S1", b["text"], b["lang"]))
     return effects
