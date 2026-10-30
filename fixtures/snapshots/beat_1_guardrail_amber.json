@@ -11,7 +11,7 @@
     "top": {
       "band": "amber",
       "text": "Caution: ₹1,800 overdue for 19 days. Safe limit today ₹200. Give ₹200 on credit, collect ₹140 now (UPI or cash).",
-      "ms": 1.65,
+      "ms": 1.0,
       "reasons": [
         "₹1,800 overdue for 19 days → limit ×0.6",
         "Score 680 → base ₹3,350",
@@ -31,8 +31,8 @@
       "entry_id": 968,
       "customer_id": "C_RAMESH",
       "amount": 200,
-      "qr_payload": "bharosa://confirm/a12ebde2047043a0aa9ba7e3ae02faed",
-      "token": "a12ebde2047043a0aa9ba7e3ae02faed",
+      "qr_payload": "bharosa://confirm/0f9765bb4fe64ed9b9b784805f0349c5",
+      "token": "0f9765bb4fe64ed9b9b784805f0349c5",
       "expires_at": "2026-10-26T09:11:00+05:30",
       "pay_amount": 140,
       "pay_qr": "upi://pay?pa=lakshmistores@ptyes&pn=Lakshmi%20Stores&am=140&cu=INR&tr=SALE-968",
@@ -105,7 +105,7 @@
         "customer": "Priya Nair",
         "amount": 340,
         "requested_amount": 340,
-        "token": "7a4357558fb8465588e6a18d96bc28df",
+        "token": "2860cb47dceb4927b42a71e8226d5119",
         "expires_at": "2026-10-26T09:10:30+05:30"
       },
       {
@@ -114,7 +114,7 @@
         "customer": "Ramesh Kumar",
         "amount": 200,
         "requested_amount": 340,
-        "token": "a12ebde2047043a0aa9ba7e3ae02faed",
+        "token": "0f9765bb4fe64ed9b9b784805f0349c5",
         "expires_at": "2026-10-26T09:11:00+05:30"
       }
     ],
@@ -230,9 +230,10 @@
         "oldest_overdue_days": 19
       }
     ],
+    "credit_balance": [],
     "pending_confirms": [
       {
-        "token": "a12ebde2047043a0aa9ba7e3ae02faed",
+        "token": "0f9765bb4fe64ed9b9b784805f0349c5",
         "entry_id": 968,
         "store": "Lakshmi Stores",
         "store_id": "S1",
@@ -300,7 +301,7 @@
       "detail": {
         "event_id": 1
       },
-      "ms": 8.07,
+      "ms": 8.22,
       "source": null
     },
     {
@@ -326,7 +327,7 @@
           "Already owes ₹1,800"
         ]
       },
-      "ms": 1.65,
+      "ms": 1.0,
       "source": null
     },
     {
@@ -373,7 +374,7 @@
       "detail": {
         "event_id": 2
       },
-      "ms": 4.97,
+      "ms": 3.56,
       "source": null
     }
   ]

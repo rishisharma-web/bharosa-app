@@ -49,3 +49,16 @@ def guardrail(r: RiskResult, customer_name: str, lang: str) -> dict:
 
 def confirmed(customer_name: str, amount: int) -> str:
     return f"{first_name(customer_name)} confirmed {inr(amount)} udhaar ✓"
+
+
+def received(amount: int, customer_name: str | None, lang: str, cash: bool = False) -> dict:
+    """Payment alert: Soundbox line + spoken text."""
+
+    who = first_name(customer_name) if customer_name else None
+    kind = " cash" if cash else ""
+    display = f"{inr(amount)}{kind} received" + (f" from {who}" if who else "")
+    spoken = {
+        "hi-IN": (f"{who} से " if who else "") + f"{inr(amount)}" + (" नकद" if cash else "") + " प्राप्त हुए।",
+        "kn-IN": (f"{who} ಅವರಿಂದ " if who else "") + f"{inr(amount)}" + (" ನಗದು" if cash else "") + " ಸ್ವೀಕರಿಸಲಾಗಿದೆ.",
+    }
+    return {"display": display, "spoken": spoken.get(lang, spoken["hi-IN"])}

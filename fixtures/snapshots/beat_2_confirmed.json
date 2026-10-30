@@ -1,5 +1,5 @@
 {
-  "now": "2026-10-26T09:01:30+05:30",
+  "now": "2026-10-26T09:02:00+05:30",
   "lang": "hi-IN",
   "demo": {
     "beat": 0,
@@ -11,7 +11,7 @@
     "top": {
       "band": "amber",
       "text": "Caution: ₹1,800 overdue for 19 days. Safe limit today ₹200. Give ₹200 on credit, collect ₹140 now (UPI or cash).",
-      "ms": 1.65,
+      "ms": 1.0,
       "reasons": [
         "₹1,800 overdue for 19 days → limit ×0.6",
         "Score 680 → base ₹3,350",
@@ -27,16 +27,7 @@
       "override": false
     },
     "front": {
-      "mode": "pay_qr",
-      "entry_id": 968,
-      "customer_id": "C_RAMESH",
-      "amount": 200,
-      "qr_payload": null,
-      "token": null,
-      "expires_at": "2026-10-26T09:11:00+05:30",
-      "pay_amount": 140,
-      "pay_qr": "upi://pay?pa=lakshmistores@ptyes&pn=Lakshmi%20Stores&am=140&cu=INR&tr=SALE-968",
-      "sale_ref": "SALE-968"
+      "mode": "idle"
     },
     "last_alert": "Ramesh confirmed ₹200 udhaar ✓"
   },
@@ -48,7 +39,7 @@
       "vpa": "lakshmistores@ptyes",
       "advance_blocked": false
     },
-    "today_collection": 980,
+    "today_collection": 1120,
     "collection_7d": [
       {
         "date": "2026-10-20",
@@ -76,7 +67,7 @@
       },
       {
         "date": "2026-10-26",
-        "amount": 980
+        "amount": 1120
       }
     ],
     "udhaar": {
@@ -105,7 +96,7 @@
         "customer": "Priya Nair",
         "amount": 340,
         "requested_amount": 340,
-        "token": "7a4357558fb8465588e6a18d96bc28df",
+        "token": "2860cb47dceb4927b42a71e8226d5119",
         "expires_at": "2026-10-26T09:10:30+05:30"
       }
     ],
@@ -221,6 +212,7 @@
         "oldest_overdue_days": 19
       }
     ],
+    "credit_balance": [],
     "pending_confirms": [],
     "mandates": [],
     "messages": [],
@@ -286,15 +278,18 @@
   },
   "trace_tail": [
     {
-      "ts": "2026-10-26T09:01:00+05:30",
-      "node": "soundbox",
-      "label": "Top display: amber · Caution: ₹1,800 overdue for 19 days. Safe limit today ₹200. ",
-      "detail": null,
+      "ts": "2026-10-26T09:01:30+05:30",
+      "node": "ledger",
+      "label": "₹140 recorded as a sale (not udhaar)",
+      "detail": {
+        "ref": "SALE-968",
+        "customer_id": "C_RAMESH"
+      },
       "ms": null,
       "source": null
     },
     {
-      "ts": "2026-10-26T09:01:00+05:30",
+      "ts": "2026-10-26T09:01:30+05:30",
       "node": "soundbox",
       "label": "Front screen: confirm_qr",
       "detail": null,
@@ -302,25 +297,25 @@
       "source": null
     },
     {
-      "ts": "2026-10-26T09:01:00+05:30",
+      "ts": "2026-10-26T09:01:30+05:30",
       "node": "soundbox",
-      "label": "Speak (hi-IN): सावधान। ₹1,800 19 दिन से बाकी है। आज की सुरक्षित स",
+      "label": "Speak (hi-IN): Ramesh से ₹140 प्राप्त हुए।",
       "detail": null,
       "ms": null,
       "source": null
     },
     {
-      "ts": "2026-10-26T09:01:00+05:30",
+      "ts": "2026-10-26T09:01:30+05:30",
       "node": "router",
-      "label": "udhaar_spoken",
+      "label": "upi_payment",
       "detail": {
-        "event_id": 2
+        "event_id": 3
       },
-      "ms": 4.97,
+      "ms": 3.74,
       "source": null
     },
     {
-      "ts": "2026-10-26T09:01:30+05:30",
+      "ts": "2026-10-26T09:02:00+05:30",
       "node": "customer_app",
       "label": "Ramesh tapped Confirm",
       "detail": {
@@ -330,7 +325,7 @@
       "source": null
     },
     {
-      "ts": "2026-10-26T09:01:30+05:30",
+      "ts": "2026-10-26T09:02:00+05:30",
       "node": "ledger",
       "label": "Entry #968 proposed → verified",
       "detail": {
@@ -341,21 +336,21 @@
       "source": null
     },
     {
-      "ts": "2026-10-26T09:01:30+05:30",
+      "ts": "2026-10-26T09:02:00+05:30",
       "node": "soundbox",
-      "label": "Front screen: pay_qr",
+      "label": "Front screen: idle",
       "detail": null,
       "ms": null,
       "source": null
     },
     {
-      "ts": "2026-10-26T09:01:30+05:30",
+      "ts": "2026-10-26T09:02:00+05:30",
       "node": "router",
       "label": "customer_confirm",
       "detail": {
-        "event_id": 3
+        "event_id": 4
       },
-      "ms": 7.06,
+      "ms": 5.1,
       "source": null
     }
   ]

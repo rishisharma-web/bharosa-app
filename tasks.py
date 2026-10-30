@@ -55,8 +55,14 @@ def snapshot():
         await fire("udhaar_spoken", {"store_id": "S1", "customer_id": "C_PRIYA", "amount": 340})
         await fire("udhaar_spoken", {"store_id": "S1", "customer_id": "C_RAMESH", "amount": 340})
         snap = dump("beat_1_guardrail_amber")
-        await fire("customer_confirm", {"token": snap["soundbox"]["front"]["token"], "device_id": "dev-ramesh"})
+        front = snap["soundbox"]["front"]
+        await fire("upi_payment", {"store_id": "S1", "payer_vpa": "ramesh.k@ptyes", "payer_name": "Ramesh Kumar",
+                                   "amount": 140, "ref": front["sale_ref"]})
+        await fire("customer_confirm", {"token": front["token"], "device_id": "dev-ramesh"})
         dump("beat_2_confirmed")
+        await fire("upi_payment", {"store_id": "S1", "payer_vpa": "9876500000@ptyes", "payer_name": "Kamala Kumar",
+                                   "amount": 500, "remark": "Ramesh ka udhaar"})
+        dump("sample_pending_match")
 
     asyncio.run(steps())
 

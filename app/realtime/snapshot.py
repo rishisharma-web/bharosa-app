@@ -12,6 +12,7 @@ from app import clock, state
 from app.core import ledger, risk, score as sc
 from app.models import (
     Advance, Bill, Customer, Entry, Mandate, Message, PendingMatch, Repayment, RiskAlert, Sale, ScoreEvent, Store,
+    StoreCustomer,
 )
 from app.realtime import trace as tr
 
@@ -192,6 +193,11 @@ def _customer(s: Session, stores: dict[str, Store], customer_id: str | None) -> 
         "id": c.id, "name": c.name, "mobile": c.mobile, "vpa": c.vpa, "lang": c.lang,
         "score": c.score, "score_band": sc.band(c.score), "score_delta_7d": delta_7d,
         "dues": dues,
+        "credit_balance": [
+            {"store": stores[sc_.store_id].name, "store_id": sc_.store_id, "amount": sc_.credit_balance}
+            for sc_ in s.exec(select(StoreCustomer).where(StoreCustomer.customer_id == c.id,
+                                                          StoreCustomer.credit_balance > 0)).all()
+        ],
         "pending_confirms": [
             {"token": e.confirm_token, "entry_id": e.id, "store": stores[e.store_id].name, "store_id": e.store_id,
              "amount": e.amount, "date": clock.iso(e.created_at), "expires_at": clock.iso(e.token_expires_at)}

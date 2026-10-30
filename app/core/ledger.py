@@ -17,8 +17,9 @@ from datetime import date, timedelta
 from sqlmodel import Session, select
 
 from app import clock
+from app.core import score
 from app.errors import EventError
-from app.models import Entry, Store
+from app.models import Allocation, Entry, Repayment, Store, StoreCustomer
 from app.realtime.trace import trace
 
 OPEN_STATES = ("verified", "partly_paid", "unverified", "defaulted")
@@ -182,3 +183,62 @@ def expire_stale(s: Session) -> list[Entry]:
         s.add(e)
         trace("ledger", f"Entry #{e.id} not confirmed in 10 min → unverified", {"entry_id": e.id})
     return list(stale)
+
+
+# ---------------------------------------------------------------- repayments
+
+def fifo_order(entries: list[Entry]) -> list[Entry]:
+    """Verified receivables (incl. partly paid / defaulted) oldest first, then unverified oldest first."""
+    return sorted(entries, key=lambda e: (e.verified_at is None, e.created_at, e.id))
+
+
+def settlement_delta(e: Entry, settled_on: date, source: str) -> int:
+    """Score change when a verified entry is fully settled (spec 7.4)."""
+    late = (settled_on - e.due_date).days
+    delta = 8 if late <= 0 else 2 if late <= 15 else -4
+    return delta // 2 if source == "cash" else delta  # merchant-attested cash counts half, rounded down
+
+
+def apply_repayment(s: Session, store_id: str, customer_id: str, amount: int, source: str, *,
+                    matched_by: str, confidence: float | None = None, payer_vpa: str | None = None,
+                    payer_name: str | None = None, remark: str | None = None, ref: str | None = None) -> Repayment:
+    """Record a repayment, allocate it FIFO, put any excess on the customer's credit balance,
+    and apply settlement score changes. Returns the Repayment row."""
+    now = clock.now()
+    rep = Repayment(store_id=store_id, customer_id=customer_id, amount=amount, source=source,
+                    payer_vpa=payer_vpa, payer_name=payer_name, remark=remark, ref=ref, matched_by=matched_by,
+                    match_confidence=confidence, merchant_share=amount, created_at=now)
+    s.add(rep)
+    s.flush()
+
+    left = amount
+    settled: list[Entry] = []
+    for e in fifo_order(open_entries(s, store_id, customer_id)):
+        if left == 0:
+            break
+        take = min(left, remaining(e))
+        s.add(Allocation(repayment_id=rep.id, entry_id=e.id, amount=take))
+        e.paid_amount += take
+        left -= take
+        if remaining(e) == 0:
+            e.state, e.settled_at = "settled", now
+            settled.append(e)
+        elif e.state != "defaulted":  # a defaulted entry stays defaulted until fully paid
+            e.state = "partly_paid"
+        s.add(e)
+    rep.allocated = amount - left
+    s.add(rep)
+
+    if left:
+        link = s.get(StoreCustomer, (store_id, customer_id))
+        link.credit_balance += left
+        s.add(link)
+    trace("ledger", f"₹{amount} {source} → {rep.allocated} allocated FIFO" + (f", ₹{left} to credit balance" if left else ""),
+          {"repayment_id": rep.id, "settled": [e.id for e in settled], "excess": left})
+
+    for e in settled:
+        if e.verified_at is not None:  # unconfirmed entries never build a score
+            reason = "settled on time" if (now.date() - e.due_date).days <= 0 else "settled late"
+            score.apply_delta(s, customer_id, settlement_delta(e, now.date(), source), f"{reason} ({source})",
+                              ref=f"settle:{e.id}", store_id=store_id)
+    return rep

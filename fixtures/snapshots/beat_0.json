@@ -185,6 +185,7 @@
         "oldest_overdue_days": 19
       }
     ],
+    "credit_balance": [],
     "pending_confirms": [],
     "mandates": [],
     "messages": [],

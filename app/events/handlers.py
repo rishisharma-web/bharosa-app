@@ -7,12 +7,12 @@ from sqlmodel import Session, select
 
 from app import clock, state
 from app.adapters import soundbox, upi
-from app.core import ledger, messages, risk, score
+from app.core import ledger, messages, reconcile, risk, score
 from app.core.money import inr
 from app.events import schemas as sc
 from app.events.effects import notify
 from app.events.router import EventError, UnitOfWork, before_each, handles
-from app.models import Consent, Customer, Entry, Sale, Store, StoreCustomer
+from app.models import Consent, Customer, Entry, PendingMatch, Sale, Store, StoreCustomer
 from app.realtime.trace import trace
 
 
@@ -223,3 +223,116 @@ async def on_new_customer(uow: UnitOfWork, p: sc.NewCustomer):
         s.flush()
     if p.amount:
         await uow.emit("udhaar_spoken", sc.UdhaarSpoken(store_id=store.id, customer_id=c.id, amount=p.amount))
+
+
+# ---------------------------------------------------------------- repayments (flow B)
+
+# The Reconciliation Agent replaces this with an LLM call (which keeps this as its fallback).
+match_payer = reconcile.fallback_match
+
+
+def _payment_received(s: Session, store: Store, amount: int, customer: Customer | None, *,
+                      cash: bool = False, sale_ref: str | None = None) -> list:
+    """Soundbox alert + front-screen flash + customer notification for money that arrived."""
+    lang = _lang(s)
+    msg = messages.received(amount, customer.name if customer else None, lang, cash=cash)
+    front = soundbox.current(s).get("front") or {}
+    if sale_ref and front.get("sale_ref") == sale_ref and front.get("mode") == "confirm_qr":
+        # Split sale: the ₹140 is paid, the ₹200 confirm QR is still waiting for a scan.
+        new_front = {**front, "pay_qr": None, "pay_paid": True}
+    elif front.get("mode") == "confirm_qr":
+        new_front = None  # don't hide a pending confirmation behind a payment flash
+    else:
+        new_front = {"mode": "amount", "amount": amount, "text": f"{inr(amount)} received ✓"}
+    soundbox.display(s, store.id, front=new_front, last_alert=msg["display"])
+    effects = [soundbox.play(store.id, msg["spoken"], lang)]
+    if customer is not None and not cash:
+        effects.append(notify(f"customer:{customer.id}", "Payment successful", f"{inr(amount)} paid to {store.name}"))
+    return effects
+
+
+def _record_sale(s: Session, store: Store, amount: int, customer_id: str | None, payer_vpa: str | None,
+                 ref: str | None, note: str) -> Sale:
+    sale = Sale(store_id=store.id, customer_id=customer_id, amount=amount, payer_vpa=payer_vpa, ref=ref,
+                note=note, created_at=clock.now())
+    s.add(sale)
+    trace("ledger", f"₹{amount} recorded as a sale (not udhaar)", {"ref": ref, "customer_id": customer_id})
+    return sale
+
+
+@handles("upi_payment")
+def on_upi_payment(uow: UnitOfWork, p: sc.UpiPayment):
+    s = uow.s
+    store = _store(s, p.store_id)
+    trace("upi", f"{inr(p.amount)} from {p.payer_vpa}", {"payer_name": p.payer_name, "remark": p.remark, "ref": p.ref})
+    d = reconcile.decide(s, store.id, p.payer_vpa, p.amount, p.payer_name, p.remark, p.ref)
+    trace("reconcile", f"{d.rule}: {d.reason}", {"customer_id": d.customer_id, "kind": d.kind})
+
+    if d.kind == "pending":
+        payment = p.model_dump(mode="json")
+        m = match_payer(payment, d.candidates)
+        trace("recon_agent", f"Best guess {m['customer_id']} ({m['confidence']:.2f})", m, source=m.get("source"))
+        ids = {c["id"] for c in d.candidates}
+        if m["customer_id"] in ids and m["confidence"] >= reconcile.AUTO_APPLY_CONFIDENCE:
+            d = reconcile.Decision("repayment", "rule3", customer_id=m["customer_id"], matched_by="agent",
+                                   confidence=m["confidence"], reason=m.get("reason", ""))
+        else:
+            pm = PendingMatch(store_id=store.id, payment=payment, candidates=d.candidates, agent_output=m,
+                              created_at=clock.now())
+            s.add(pm)
+            s.flush()
+            trace("validator", f"Confidence {m['confidence']:.2f} < {reconcile.AUTO_APPLY_CONFIDENCE}: ask merchant",
+                  {"pending_id": pm.id})
+            return _payment_received(s, store, p.amount, None) + [
+                notify(f"merchant:{store.id}", f"Who paid {inr(p.amount)}?", p.payer_name or p.payer_vpa,
+                       {"label": "Choose", "pending_id": pm.id})]
+
+    customer = s.get(Customer, d.customer_id) if d.customer_id else None
+    if d.kind == "sale":
+        _record_sale(s, store, p.amount, d.customer_id, p.payer_vpa, p.ref, d.reason)
+        return _payment_received(s, store, p.amount, customer, sale_ref=p.ref if d.rule == "rule0" else None)
+
+    if d.link_vpa:
+        customer.vpa = p.payer_vpa
+        s.add(customer)
+        trace("reconcile", f"Linked {p.payer_vpa} to {customer.name}", {"customer_id": customer.id})
+    ledger.apply_repayment(s, store.id, customer.id, p.amount, "upi", matched_by=d.matched_by,
+                           confidence=d.confidence, payer_vpa=p.payer_vpa, payer_name=p.payer_name,
+                           remark=p.remark, ref=p.ref)
+    return _payment_received(s, store, p.amount, customer)
+
+
+@handles("cash_reported")
+def on_cash_reported(uow: UnitOfWork, p: sc.CashReported):
+    s = uow.s
+    store = _store(s, p.store_id)
+    if p.customer_id is None or p.amount is None:
+        raise EventError("free-text sentences need the Counter Agent (not built yet); "
+                         "send customer_id and amount", 501)
+    c = _store_customer(s, store.id, p.customer_id)
+    trace("soundbox", f"Heard: {messages.first_name(c.name)} {p.amount} cash diye", {"text": p.text})
+    ledger.apply_repayment(s, store.id, c.id, p.amount, "cash", matched_by="merchant", remark=p.text)
+    return _payment_received(s, store, p.amount, c, cash=True)
+
+
+@handles("match_resolved")
+def on_match_resolved(uow: UnitOfWork, p: sc.MatchResolved):
+    s = uow.s
+    pm = s.get(PendingMatch, p.pending_id)
+    if pm is None:
+        raise EventError(f"unknown pending match {p.pending_id}", 404)
+    if pm.resolved:
+        raise EventError("this payment was already matched", 409)
+    store = s.get(Store, pm.store_id)
+    pay = pm.payment
+    if p.customer_id is None:
+        _record_sale(s, store, pay["amount"], None, pay["payer_vpa"], pay.get("ref"), "merchant: not a repayment")
+    else:
+        c = _store_customer(s, store.id, p.customer_id)
+        # The payer's VPA is not linked: it may be a relative's account (spec 4.2).
+        ledger.apply_repayment(s, store.id, c.id, pay["amount"], "upi", matched_by="human",
+                               payer_vpa=pay["payer_vpa"], payer_name=pay.get("payer_name"),
+                               remark=pay.get("remark"), ref=pay.get("ref"))
+        trace("merchant_app", f"Merchant matched {inr(pay['amount'])} to {c.name}", {"pending_id": pm.id})
+    pm.resolved, pm.resolved_customer_id = True, p.customer_id
+    s.add(pm)
