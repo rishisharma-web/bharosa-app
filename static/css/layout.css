@@ -124,3 +124,24 @@
   .phone { transform: scale(.94); transform-origin: top center; margin-bottom: -46px; }
   .demobar, .controls { margin-left: 12px; margin-right: 12px; }
 }
+
+/* ---------- single-device views: one centred device, demo bar below ---------- */
+.stage.view-soundbox { grid-template-columns: minmax(460px, 560px); }
+.stage.view-merchant, .stage.view-customer { grid-template-columns: 430px; }
+
+/* ---------- step controls + Explain panel ---------- */
+.demobar { grid-template-columns: minmax(420px, .9fr) 1.6fr; }
+.step-dots { display: flex; align-items: center; gap: 5px; margin-top: 8px; }
+.step-dots span { width: 22px; height: 6px; border-radius: 6px; background: var(--line); }
+.step-dots span.done { background: var(--navy); } .step-dots span.cur { background: var(--cyan); }
+.step-dots small { margin-left: 6px; }
+.next-step { margin-top: 10px; padding: 8px 12px; border-radius: 12px; background: var(--bg); font-size: 14px; display: flex; gap: 6px; align-items: baseline; }
+.next-step b { color: var(--ink); }
+.next-step.yours { background: var(--amber-bg); color: #8A5300; }
+.eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.explain .ex-label { font-size: 17px; font-weight: 800; color: var(--ink); margin: 4px 0 10px; }
+.explain .ex-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.explain .ex-grid > div { background: var(--bg); border-radius: 14px; padding: 10px 12px; }
+.explain h5 { margin: 0 0 4px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; display: flex; gap: 6px; align-items: center; }
+.explain p { margin: 0; font-size: 14px; color: var(--ink); line-height: 1.45; }
+.explain .ex-intro p.ex-caption { font-size: 18px; font-weight: 700; margin: 6px 0; }

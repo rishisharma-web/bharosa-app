@@ -51,21 +51,21 @@ def fake_llm(monkeypatch):
 # ---------------------------------------------------------------- Counter Agent
 
 def test_counter_fallback_udhaar_text(fresh):
-    ev(fresh, "udhaar_spoken", store_id="S1", text="Ramesh 340 udhaar")
+    ev(fresh, "udhaar_spoken", store_id="S1", text="Ramesh 500 udhaar")
     top = snap(fresh)["soundbox"]["top"]
-    assert (top["customer_id"], top["credit_now"], top["collect_now"]) == ("C_RAMESH", 200, 140)
+    assert (top["customer_id"], top["credit_now"], top["collect_now"]) == ("C_RAMESH", 400, 100)
 
 
 def test_counter_fallback_cash_and_two_clauses(fresh):
-    ev(fresh, "cash_reported", store_id="S1", text="Suresh ne 300 cash diye")
+    ev(fresh, "cash_reported", store_id="S1", text="Ramesh ne 300 cash diye")
     with db.session() as s:
-        r = s.exec(select(Repayment).where(Repayment.customer_id == "C_SURESH").order_by(Repayment.id.desc())).first()
+        r = s.exec(select(Repayment).where(Repayment.customer_id == "C_RAMESH").order_by(Repayment.id.desc())).first()
         assert (r.amount, r.source) == (300, "cash")
-    out = ev(fresh, "udhaar_spoken", store_id="S1", text="Priya 200 aur Anita 150 udhaar")
+    out = ev(fresh, "udhaar_spoken", store_id="S1", text="Priya 200 aur Meena 150 udhaar")
     assert len(out["child_event_ids"]) == 2
     with db.session() as s:
         assert {(e.customer_id, e.amount) for e in s.exec(select(Entry).where(Entry.state == "proposed")).all()} == {
-            ("C_PRIYA", 200), ("C_ANITA", 150)}
+            ("C_PRIYA", 200), ("C_MEENA", 150)}
 
 
 def test_counter_ambiguous_name_asks(fresh):
@@ -102,7 +102,7 @@ def test_counter_llm_output_is_used_when_valid(fresh, fake_llm):
 # ---------------------------------------------------------------- Recovery Agent
 
 def beat_2(client):
-    ev(client, "udhaar_spoken", store_id="S1", customer_id="C_RAMESH", amount=340)
+    ev(client, "udhaar_spoken", store_id="S1", customer_id="C_RAMESH", amount=500)
     ev(client, "customer_confirm", token=snap(client)["soundbox"]["front"]["token"], device_id="dev-ramesh")
 
 
@@ -110,7 +110,7 @@ def test_recovery_beat_3(fresh):
     beat_2(fresh)
     ev(fresh, "nudges_requested", store_id="S1", customer_ids=["C_RAMESH"])
     [d] = snap(fresh)["merchant"]["drafts"]
-    assert rupee_figures(d["text"]) == {2_000}
+    assert rupee_figures(d["text"]) == {1_900}
     assert snap(fresh)["customer"]["messages"] == []  # the customer sees nothing until the merchant approves
     ev(fresh, "nudges_approved", message_ids=[d["message_id"]])
     assert snap(fresh)["customer"]["messages"][0]["text"] == d["text"]
@@ -119,18 +119,18 @@ def test_recovery_beat_3(fresh):
        text="Salary 1 tareekh ko aati hai, tab pura de dunga")
     with db.session() as s:
         p = s.exec(select(Promise).where(Promise.customer_id == "C_RAMESH")).one()
-        assert (p.amount, p.date, p.status) == (2_000, date(2026, 11, 1), "open")
+        assert (p.amount, p.date, p.status) == (1_900, date(2026, 11, 1), "open")
         reply = s.exec(select(Message).where(Message.customer_id == "C_RAMESH").order_by(Message.id.desc())).first()
         ag = reply.agent_output
         assert (ag["intent"], ag["suggest_mandate"], ag["escalate"]) == ("promise", True, False)
     msgs = snap(fresh)["customer"]["messages"]
     assert [a["type"] for a in msgs[-1]["actions"]] == ["setup_autopay", "pay"]
     [t] = snap(fresh)["merchant"]["threads"]
-    assert t["promise"]["label"] == "Promised ₹2,000 on 1 Nov" and t["intent"] == "promise"
+    assert t["promise"]["label"] == "Promised ₹1,900 on 1 Nov" and t["intent"] == "promise"
 
     # Ramesh taps "Set up auto-pay"
     ev(fresh, "mandate_created", customer_id="C_RAMESH", store_id="S1", cap=3_000, window_start_day=1, window_end_day=5)
-    assert snap(fresh)["customer"]["score"] == 685
+    assert snap(fresh)["customer"]["score"] == 665
 
 
 def test_collector_policy_and_cooldown(fresh):
@@ -138,7 +138,7 @@ def test_collector_policy_and_cooldown(fresh):
     assert snap(fresh)["merchant"]["drafts"] == []
     ev(fresh, "nudges_requested", store_id="S1")  # policy: overdue ≥ 7 days
     drafts = snap(fresh)["merchant"]["drafts"]
-    assert 1 <= len(drafts) <= 10 and "C_SURESH" not in {d["customer_id"] for d in drafts}
+    assert {d["customer_id"] for d in drafts} == {"C_DEEPAK", "C_VIKRAM", "C_RAMESH"}
     ev(fresh, "nudges_approved", message_ids=[d["message_id"] for d in drafts])
     ev(fresh, "nudges_requested", store_id="S1", customer_ids=[drafts[0]["customer_id"]])  # 3-day cooldown
     assert snap(fresh)["merchant"]["drafts"] == []
@@ -158,11 +158,11 @@ def test_draft_validator():
 
 
 def test_draft_llm_invention_falls_back(fresh, fake_llm):
-    fake_llm["recovery_draft"] = [json.dumps({"message": "Ramesh ji, ₹2,000 + ₹100 penalty bhejiye", "lang": "hi-IN"})]
+    fake_llm["recovery_draft"] = [json.dumps({"message": "Ramesh ji, ₹1,900 + ₹100 penalty bhejiye", "lang": "hi-IN"})]
     beat_2(fresh)
     ev(fresh, "nudges_requested", store_id="S1", customer_ids=["C_RAMESH"])
     [d] = snap(fresh)["merchant"]["drafts"]
-    assert "penalty" not in d["text"] and rupee_figures(d["text"]) == {2_000}
+    assert "penalty" not in d["text"] and rupee_figures(d["text"]) == {1_900}
 
 
 def test_reply_validator_policy():
@@ -211,15 +211,15 @@ def test_recon_agent_cannot_pick_outside_candidates(fresh, fake_llm):
 
 # ---------------------------------------------------------------- Munim Agent
 
-QUESTION = "Friday ko Sharma ko 18,000 kaise dunga?"
+QUESTION = "Friday ko Sharma ko 15,000 kaise dunga?"
 
 
 def test_munim_template_contract(fresh):
     r = fresh.post("/api/agents/munim/ask", json={"store_id": "S1", "question": QUESTION, "lang": "hi-IN"}).json()
     assert [st["tool"] for st in r["steps"]][:3] == ["get_forecast", "list_collectable_dues", "check_advance_eligibility"]
     figs = rupee_figures(r["answer"])
-    assert {9_200, 800, 8_800, 138} <= figs
-    assert "Suresh" in r["answer"]
+    assert {15_000, 10_000, 5_000, 75} <= figs
+    assert "koi udhaar wapas aane ki ummeed nahi" in r["answer"]
     types = {a["type"]: a["params"] for a in r["actions"]}
     assert types["offer_advance"] == {"bill_id": "B1"} and types["send_nudges"]["customer_ids"]
     assert r["source"] == "template"
@@ -229,24 +229,24 @@ def test_munim_template_contract(fresh):
 def test_munim_llm_tool_loop_accepted(fresh, fake_llm):
     fake_llm["munim"] = [
         json.dumps({"tool": "check_advance_eligibility", "args": {"bill_id": "B1"}}),
-        json.dumps({"final": {"answer": "₹9,200 kam hai; ₹9,200 ka advance mil sakta hai, fee ₹138.",
+        json.dumps({"final": {"answer": "₹5,000 kam hai; ₹5,000 ka advance mil sakta hai, fee ₹75.",
                               "actions": [{"type": "offer_advance", "params": {"bill_id": "B1"}}]}}),
     ]
     r = fresh.post("/api/agents/munim/ask", json={"question": QUESTION, "lang": "hi-IN"}).json()
-    assert r["source"] == "live" and r["answer"].startswith("₹9,200 kam hai")
+    assert r["source"] == "live" and r["answer"].startswith("₹5,000 kam hai")
 
 
 def test_munim_invented_number_rejected(fresh, fake_llm):
-    fake_llm["munim"] = [json.dumps({"final": {"answer": "Aapko ₹5,000 ka loan milega.",
+    fake_llm["munim"] = [json.dumps({"final": {"answer": "Aapko ₹7,777 ka loan milega.",
                                                "actions": [{"type": "transfer_money", "params": {}}]}})]
     r = fresh.post("/api/agents/munim/ask", json={"question": QUESTION, "lang": "hi-IN"}).json()
-    assert r["source"] == "template" and 5_000 not in rupee_figures(r["answer"])
+    assert r["source"] == "template" and 7_777 not in rupee_figures(r["answer"])
     assert {a["type"] for a in r["actions"]} <= {"send_nudges", "offer_advance", "open_customer"}
 
 
 def test_munim_other_intents(fresh):
     r = fresh.post("/api/agents/munim/ask", json={"question": "Vikram ka kitna baaki hai?", "lang": "hi-IN"}).json()
-    assert "₹2,600" in r["answer"] and r["actions"][0]["type"] == "open_customer"
+    assert "₹2,500" in r["answer"] and r["actions"][0]["type"] == "open_customer"
     r = fresh.post("/api/agents/munim/ask", json={"question": "Kaun kaun overdue hai?", "lang": "en-IN"}).json()
     assert r["actions"][0]["type"] == "send_nudges"
 

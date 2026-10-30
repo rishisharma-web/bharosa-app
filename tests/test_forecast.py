@@ -12,21 +12,23 @@ def test_b1_gap_contract(fresh):
     with db.session() as s:
         fc = forecast.forecast(s, "S1")
     [g] = fc["gaps"]
-    assert (g["bill_id"], g["available"], g["gap"], g["flagged_on"]) == ("B1", 8_800, 9_200, "2026-10-29")
-    before_fri = [c for c in fc["collections"] if c["date"] < "2026-10-30"]
-    assert [(c["customer_id"], c["date"], c["amount"]) for c in before_fri] == [("C_SURESH", "2026-10-27", 800)]
-    assert fc["days"][0] == {"date": "2026-10-26", "cash": 4_400, "inflow": 1_200, "outflow": 0, "collections": 0}
+    assert (g["bill_id"], g["available"], g["gap"], g["flagged_on"]) == ("B1", 10_000, 5_000, "2026-10-29")
+    assert [c for c in fc["collections"] if c["date"] < "2026-10-30"] == []  # nobody is expected to pay before Friday
+    assert fc["days"][0] == {"date": "2026-10-26", "cash": 5_500, "inflow": 1_500, "outflow": 0, "collections": 0}
+    salary_day = [c for c in fc["collections"] if c["date"] == "2026-11-01"]
+    assert sum(c["amount"] for c in salary_day) == 8_100 and {c["basis"] for c in salary_day} == {"mandate"}
 
 
 def test_snapshot_due_soon_shows_gap(fresh):
     [d] = fresh.get("/api/snapshot").json()["merchant"]["due_soon"]
-    assert (d["bill_id"], d["amount"], d["gap"], d["due"]) == ("B1", 18_000, 9_200, "2026-10-30")
+    assert (d["bill_id"], d["amount"], d["gap"], d["due"]) == ("B1", 15_000, 5_000, "2026-10-30")
 
 
 def test_briefing_ready_at_reset(fresh):
     b = fresh.get("/api/snapshot").json()["merchant"]["briefing"]
-    assert b["lang"] == "hi-IN" and "₹9,200" in b["text"] and "Sharma Traders" in b["text"]
-    assert b["text_en"].endswith("Sharma Traders ₹18,000 due Fri: ₹9,200 short.")
+    assert b["lang"] == "hi-IN" and "₹5,000" in b["text"] and "Sharma Traders" in b["text"]
+    assert b["text_en"].endswith("Sharma Traders ₹15,000 due Fri: ₹5,000 short.")
+    assert b["source"] == "template"  # composed through Munim at reset; no LLM in tests
     assert b["summary"]["yesterday_sales"] > 0
 
 

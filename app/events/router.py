@@ -67,6 +67,11 @@ class UnitOfWork:
     def event_id(self) -> int | None:
         return self._parents[-1] if self._parents else None
 
+    @property
+    def nested(self) -> bool:
+        """True while handling a child event (e.g. a salary sweep inside advance_day)."""
+        return len(self._parents) > 1
+
     async def emit(self, event_type: str, payload: BaseModel | dict) -> int:
         """Persist and handle one event inside the current transaction. Returns its id."""
         model = validate(event_type, payload) if isinstance(payload, dict) else payload

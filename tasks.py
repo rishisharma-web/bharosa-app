@@ -29,62 +29,33 @@ def test():
 
 
 def snapshot():
-    """Sample snapshots for frontend work, captured after running real events."""
+    """Sample snapshots for frontend work: one per demo beat, produced by the real demo script."""
     import asyncio
+    import shutil
 
-    from app import clock, db
+    from app import db
     from app.events import handlers  # noqa: F401  (registers handlers)
-    from app.agents import munim
-    from app.events.router import fire, unit_of_work
+    from app.events.router import fire
     from app.realtime.snapshot import build_snapshot
-    from app.sim.seed import seed as do_seed
+    from app.sim import demo_script
 
     out_dir = ROOT / "fixtures" / "snapshots"
-    out_dir.mkdir(parents=True, exist_ok=True)
+    shutil.rmtree(out_dir, ignore_errors=True)
+    out_dir.mkdir(parents=True)
 
-    def dump(name: str) -> dict:
+    def dump(name: str) -> None:
         with db.session() as s:
             snap = build_snapshot(s)
         (out_dir / f"{name}.json").write_text(json.dumps(snap, indent=2, ensure_ascii=False), encoding="utf-8")
         print(f"wrote fixtures/snapshots/{name}.json")
-        return snap
 
     async def steps():
-        do_seed()
-        with db.session() as s:
-            clock.load(s)
-        dump("beat_0")
-        await fire("udhaar_spoken", {"store_id": "S1", "customer_id": "C_PRIYA", "amount": 340})
-        await fire("udhaar_spoken", {"store_id": "S1", "customer_id": "C_RAMESH", "amount": 340})
-        snap = dump("beat_1_guardrail_amber")
-        front = snap["soundbox"]["front"]
-        await fire("upi_payment", {"store_id": "S1", "payer_vpa": "ramesh.k@ptyes", "payer_name": "Ramesh Kumar",
-                                   "amount": 140, "ref": front["sale_ref"]})
-        await fire("customer_confirm", {"token": front["token"], "device_id": "dev-ramesh"})
-        dump("beat_2_confirmed")
-        await fire("nudges_requested", {"store_id": "S1", "customer_ids": ["C_RAMESH"]})
-        snap = dump("beat_3a_draft")
-        await fire("nudges_approved", {"message_ids": [snap["merchant"]["drafts"][0]["message_id"]]})
-        await fire("customer_reply", {"customer_id": "C_RAMESH", "store_id": "S1",
-                                      "text": "Salary 1 tareekh ko aati hai, tab pura de dunga"})
-        dump("beat_3b_reply")
-        await fire("mandate_created", {"customer_id": "C_RAMESH", "store_id": "S1", "cap": 3000,
-                                       "window_start_day": 1, "window_end_day": 5})
-        dump("beat_3_mandate")
-        async with unit_of_work() as uow:
-            await munim.ask(uow.s, "S1", "Friday ko Sharma ko 18,000 kaise dunga?", "hi-IN")
-        await fire("offer_advance", {"store_id": "S1", "bill_id": "B1"})
-        snap = dump("beat_4_offer")
-        await fire("advance_accept", {"advance_id": snap["merchant"]["advance"]["id"]})
-        dump("beat_4_advance_repaying")
-        await fire("advance_day", {"days": 6})
-        dump("beat_5_salary_day")
-        await fire("inject_fraud_ring", {"store_id": "S2"})
-        dump("beat_6_fraud_ring")
-
-        do_seed()
-        with db.session() as s:
-            clock.load(s)
+        await demo_script.reset()
+        dump("beat_0_morning")
+        for beat in demo_script.BEATS[1:]:
+            await demo_script.run_beat(fast=True)
+            dump(f"beat_{beat.n}_{beat.title.split()[0].lower()}")
+        await demo_script.reset()
         await fire("upi_payment", {"store_id": "S1", "payer_vpa": "9876500000@ptyes", "payer_name": "Kamala Kumar",
                                    "amount": 500, "remark": "Ramesh ka udhaar"})
         dump("sample_pending_match")

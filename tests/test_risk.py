@@ -15,27 +15,28 @@ def feats(score=680, owed=0, d=0, new=False, starter=500, overdue=None):
 
 
 @pytest.mark.parametrize("cid,limit,band,credit,collect", [
-    ("C_RAMESH", 200, "amber", 200, 140),
-    ("C_PRIYA", 4_100, "green", 340, 0),
-    ("C_VIKRAM", 0, "red", 0, 340),
-    ("C_ANITA", 500, "green", 340, 0),
+    ("C_RAMESH", 400, "amber", 400, 100),
+    ("C_PRIYA", 4_100, "green", 500, 0),
+    ("C_VIKRAM", 0, "red", 0, 500),
 ])
 def test_contract_values(fresh, cid, limit, band, credit, collect):
     with db.session() as s:
-        r = risk.evaluate(s, "S1", cid, 340)
+        r = risk.evaluate(s, "S1", cid, 500)
     assert (r.safe_limit, r.band, r.credit_now, r.collect_now) == (limit, band, credit, collect)
 
 
 def test_ramesh_reasons(fresh):
     with db.session() as s:
-        r = risk.evaluate(s, "S1", "C_RAMESH", 340)
-    assert r.reasons == ["₹1,800 overdue for 19 days → limit ×0.6", "Score 680 → base ₹3,350", "Already owes ₹1,800"]
+        r = risk.evaluate(s, "S1", "C_RAMESH", 500)
+    assert r.reasons == ["₹1,500 overdue for 20 days → limit ×0.6", "Score 660 → base ₹3,200", "Already owes ₹1,500"]
     assert r.features["is_new"] is False
 
 
-def test_anita_is_new(fresh):
+def test_new_customer_gets_the_starter_limit(fresh):
+    fresh.post("/api/events", json={"type": "new_customer", "payload": {"store_id": "S1", "name": "Meera Joshi",
+                                                                        "mobile": "9000011111"}})
     with db.session() as s:
-        r = risk.evaluate(s, "S1", "C_ANITA", 300)
+        r = risk.evaluate(s, "S1", "C_N001", 300)
     assert r.features["is_new"] and r.safe_limit == 500 and r.band == "green"
 
 
@@ -67,20 +68,20 @@ def test_new_customer_pending_reduces_starter():
 
 
 def test_pending_entries_count_as_owed(fresh):
-    """A second sale while the first ₹200 waits for a scan must not get a fresh ₹200."""
+    """A second sale while the first ₹400 waits for a scan must not get a fresh ₹400."""
     fresh.post("/api/events", json={"type": "udhaar_spoken",
-                                    "payload": {"store_id": "S1", "customer_id": "C_RAMESH", "amount": 340}})
+                                    "payload": {"store_id": "S1", "customer_id": "C_RAMESH", "amount": 500}})
     with db.session() as s:
-        r = risk.evaluate(s, "S1", "C_RAMESH", 340)
-    assert r.safe_limit == 0 and r.band == "red"
+        r = risk.evaluate(s, "S1", "C_RAMESH", 500)
+    assert r.safe_limit == 0 and r.band == "red"  # 3,200 × 0.6 − 1,900 = ₹20 → floor50 → ₹0
 
 
 def test_latency_p95_under_50ms(fresh):
     samples = []
     with db.session() as s:
-        for cid in ["C_RAMESH", "C_PRIYA", "C_VIKRAM", "C_ANITA"] * 25:
+        for cid in ["C_RAMESH", "C_PRIYA", "C_VIKRAM", "C_MEENA"] * 25:
             t0 = time.perf_counter()
-            risk.evaluate(s, "S1", cid, 340)
+            risk.evaluate(s, "S1", cid, 500)
             samples.append((time.perf_counter() - t0) * 1000)
     assert statistics.quantiles(samples, n=20)[-1] < 50
 

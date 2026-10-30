@@ -4,8 +4,22 @@
   "demo": {
     "beat": 0,
     "total": 7,
-    "caption": "Morning: Bharosa briefs Lakshmi Stores in Hindi.",
-    "awaiting": null
+    "title": "Morning",
+    "caption": "Morning: Munim briefs Lakshmi Stores in Hindi.",
+    "step": 0,
+    "steps": 1,
+    "next": {
+      "beat": 0,
+      "title": "Morning",
+      "label": "Play Munim's morning briefing",
+      "presenter": false,
+      "ui": {
+        "merchant": "home",
+        "customer": "home"
+      }
+    },
+    "last": null,
+    "done": false
   },
   "soundbox": {
     "store_id": "S1",
@@ -25,63 +39,63 @@
       "vpa": "lakshmistores@ptyes",
       "advance_blocked": false
     },
-    "today_collection": 980,
+    "today_collection": 1000,
     "collection_7d": [
       {
         "date": "2026-10-20",
-        "amount": 11160
+        "amount": 10400
       },
       {
         "date": "2026-10-21",
-        "amount": 12050
+        "amount": 9600
       },
       {
         "date": "2026-10-22",
-        "amount": 12240
+        "amount": 10200
       },
       {
         "date": "2026-10-23",
-        "amount": 11210
+        "amount": 11000
       },
       {
         "date": "2026-10-24",
-        "amount": 12290
+        "amount": 12400
       },
       {
         "date": "2026-10-25",
-        "amount": 10350
+        "amount": 8600
       },
       {
         "date": "2026-10-26",
-        "amount": 980
+        "amount": 1000
       }
     ],
     "udhaar": {
-      "outstanding": 45000,
-      "verified": 38000,
-      "unverified": 7000,
-      "overdue": 24360,
+      "outstanding": 18000,
+      "verified": 17000,
+      "unverified": 1000,
+      "overdue": 7000,
       "pending_confirm": 0,
-      "customers_owing": 33
+      "customers_owing": 8
     },
     "briefing": {
       "date": "2026-10-26",
       "lang": "hi-IN",
-      "text": "सुप्रभात, Lakshmi Stores। कल की UPI बिक्री ₹9,290। इस हफ्ते ₹9,950 उधार वापस आने की उम्मीद। 15 ग्राहकों का ₹24,360 बकाया। शुक्रवार को Sharma Traders को ₹18,000 देने हैं, ₹9,200 कम पड़ेंगे।",
-      "text_en": "Good morning, Lakshmi Stores. Yesterday's UPI sales ₹9,290. Udhaar collectable this week ₹9,950. 15 customers overdue (₹24,360). Sharma Traders ₹18,000 due Fri: ₹9,200 short.",
+      "text": "सुप्रभात, Lakshmi Stores। कल की UPI बिक्री ₹8,600। इस हफ्ते ₹8,100 उधार वापस आने की उम्मीद। 3 ग्राहकों का ₹7,000 बकाया। शुक्रवार को Sharma Traders को ₹15,000 देने हैं, ₹5,000 कम पड़ेंगे।",
+      "text_en": "Good morning, Lakshmi Stores. Yesterday's UPI sales ₹8,600. Udhaar collectable this week ₹8,100. 3 customers overdue (₹7,000). Sharma Traders ₹15,000 due Fri: ₹5,000 short.",
       "summary": {
         "date": "2026-10-26",
-        "yesterday_sales": 9290,
-        "collectable_this_week": 9950,
-        "overdue_customers": 15,
-        "overdue_amount": 24360,
+        "yesterday_sales": 8600,
+        "collectable_this_week": 8100,
+        "overdue_customers": 3,
+        "overdue_amount": 7000,
         "bills_due": [
           {
             "bill_id": "B1",
             "distributor": "Sharma Traders",
-            "amount": 18000,
+            "amount": 15000,
             "due": "2026-10-30",
-            "gap": 9200
+            "gap": 5000
           }
         ]
       },
@@ -92,15 +106,15 @@
       {
         "bill_id": "B1",
         "distributor": "Sharma Traders",
-        "amount": 18000,
+        "amount": 15000,
         "due": "2026-10-30",
-        "remaining": 18000,
+        "remaining": 15000,
         "paid_by_lender": 0,
         "status": "due",
-        "gap": 9200
+        "gap": 5000
       }
     ],
-    "cash_on_hand": 3200,
+    "cash_on_hand": 4000,
     "advance": null,
     "pending_entries": [],
     "pending_matches": [
@@ -114,54 +128,54 @@
           {
             "id": "C_RAMESH",
             "name": "Ramesh Kumar",
-            "outstanding": 1800,
+            "outstanding": 1500,
             "open_entries": [
-              1800
+              1500
             ],
             "similarity": 1.0,
-            "amount_gap": 1300
+            "amount_gap": 1000
           },
           {
-            "id": "C_1035",
-            "name": "Rashmi Bhandari",
-            "outstanding": 850,
+            "id": "C_KAVYA",
+            "name": "Kavya Menon",
+            "outstanding": 2600,
             "open_entries": [
-              600,
-              250
-            ],
-            "similarity": 0.667,
-            "amount_gap": 100
-          },
-          {
-            "id": "C_SURESH",
-            "name": "Suresh Gowda",
-            "outstanding": 900,
-            "open_entries": [
-              900
-            ],
-            "similarity": 0.667,
-            "amount_gap": 400
-          },
-          {
-            "id": "C_1042",
-            "name": "Asha Kini",
-            "outstanding": 880,
-            "open_entries": [
-              310,
-              570
-            ],
-            "similarity": 0.6,
-            "amount_gap": 70
-          },
-          {
-            "id": "C_1025",
-            "name": "Ashok Yadav",
-            "outstanding": 460,
-            "open_entries": [
-              460
+              1600,
+              1000
             ],
             "similarity": 0.545,
-            "amount_gap": 40
+            "amount_gap": 500
+          },
+          {
+            "id": "C_VIKRAM",
+            "name": "Vikram Rao",
+            "outstanding": 2500,
+            "open_entries": [
+              2500
+            ],
+            "similarity": 0.5,
+            "amount_gap": 2000
+          },
+          {
+            "id": "C_IMRAN",
+            "name": "Imran Khan",
+            "outstanding": 1000,
+            "open_entries": [
+              1000
+            ],
+            "similarity": 0.444,
+            "amount_gap": 500
+          },
+          {
+            "id": "C_MEENA",
+            "name": "Meena Iyer",
+            "outstanding": 3000,
+            "open_entries": [
+              1500,
+              1500
+            ],
+            "similarity": 0.4,
+            "amount_gap": 1000
           }
         ],
         "agent": {
@@ -177,95 +191,125 @@
     "drafts": [],
     "customers_top": [
       {
-        "id": "C_1055",
-        "name": "Pradeep Saxena",
-        "outstanding": 3760,
-        "verified": 3020,
+        "id": "C_DEEPAK",
+        "name": "Deepak Joshi",
+        "outstanding": 3000,
+        "verified": 3000,
         "band": "red",
         "safe_limit": 0,
-        "score": 574,
+        "score": 640,
         "score_band": "Good",
-        "overdue_days": 45
+        "overdue_days": 10
       },
       {
-        "id": "C_1032",
-        "name": "Latha Joshi",
-        "outstanding": 3700,
-        "verified": 3330,
-        "band": "red",
-        "safe_limit": 0,
-        "score": 633,
-        "score_band": "Good",
-        "overdue_days": 40
+        "id": "C_MEENA",
+        "name": "Meena Iyer",
+        "outstanding": 3000,
+        "verified": 3000,
+        "band": "green",
+        "safe_limit": 650,
+        "score": 720,
+        "score_band": "Strong",
+        "overdue_days": 0
       },
       {
-        "id": "C_1039",
-        "name": "Lalitha Patil",
-        "outstanding": 3640,
-        "verified": 2430,
-        "band": "red",
-        "safe_limit": 0,
-        "score": 433,
-        "score_band": "Building",
-        "overdue_days": 50
-      },
-      {
-        "id": "C_1052",
-        "name": "Archana Iyer",
-        "outstanding": 3560,
-        "verified": 2700,
-        "band": "red",
-        "safe_limit": 0,
-        "score": 371,
-        "score_band": "Building",
-        "overdue_days": 49
+        "id": "C_KAVYA",
+        "name": "Kavya Menon",
+        "outstanding": 2600,
+        "verified": 2600,
+        "band": "green",
+        "safe_limit": 900,
+        "score": 700,
+        "score_band": "Strong",
+        "overdue_days": 0
       },
       {
         "id": "C_VIKRAM",
         "name": "Vikram Rao",
-        "outstanding": 2600,
-        "verified": 2600,
+        "outstanding": 2500,
+        "verified": 2500,
         "band": "red",
         "safe_limit": 0,
         "score": 420,
         "score_band": "Building",
-        "overdue_days": 41
+        "overdue_days": 45
       },
       {
-        "id": "C_1014",
-        "name": "Jyothi Khan",
-        "outstanding": 2230,
-        "verified": 1280,
-        "band": "red",
-        "safe_limit": 0,
-        "score": 392,
-        "score_band": "Building",
-        "overdue_days": 44
-      },
-      {
-        "id": "C_1037",
-        "name": "Nasreen Bhat",
-        "outstanding": 2200,
-        "verified": 2200,
-        "band": "red",
-        "safe_limit": 0,
-        "score": 489,
-        "score_band": "Building",
-        "overdue_days": 48
-      },
-      {
-        "id": "C_1051",
-        "name": "Sudha Acharya",
-        "outstanding": 2010,
-        "verified": 2010,
+        "id": "C_ARJUN",
+        "name": "Arjun Shetty",
+        "outstanding": 2500,
+        "verified": 2500,
         "band": "green",
         "safe_limit": 900,
-        "score": 623,
+        "score": 690,
+        "score_band": "Good",
+        "overdue_days": 0
+      },
+      {
+        "id": "C_SUNITA",
+        "name": "Sunita Reddy",
+        "outstanding": 1900,
+        "verified": 1900,
+        "band": "green",
+        "safe_limit": 900,
+        "score": 610,
+        "score_band": "Good",
+        "overdue_days": 0
+      },
+      {
+        "id": "C_RAMESH",
+        "name": "Ramesh Kumar",
+        "outstanding": 1500,
+        "verified": 1500,
+        "band": "amber",
+        "safe_limit": 400,
+        "score": 660,
+        "score_band": "Good",
+        "overdue_days": 20
+      },
+      {
+        "id": "C_IMRAN",
+        "name": "Imran Khan",
+        "outstanding": 1000,
+        "verified": 0,
+        "band": "green",
+        "safe_limit": 1750,
+        "score": 600,
         "score_band": "Good",
         "overdue_days": 0
       }
     ],
     "threads": [],
+    "suggestions": [
+      {
+        "id": "reminders",
+        "kind": "reminders",
+        "title": "3 customers overdue more than a week",
+        "body": "Deepak ₹3,000 (10 days), Vikram ₹2,500 (45 days), Ramesh ₹1,500 (20 days)",
+        "action": {
+          "type": "send_nudges",
+          "label": "Send 3 reminders",
+          "customer_ids": [
+            "C_DEEPAK",
+            "C_VIKRAM",
+            "C_RAMESH"
+          ]
+        },
+        "source": "template"
+      },
+      {
+        "id": "bill:B1",
+        "kind": "bill",
+        "title": "Sharma Traders ₹15,000 due Friday",
+        "body": "You will be ₹5,000 short. Want options?",
+        "action": {
+          "type": "ask_munim",
+          "label": "Ask Munim",
+          "question": "Friday ko Sharma ko 15,000 kaise dunga?"
+        },
+        "source": "template"
+      }
+    ],
     "munim_last": null
   },
   "customer": {
@@ -274,16 +318,16 @@
     "mobile": "9845012345",
     "vpa": "ramesh.k@ptyes",
     "lang": "hi-IN",
-    "score": 680,
+    "score": 660,
     "score_band": "Good",
     "score_delta_7d": 0,
     "dues": [
       {
         "store": "Lakshmi Stores",
         "store_id": "S1",
-        "amount": 1800,
-        "verified": 1800,
-        "oldest_overdue_days": 19
+        "amount": 1500,
+        "verified": 1500,
+        "oldest_overdue_days": 20
       }
     ],
     "credit_balance": [],
@@ -293,30 +337,30 @@
     "history": [
       {
         "type": "entry",
-        "id": 378,
+        "id": 7,
         "store": "Lakshmi Stores",
-        "amount": 1800,
+        "amount": 1500,
         "paid": 0,
         "state": "verified",
         "verified": true,
-        "ts": "2026-09-07T10:30:00+05:30",
-        "due": "2026-10-07"
+        "ts": "2026-09-06T10:30:00+05:30",
+        "due": "2026-10-06"
       },
       {
         "type": "repayment",
-        "id": 98,
+        "id": 3,
         "store": "Lakshmi Stores",
-        "amount": 830,
+        "amount": 900,
         "source": "upi",
         "state": "paid",
         "ts": "2026-09-02T19:10:00+05:30"
       },
       {
         "type": "entry",
-        "id": 221,
+        "id": 5,
         "store": "Lakshmi Stores",
-        "amount": 380,
-        "paid": 380,
+        "amount": 400,
+        "paid": 400,
         "state": "settled",
         "verified": true,
         "ts": "2026-08-22T18:05:00+05:30",
@@ -324,16 +368,17 @@
       },
       {
         "type": "entry",
-        "id": 68,
+        "id": 3,
         "store": "Lakshmi Stores",
-        "amount": 450,
-        "paid": 450,
+        "amount": 500,
+        "paid": 500,
         "state": "settled",
         "verified": true,
         "ts": "2026-08-10T11:20:00+05:30",
         "due": "2026-09-09"
       }
     ],
+    "score_history": [],
     "rewards": []
   },
   "risk_console": {
@@ -341,17 +386,29 @@
   },
   "trace_tail": [
     {
-      "ts": "2026-10-26T09:00:30+05:30",
-      "node": "db",
-      "label": "World seeded",
+      "ts": "2026-10-26T09:00:00+05:30",
+      "node": "munim_agent",
+      "label": "Morning briefing composed",
       "detail": {
-        "customers": 110,
-        "entries": 1004,
-        "repayments": 591,
-        "seconds": 0.58
+        "summary": {
+          "date": "2026-10-26",
+          "yesterday_sales": 8600,
+          "collectable_this_week": 8100,
+          "overdue_customers": 3,
+          "overdue_amount": 7000,
+          "bills_due": [
+            {
+              "bill_id": "B1",
+              "distributor": "Sharma Traders",
+              "amount": 15000,
+              "due": "2026-10-30",
+              "gap": 5000
+            }
+          ]
+        }
       },
-      "ms": 580.0,
-      "source": null
+      "ms": null,
+      "source": "template"
     },
     {
       "ts": "2026-10-26T09:00:30+05:30",
@@ -423,7 +480,7 @@
       "detail": {
         "event_id": 1
       },
-      "ms": 19.53,
+      "ms": 7.93,
       "source": null
     }
   ]

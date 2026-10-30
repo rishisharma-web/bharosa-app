@@ -9,7 +9,7 @@ from datetime import date, timedelta
 from sqlmodel import Session, select
 
 from app import clock, state
-from app.core import forecast, integrity, ledger, risk, score as sc
+from app.core import forecast, integrity, ledger, risk, score as sc, suggestions
 from app.models import (
     Advance, Bill, Customer, Entry, Mandate, Message, PendingMatch, Repayment, RiskAlert, Sale, ScoreEvent, Store,
     StoreCustomer, Promise,
@@ -18,8 +18,13 @@ from app.core.money import inr
 from app.realtime import trace as tr
 
 MERCHANT_STORE = "S1"
-DEMO_TOTAL_BEATS = 7
-INDICATOR_AMOUNT = 340  # the Udhaar Book risk dot shows the band for a typical ₹340 sale (spec 11.7)
+INDICATOR_AMOUNT = 500  # the Udhaar Book risk dot shows the band for a typical ₹500 sale (spec 11.7)
+
+
+def _demo(s: Session) -> dict:
+    from app.sim import demo_script  # local: the demo script imports the event router, which imports this module
+
+    return demo_script.status(s)
 
 
 def _ordinal(n: int) -> str:
@@ -38,12 +43,7 @@ def build_snapshot(s: Session) -> dict:
     return {
         "now": clock.iso(clock.now()),
         "lang": state.get(s, "lang"),
-        "demo": {
-            "beat": state.get(s, "demo_beat"),
-            "total": DEMO_TOTAL_BEATS,
-            "caption": state.get(s, "demo_caption"),
-            "awaiting": state.get(s, "demo_awaiting"),  # presenter step the beat is waiting for
-        },
+        "demo": _demo(s),
         "soundbox": state.get(s, "soundbox"),
         "merchant": _merchant(s, stores[MERCHANT_STORE]),
         "customer": _customer(s, stores, state.get(s, "focus_customer")),
@@ -97,7 +97,8 @@ def _merchant(s: Session, store: Store) -> dict:
 
     bills = s.exec(select(Bill).where(Bill.store_id == store.id, Bill.status != "paid",
                                       Bill.due_date <= today + timedelta(days=7)).order_by(Bill.due_date)).all()
-    gaps = {g["bill_id"]: g["gap"] for g in forecast.forecast(s, store.id)["gaps"]} if bills else {}
+    gap_rows = forecast.forecast(s, store.id)["gaps"] if bills else []
+    gaps = {g["bill_id"]: g["gap"] for g in gap_rows}
     advance = s.exec(select(Advance).where(Advance.store_id == store.id, Advance.state != "declined")
                      .order_by(Advance.created_at.desc())).first()
     pms = s.exec(select(PendingMatch).where(PendingMatch.store_id == store.id, PendingMatch.resolved == False)  # noqa: E712
@@ -148,6 +149,7 @@ def _merchant(s: Session, store: Store) -> dict:
         ],
         "customers_top": customers_top,
         "threads": _threads(s, store.id),
+        "suggestions": suggestions.for_store(s, store.id, gap_rows),
         "munim_last": state.get(s, "munim_last"),
     }
 

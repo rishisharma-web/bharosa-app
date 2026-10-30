@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT))
 
 
 def check_beats(get: Callable[[str], dict], post: Callable[[str], dict], say=print) -> None:
+    """Press Next through the whole demo (presenter steps are done by "Do it for me")."""
     def snap():
         return get("/api/snapshot")
 
@@ -31,60 +32,81 @@ def check_beats(get: Callable[[str], dict], post: Callable[[str], dict], say=pri
     say("Beat 0 · Morning")
     post("/api/demo/reset")
     s = snap()
-    ok(s["merchant"]["briefing"] is not None, "briefing ready")
-    ok(s["merchant"]["due_soon"][0]["gap"] == 9_200, "Sharma Traders ₹18,000 · ₹9,200 short")
-    ok(s["merchant"]["udhaar"]["outstanding"] == 45_000, "outstanding ₹45,000")
+    ok(s["merchant"]["briefing"] is not None and s["merchant"]["udhaar"]["outstanding"] == 18_000,
+       "briefing ready; outstanding ₹18,000")
+    ok(s["merchant"]["due_soon"][0]["gap"] == 5_000, "Sharma Traders ₹15,000 · ₹5,000 short")
+    ok(s["demo"]["next"]["label"] == "Play Munim's morning briefing", "first step: Munim's briefing")
+    ok(nxt()["last"]["kind"] == "ai", "briefing played (code numbers, Munim wording)")
 
     say("Beat 1 · Guardrail")
-    r = nxt()
+    ok(nxt()["last"] is None, "enter beat: caption only, nothing runs")
+    nxt()
+    ok(snap()["soundbox"]["top"]["band"] == "green", "Priya ₹500 → green")
+    nxt()
+    ok(snap()["soundbox"]["top"]["band"] == "red", "Vikram ₹500 → red")
+    nxt()
     top = snap()["soundbox"]["top"]
-    ok(r["beat"] == 1 and r["awaiting"] is None, "beat 1 ran")
-    ok((top["customer_id"], top["band"], top["credit_now"], top["collect_now"]) == ("C_RAMESH", "amber", 200, 140),
-       "Ramesh amber: ₹200 credit, ₹140 now")
+    ok((top["customer_id"], top["band"], top["credit_now"], top["collect_now"]) == ("C_RAMESH", "amber", 400, 100),
+       "Ramesh ₹500 → amber: ₹400 credit, ₹100 now")
+    ok(snap()["customer"]["pending_confirms"] and "notify" not in str(snap()["soundbox"]),
+       "nothing pushed to Ramesh before he scans")
 
     say("Beat 2 · Confirm")
+    nxt()
     r = nxt()
-    ok(r["awaiting"] is not None and snap()["demo"]["awaiting"] == r["awaiting"], "waits for the presenter's scan")
+    ok(r["last"]["label"].startswith("Ramesh pays the ₹100"), "₹100 paid by UPI, recorded as a sale")
+    ok(r["next"]["presenter"], "waits for the presenter: scan + Confirm")
     nxt()
     s = snap()
-    ok(s["customer"]["pending_confirms"] == [], "entry confirmed")
-    ok(s["customer"]["dues"][0]["amount"] == 2_000, "Ramesh owes ₹2,000 (the ₹140 was a sale)")
+    ok(s["customer"]["dues"][0]["amount"] == 1_900 and s["customer"]["pending_confirms"] == [],
+       "confirmed: Ramesh owes ₹1,900 (the ₹100 was a sale)")
 
     say("Beat 3 · Recovery")
-    r = nxt()
-    ok(r["awaiting"] is not None, "waits for Ramesh to tap auto-pay")
-    t = snap()["merchant"]["threads"][0]
-    ok(t["promise"] and (t["promise"]["amount"], t["promise"]["date"]) == (2_000, "2026-11-01"),
-       "reply → promise ₹2,000 on 1 Nov")
+    nxt()
+    ok(any(c["kind"] == "reminders" for c in snap()["merchant"]["suggestions"]), "Munim suggests 3 reminders")
+    nxt()
+    ok(len(snap()["merchant"]["drafts"]) == 3, "3 reminders drafted")
+    nxt()
+    ok(snap()["merchant"]["drafts"] == [], "merchant approved them")
+    nxt()
+    t = next(x for x in snap()["merchant"]["threads"] if x["customer_id"] == "C_RAMESH")
+    ok(t["promise"] and (t["promise"]["amount"], t["promise"]["date"]) == (1_900, "2026-11-01"),
+       "Hinglish reply → promise ₹1,900 on 1 Nov")
     nxt()
     s = snap()
-    ok(s["customer"]["mandates"][0]["status"] == "active" and s["customer"]["score"] == 685, "auto-pay active, score 685")
+    ok(s["customer"]["mandates"][0]["status"] == "active" and s["customer"]["score"] == 665, "auto-pay on, score 665")
 
     say("Beat 4 · Supplier Advance")
-    r = nxt()
-    ok("₹9,200" in snap()["merchant"]["munim_last"]["answer"], "Munim: ₹9,200 short, advance offered")
+    nxt()
+    ok(any(c["kind"] == "bill" for c in snap()["merchant"]["suggestions"]), "Munim suggests: Sharma Traders, ₹5,000 short")
+    nxt()
+    ok("₹5,000" in snap()["merchant"]["munim_last"]["answer"], "Munim: ₹5,000 short, advance offered")
     nxt()
     a = snap()["merchant"]["advance"]
-    ok((a["state"], a["amount"], a["fee"], a["total_due"]) == ("repaying", 9_200, 138, 9_338),
-       "Partner NBFC paid ₹9,200 to Sharma Traders; repaying ₹9,338")
+    ok((a["state"], a["amount"], a["fee"], a["total_due"]) == ("offered", 5_000, 75, 5_075), "offer ₹5,000 + ₹75 fee")
+    nxt()
+    ok(snap()["merchant"]["advance"]["state"] == "repaying", "accepted: Partner NBFC paid Sharma Traders ₹5,000")
 
     say("Beat 5 · Salary day")
     nxt()
+    nxt()
     s = snap()
     ok(s["now"].startswith("2026-11-01"), "Sun 1 Nov")
-    ok(s["customer"]["dues"] == [] and s["customer"]["score"] == 692, "Ramesh auto-paid, score 680 → 692")
-    ok(s["merchant"]["advance"]["repaid"] == 2_200, "₹2,200 repaid to the lender via 20% splits")
+    ok(s["customer"]["dues"] == [] and s["customer"]["score"] == 672, "Ramesh auto-paid, score 660 → 672")
+    ok(s["merchant"]["advance"]["repaid"] == 2_000, "₹2,000 (20% of ₹10,000) repaid to the lender")
 
     say("Beat 6 · Fraud ring")
     nxt()
+    r = nxt()
     [al] = snap()["risk_console"]["alerts"]
     ok((al["store"], al["rules"], al["risk"], al["advance_blocked"]) == ("Sai Kirana", ["R1", "R3", "R4", "R5"], 1.0, True),
        "Sai Kirana flagged R1 R3 R4 R5, advance blocked")
-    ok(nxt().get("done") is True, "script complete")
+    ok(r["done"] is True, "script complete")
 
     say("Rehearsal · goto 4")
     r = post("/api/demo/goto/4")
-    ok(r["beat"] == 4 and snap()["merchant"]["advance"]["state"] == "repaying", "goto(4) lands after the advance")
+    ok(r["beat"] == 3 and r["step"] == r["steps"] and r["next"]["beat"] == 4, "goto(4): the next press enters beat 4")
+    ok(snap()["customer"]["score"] == 665, "beats 0–3 replayed")
     post("/api/demo/reset")
 
 

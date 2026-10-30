@@ -39,7 +39,8 @@ def clear_front_if_showing(s: Session, entry_id: int, replacement: dict | None =
         display(s, sb.get("store_id", "S1"), front=replacement or IDLE_FRONT)
 
 
-def play(store_id: str, text: str, lang: str) -> Effect:
-    """Queue speech for the device. The TTS adapter fills `url` once it exists; text is always shown."""
+def play(store_id: str, text: str, lang: str, kind: str = "alert") -> Effect:
+    """Queue speech for the device. The TTS adapter fills `url` once it exists; text is always shown.
+    `kind` lets the UI treat the long morning briefing differently from short alerts."""
     trace("soundbox", f"Speak ({lang}): {text[:50]}")
-    return audio(f"soundbox:{store_id}", text, lang, url=None)
+    return audio(f"soundbox:{store_id}", text, lang, url=None, kind=kind)

@@ -57,7 +57,7 @@ def eligibility(s: Session, store_id: str, bill_id: str) -> dict:
     cap = floor_to(v * CAP_SHARE, 1)
     bill_left = bill.amount - bill.paid_by_lender - bill.paid_by_store
     amount = max(0, min(gap, cap, bill_left, MAX_ADVANCE))
-    reasons = [f"Cash short by {inr(gap)} before {bill.distributor}'s bill" if gap > 0 else "No cash gap before the bill",
+    reasons = [f"Cash short by {inr(gap)} before the {bill.distributor} bill" if gap > 0 else "No cash gap before the bill",
                f"Verified udhaar from good customers {inr(v)} → cap {inr(cap)}"]
     eligible = True
     if store.advance_blocked:

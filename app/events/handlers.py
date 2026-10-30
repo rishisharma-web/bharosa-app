@@ -65,11 +65,6 @@ def _confirm_front(store: Store, e: Entry, collect_now: int = 0, sale_ref: str |
     }
 
 
-def _confirm_notify(store: Store, e: Entry):
-    return notify(f"customer:{e.customer_id}", store.name, f"{inr(e.amount)} on credit · Confirm",
-                  {"label": "Confirm", "token": e.confirm_token})
-
-
 @before_each
 def _expire_confirmations(uow: UnitOfWork) -> None:
     for e in ledger.expire_stale(uow.s):
@@ -155,10 +150,8 @@ async def on_udhaar_spoken(uow: UnitOfWork, p: sc.UdhaarSpoken):
                  "sale_ref": sale_ref}
     soundbox.display(s, store.id, top=top, front=front)
 
-    effects = [soundbox.play(store.id, msg["spoken"], lang)]
-    if entry:
-        effects.append(_confirm_notify(store, entry))
-    return effects
+    # Nothing is pushed to the customer: the entry reaches their phone only when they scan the QR.
+    return [soundbox.play(store.id, msg["spoken"], lang)]
 
 
 @handles("guardrail_override")
@@ -181,7 +174,6 @@ def on_guardrail_override(uow: UnitOfWork, p: sc.GuardrailOverride):
     top.update({"entry_id": e.id, "credit_now": e.amount, "collect_now": 0, "override": True,
                 "text": f"Override: giving {messages.first_name(c.name)} {inr(e.amount)} on credit."})
     soundbox.display(s, store.id, top=top, front=_confirm_front(store, e))
-    return [_confirm_notify(store, e)]
 
 
 @handles("customer_confirm")
@@ -239,7 +231,7 @@ def on_entry_corrected(uow: UnitOfWork, p: sc.EntryCorrected):
     ledger.correct(s, e, p.amount)
     store = s.get(Store, e.store_id)
     soundbox.display(s, store.id, front=_confirm_front(store, e))
-    return [_confirm_notify(store, e)]
+    return [notify(f"merchant:{store.id}", "New QR ready", f"Ask the customer to scan {inr(e.amount)} again")]
 
 
 @handles("new_customer")
@@ -403,9 +395,10 @@ def on_salary_credited(uow: UnitOfWork, p: sc.SalaryCredited):
             continue
         store = s.get(Store, m.store_id)
         msg = messages.received(rep.amount, c.name, _lang(s))
-        soundbox.display(s, store.id, last_alert=msg["display"])
-        effects += [soundbox.play(store.id, msg["spoken"], _lang(s)),
-                    notify(f"customer:{c.id}", "Auto-pay", f"{inr(rep.amount)} auto-paid to {store.name} ✓")]
+        effects.append(notify(f"customer:{c.id}", "Auto-pay", f"{inr(rep.amount)} auto-paid to {store.name} ✓"))
+        if not uow.nested:  # a salary-day sweep inside advance_day is announced once, as a total
+            soundbox.display(s, store.id, last_alert=msg["display"])
+            effects.append(soundbox.play(store.id, msg["spoken"], _lang(s)))
     return effects
 
 

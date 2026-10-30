@@ -12,8 +12,8 @@ class Effect:
         return {"type": self.type, "data": self.data}
 
 
-def audio(target: str, text: str, lang: str, url: str | None = None) -> Effect:
-    return Effect("audio", {"target": target, "url": url, "text": text, "lang": lang})
+def audio(target: str, text: str, lang: str, url: str | None = None, kind: str = "alert") -> Effect:
+    return Effect("audio", {"target": target, "url": url, "text": text, "lang": lang, "kind": kind})
 
 
 def notify(target: str, title: str, body: str, action: dict | None = None) -> Effect:

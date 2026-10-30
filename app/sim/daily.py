@@ -12,11 +12,11 @@ from datetime import datetime, time, timedelta
 
 from sqlmodel import select
 
-from app import clock
+from app import clock, state
 from app.adapters import soundbox
 from app.adapters.payments import DistributorAdapter
 from app.agents import munim
-from app.core import forecast, integrity, ledger, score
+from app.core import forecast, integrity, ledger, messages, score
 from app.core.money import inr
 from app.models import Advance, Bill, Entry, Mandate, Promise, Repayment, Sale, Store
 from app.realtime.trace import trace
@@ -104,8 +104,16 @@ async def run_day(uow) -> list:
     today = clock.today()
     payers = s.exec(select(Mandate.customer_id).where(Mandate.status == "active",
                                                      Mandate.window_start_day == today.day).distinct()).all()
+    swept_from = clock.now()
     for cid in sorted(payers):
         await uow.emit("salary_credited", {"customer_id": cid})
+    sweeps = s.exec(select(Repayment).where(Repayment.source == "mandate", Repayment.store_id == "S1",
+                                            Repayment.created_at >= swept_from)).all()
+    lang = state.get(s, "lang")
+    if sweeps:
+        msg = messages.salary_day(sum(r.amount for r in sweeps), len(sweeps), lang)
+        soundbox.display(s, "S1", last_alert=msg["display"])
+        effects.append(soundbox.play("S1", msg["spoken"], lang))
 
     for store in s.exec(select(Store)).all():
         fc = forecast.forecast(s, store.id)
@@ -115,5 +123,5 @@ async def run_day(uow) -> list:
         integrity.check(s, store.id, "nightly")
     b = await munim.compose_briefing(s, "S1")
     soundbox.display(s, "S1", front=soundbox.IDLE_FRONT)
-    effects.append(soundbox.play("S1", b["text"], b["lang"]))
+    effects.append(soundbox.play("S1", b["text"], b["lang"], kind="briefing"))
     return effects

@@ -1,7 +1,7 @@
 """Notebook vs Bharosa (spec 11.5): the same customers and the same random draws, two policies,
 30 simulated days from Mon 26 Oct. Labelled in the UI as a simulation on synthetic data.
 
-Starting book: Lakshmi Stores' seeded customers and open udhaar (identical for both).
+Population: a synthetic kirana with 55 regulars in the usual persona mix (not the demo shop).
 Each day every customer may buy on credit; every draw (purchase, amount, how late they pay,
 never-pays, partial pays, reaction to a reminder) is made once per customer and shared by both
 policies, so the only difference is the policy:
@@ -23,16 +23,15 @@ from pathlib import Path
 
 from app.config import get_settings
 from app.core import risk
-from app.sim import seed as seed_mod
-from app.sim.personas import PERSONAS
+from app.sim.personas import MIX, PERSONAS
 
 DAYS = 30
 START = date(2026, 10, 26)
 CACHE = Path(__file__).resolve().parent.parent.parent / "fixtures" / "compare.json"
-BILL_DAY, BILL_AMOUNT = 4, 18_000  # Sharma Traders, Fri 30 Oct
+BILL_DAY, BILL_AMOUNT = 4, 15_000  # Sharma Traders, Fri 30 Oct
 NUDGE_SHIFT_DAYS, NUDGE_EFFECT_P = 10, 0.6
 DUE_DAYS = 30
-VERSION = 1  # bump when the simulation changes so the cached JSON is rebuilt
+VERSION = 2  # bump when the simulation changes so the cached JSON is rebuilt
 
 
 @dataclass
@@ -158,13 +157,25 @@ def _run(custs: list[Cust], opening: list[tuple[str, date, int]], purchases: dic
     }
 
 
+def population(seed: int) -> tuple[list[Cust], list[tuple[str, date, int]]]:
+    """A synthetic kirana: 55 regulars in the usual persona mix, each with 0–2 open udhaar entries.
+    Half the salary-day customers would take auto-pay under Bharosa."""
+    rng = random.Random(f"{seed}:compare:population")
+    custs, opening = [], []
+    for persona, n in MIX.items():
+        p = PERSONAS[persona]
+        for i in range(n):
+            cid = f"{persona}_{i}"
+            custs.append(Cust(cid, persona, rng.randint(*p.score), persona == "salary_day" and i % 2 == 0))
+            for _ in range(rng.randint(0, 2)):
+                opening.append((cid, START - timedelta(days=rng.randint(1, 50)),
+                                rng.randrange(p.amount[0], p.amount[1] + 1, 10)))
+    return custs, opening
+
+
 def simulate(seed: int | None = None) -> dict:
     seed = get_settings().seed if seed is None else seed
-    w = seed_mod.build_world(seed)
-    s1 = [c for c in w.customers if c.store_id == "S1"]
-    custs = [Cust(c.id, c.persona or "punctual", c.score, bool(c.mandate_at) or c.id == "C_RAMESH") for c in s1]
-    opening = [(e.customer_id, e.created_at.date(), e.remaining) for e in w.entries
-               if e.store_id == "S1" and e.remaining > 0]
+    custs, opening = population(seed)
 
     purchases: dict[int, list[tuple[str, int]]] = {}
     credit_draws: dict = {}

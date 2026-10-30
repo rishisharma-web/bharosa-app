@@ -34,7 +34,8 @@
       <button :class="snap?.lang==='hi-IN' && 'on'" @click="setLang('hi-IN')">हिं</button>
       <button :class="snap?.lang==='kn-IN' && 'on'" @click="setLang('kn-IN')">ಕನ್ನ</button>
     </div>
-    <button class="icon-btn" @click="soundOn=!soundOn; started=true" :title="soundOn ? 'Sound on' : 'Sound off'" x-text="soundOn ? '🔊' : '🔈'"></button>
+    <button class="icon-btn" @click="toggleSound()" :title="soundOn ? 'Sound on (click to mute)' : 'Sound off'" x-text="soundOn ? '🔊' : '🔈'"></button>
+    <button class="btn btn-danger btn-sm" x-show="playing" x-transition @click="stopSpeech()" title="Stop speaking now">⏹ Stop speech</button>
     <button class="btn btn-outline btn-sm" @click="reset()" :disabled="demo.busy">Reset</button>
   </div>
 </header>
@@ -147,6 +148,10 @@
           <button class="btn btn-primary btn-sm" @click="sb.why=false">Use suggestion</button>
           <button class="btn btn-danger btn-sm" @click="override()" x-text="'Override: give ' + U.inr(top?.requested)"></button>
         </div>
+        <div class="speaking" x-show="nowPlaying" x-transition>
+          <span class="dot dot-green"></span><span class="grow" x-text="nowPlaying?.text"></span>
+          <button class="btn btn-ghost btn-sm" @click="stopSpeech()" title="Stop">⏹</button>
+        </div>
         <div class="last-alert" x-text="snap?.soundbox?.last_alert || ''"></div>
 
         <div class="speak" x-show="sb.panel" x-transition>
@@ -155,7 +160,7 @@
             <template x-for="p in presets"><button class="chip-btn" @click="say(p)" x-text="p.label"></button></template>
           </div>
           <form @submit.prevent="sayText()">
-            <input class="input" x-model="sb.text" placeholder="Type what the shopkeeper says… e.g. Ramesh 340 udhaar">
+            <input class="input" x-model="sb.text" placeholder="Type what the shopkeeper says… e.g. Ramesh 500 udhaar">
             <button class="btn btn-primary">Say</button>
           </form>
           <div class="note">Paytm's Soundbox already converts speech to text; we receive the text. Free text goes to the Counter Agent.</div>
@@ -188,9 +193,21 @@
           </div>
 
           <div class="card brief" x-show="M?.briefing">
-            <div class="row between"><span class="who">📒 Munim · morning briefing</span><button class="play" @click="playBriefing()" title="Play">▶</button></div>
+            <div class="row between"><span class="who">📒 Munim · morning briefing
+              <span class="badge-src" :class="U.srcBadge(M?.briefing?.source)?.[1]" x-text="U.srcBadge(M?.briefing?.source)?.[0]"></span></span>
+              <button class="play" @click="toggleBriefing()" :title="briefingPlaying ? 'Stop' : 'Play'" x-text="briefingPlaying ? '⏹' : '▶'"></button></div>
             <p x-text="M?.briefing?.text"></p>
           </div>
+
+          <!-- Munim's suggestions: code decides when a card appears -->
+          <template x-for="card in M?.suggestions || []" :key="card.id">
+            <div class="card suggest">
+              <div class="who">✨ Munim suggests</div>
+              <div class="card-title" x-text="card.title"></div>
+              <div class="small" style="margin-top:2px" x-text="card.body"></div>
+              <button class="btn btn-primary btn-sm" style="margin-top:10px" @click="suggestion(card)" x-text="card.action.label"></button>
+            </div>
+          </template>
 
           <!-- action cards: things that need the merchant -->
           <template x-for="pm in M?.pending_matches || []" :key="pm.pending_id">
@@ -418,7 +435,7 @@
         <div class="scroll" x-show="m.screen==='munim'" x-ref="munimScroll">
           <div class="back"><button @click="m.screen='home'">←</button>Ask Munim</div>
           <div class="chips" x-show="!munimChat.length">
-            <button class="chip-btn" @click="askMunim('Friday ko Sharma ko 18,000 kaise dunga?')">Friday ko Sharma ko 18,000 kaise dunga?</button>
+            <button class="chip-btn" @click="askMunim('Friday ko Sharma ko 15,000 kaise dunga?')">Friday ko Sharma ko 15,000 kaise dunga?</button>
             <button class="chip-btn" @click="askMunim('Kaun kaun overdue hai?')">Kaun kaun overdue hai?</button>
             <button class="chip-btn" @click="askMunim('Ramesh ka kitna baaki hai?')">Ramesh ka kitna baaki hai?</button>
           </div>
@@ -467,14 +484,8 @@
               <select class="switcher" :value="C?.id" @change="focus($event.target.value)">
                 <template x-for="cu in c.customers" :key="cu.id"><option :value="cu.id" x-text="cu.name" :selected="cu.id===C?.id"></option></template>
               </select></div>
-            <div class="bell">🔔<i x-show="(C?.pending_confirms||[]).length"></i></div>
+            <div class="bell">🔔</div>
           </div>
-
-          <template x-for="p in C?.pending_confirms || []" :key="p.token">
-            <div class="confirm-banner" @click="openConfirm(p.token)" style="margin-bottom:12px">
-              <div class="grow"><b x-text="p.store + ': ' + U.inr(p.amount) + ' on credit'"></b><span>Tap to confirm or dispute</span></div><span class="btn btn-sm" style="background:#fff;color:var(--navy)">Confirm</span>
-            </div>
-          </template>
 
           <div class="card">
             <div class="row between"><span class="card-title">Bharosa Score</span><span class="pill pill-green" x-show="C?.score_delta_7d>0" x-text="'+' + C?.score_delta_7d + ' this week'"></span>
@@ -618,40 +629,50 @@
       </div></div>
     </section>
 
-    <!-- side panel for single-device views -->
-    <aside class="side" x-show="view==='merchant' || view==='customer' || view==='soundbox'">
-      <h3>Live trace</h3>
-      <div class="trace-mini" style="max-height:620px">
-        <template x-for="(t, i) in traceLong.slice(0, 40)" :key="i">
-          <div class="trace-line" style="grid-template-columns:44px 96px 1fr auto"><span class="t" x-text="U.time(t.ts)"></span><span class="n" x-text="t.node"></span><span class="l" x-text="t.label"></span>
-            <span><template x-if="t.source"><span class="badge-src" :class="U.srcBadge(t.source)?.[1]" x-text="U.srcBadge(t.source)?.[0]"></span></template><span class="ms" x-text="msLabel(t)"></span></span></div>
-        </template>
-      </div>
-    </aside>
   </div>
 
-  <!-- ======================================================= DEMO BAR (Live Demo) -->
-  <div class="demobar" x-show="view==='live'">
+  <!-- ======================================================= DEMO BAR: step controls + Explain -->
+  <div class="demobar" x-show="view!=='overview' && D">
     <div class="demo-card">
       <div class="beat-ctl">
-        <button class="btn btn-secondary btn-sm" @click="demoPrev()" :disabled="demo.busy || !(snap?.demo?.beat > 0)">◀</button>
-        <span class="count" x-text="'Beat ' + (snap?.demo?.beat ?? 0) + ' / ' + ((snap?.demo?.total || 7) - 1)"></span>
-        <button class="btn btn-primary btn-sm" @click="demoNext()" :disabled="demo.busy">
-          <span x-show="demo.busy" class="spinner"></span><span x-text="snap?.demo?.awaiting ? 'Do it for me ▶' : 'Next ▶'"></span></button>
-        <span class="small muted grow" style="text-align:right" x-text="demo.script[(snap?.demo?.beat ?? 0)]?.title || ''"></span>
+        <button class="btn btn-secondary btn-sm" @click="demoBack()" :disabled="demo.busy || (D?.beat === 0 && D?.step === 0)" title="Restart this beat (at its start: the previous beat)">◀</button>
+        <button class="btn btn-primary" @click="demoNext()" :disabled="demo.busy || D?.done">
+          <span x-show="demo.busy" class="spinner"></span>
+          <span x-text="D?.done ? 'Demo complete' : (yourTurn ? 'Do it for me ▶' : 'Next ▶')"></span></button>
+        <button class="btn btn-ghost btn-sm" @click="demoRunBeat()" :disabled="demo.busy || D?.done" title="Run the rest of this beat without stopping">Run beat ⏭</button>
+        <span class="grow"></span>
+        <span class="count" x-text="'Beat ' + D?.beat + ' · ' + D?.title"></span>
       </div>
-      <div class="caption" x-text="snap?.demo?.caption"></div>
-      <div class="awaiting" x-show="snap?.demo?.awaiting">👉 <span x-text="snap?.demo?.awaiting"></span></div>
-      <div class="beat-dots"><template x-for="i in 7"><span :class="(i-1) < (snap?.demo?.beat ?? 0) ? 'done' : (i-1) === (snap?.demo?.beat ?? 0) ? 'cur' : ''"></span></template></div>
+      <div class="beat-dots"><template x-for="i in (D?.total || 7)"><span :class="(i-1) < D?.beat ? 'done' : (i-1) === D?.beat ? 'cur' : ''"></span></template></div>
+      <div class="caption" x-text="D?.caption"></div>
+      <div class="step-dots" x-show="D?.steps">
+        <template x-for="i in (D?.steps || 0)"><span :class="(i-1) < D?.step ? 'done' : (i-1) === D?.step ? 'cur' : ''"></span></template>
+        <small class="muted" x-text="D?.step >= D?.steps ? 'Beat complete' : 'Step ' + (D?.step + 1) + ' of ' + D?.steps"></small>
+      </div>
+      <div class="next-step" x-show="D?.next" :class="yourTurn && 'yours'">
+        <span x-text="yourTurn ? '👉 Your turn:' : (D?.next?.beat !== D?.beat ? 'Next beat:' : 'Next:')"></span>
+        <b x-text="D?.next?.beat !== D?.beat ? D?.next?.title : D?.next?.label"></b>
+      </div>
     </div>
-    <div class="demo-card">
-      <div class="row between" style="margin-bottom:6px"><b style="color:var(--ink)">Trace</b><a href="#/overview" class="link small">Architecture →</a></div>
-      <div class="trace-mini">
-        <template x-for="(t, i) in traceTail" :key="i">
-          <div class="trace-line"><span class="t" x-text="U.time(t.ts)"></span><span class="n" x-text="t.node"></span><span class="l" x-text="t.label"></span>
-            <span><template x-if="t.source"><span class="badge-src" :class="U.srcBadge(t.source)?.[1]" x-text="U.srcBadge(t.source)?.[0]"></span></template><span class="ms" x-text="msLabel(t)"></span></span></div>
-        </template>
-      </div>
+    <div class="demo-card explain">
+      <template x-if="D?.last">
+        <div>
+          <div class="row between"><span class="eyebrow">Just happened</span><a href="#/overview" class="link small">Architecture →</a></div>
+          <div class="ex-label" x-text="D?.last?.label"></div>
+          <div class="ex-grid">
+            <div><h5>What happened</h5><p x-text="D?.last?.what"></p></div>
+            <div><h5>Who decided <span class="pill" :class="whoPill(D?.last?.kind)[1]" x-text="whoPill(D?.last?.kind)[0]"></span></h5><p x-text="D?.last?.who"></p></div>
+            <div><h5>Why it matters</h5><p x-text="D?.last?.why"></p></div>
+          </div>
+        </div>
+      </template>
+      <template x-if="!D?.last">
+        <div class="ex-intro">
+          <span class="eyebrow" x-text="'Beat ' + D?.beat + ' · ' + D?.title"></span>
+          <p class="ex-caption" x-text="D?.caption"></p>
+          <p class="muted small">Press <b>Next</b> to run one step at a time. Each step is explained here: what happened, who decided (code, an AI agent, the customer or the merchant) and why it matters.</p>
+        </div>
+      </template>
     </div>
   </div>
 
@@ -706,7 +727,7 @@
       <div class="trace-panel">
         <template x-for="(t, i) in traceLong" :key="i">
           <div class="trace-line"><span class="t" x-text="U.time(t.ts)"></span><span class="n" x-text="t.node"></span><span class="l" :title="t.label" x-text="t.label"></span>
-            <span><template x-if="t.source"><span class="badge-src" :class="U.srcBadge(t.source)?.[1]" x-text="U.srcBadge(t.source)?.[0]"></span></template><span class="ms small" x-text="msLabel(t)"></span></span></div>
+            <span><template x-if="t.source"><span class="badge-src" :class="U.srcBadge(t.source)?.[1]" x-text="U.srcBadge(t.source)?.[0]"></span></template></span></div>
         </template>
         <div class="empty" x-show="!trace.length">Run a demo beat to see the trace.</div>
       </div>

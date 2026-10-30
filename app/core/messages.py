@@ -62,3 +62,12 @@ def received(amount: int, customer_name: str | None, lang: str, cash: bool = Fal
         "kn-IN": (f"{who} ಅವರಿಂದ " if who else "") + f"{inr(amount)}" + (" ನಗದು" if cash else "") + " ಸ್ವೀಕರಿಸಲಾಗಿದೆ.",
     }
     return {"display": display, "spoken": spoken.get(lang, spoken["hi-IN"])}
+
+
+def salary_day(total: int, count: int, lang: str) -> dict:
+    display = f"Salary day: {inr(total)} auto-collected from {count} customers"
+    spoken = {
+        "hi-IN": f"वेतन दिवस: {count} ग्राहकों से {inr(total)} ऑटो-पे से प्राप्त हुए।",
+        "kn-IN": f"ಸಂಬಳದ ದಿನ: {count} ಗ್ರಾಹಕರಿಂದ {inr(total)} ಆಟೋ-ಪೇ ಮೂಲಕ ಬಂದಿದೆ.",
+    }
+    return {"display": display, "spoken": spoken.get(lang, spoken["hi-IN"])}

@@ -156,7 +156,7 @@ def compose(s: Session, store_id: str, intent: str, steps: list[dict], lang: str
     if intent == "bill" and "check_advance_eligibility" in r:
         el, coll, od = r["check_advance_eligibility"], r["list_collectable_dues"], r.get("list_overdue", {"items": []})
         gap = next((g for g in r["get_forecast"]["gaps"] if g["bill_id"] == el["bill_id"]), None)
-        payers = ", ".join(i["name"].split()[0] for i in coll["items"]) or ("koi nahi" if hi else "nobody")
+        payers = ", ".join(i["name"].split()[0] for i in coll["items"])
         nudge_ids = [i["customer_id"] for i in od["items"]]
         actions = []
         if nudge_ids:
@@ -170,16 +170,19 @@ def compose(s: Session, store_id: str, intent: str, steps: list[dict], lang: str
                     if hi else f"{el['distributor']}'s bill on {_day(el['due'], lang)} is covered; no shortfall.")
             return text, actions
         if hi:
+            back = (f"Usse pehle sirf {inr(coll['total'])} udhaar wapas aane ki ummeed hai ({payers})." if coll["total"]
+                    else "Usse pehle koi udhaar wapas aane ki ummeed nahi hai.")
             text = (f"{_day(el['due'], lang)} ko {el['distributor']} ko {inr(gap['amount'])} dene hain. Tab tak aapke paas "
-                    f"lagbhag {inr(gap['available'])} honge, yaani {inr(gap['gap'])} kam. Usse pehle sirf "
-                    f"{inr(coll['total'])} udhaar wapas aane ki ummeed hai ({payers}). Do raaste: 1) overdue "
+                    f"lagbhag {inr(gap['available'])} honge, yaani {inr(gap['gap'])} kam. {back} Do raaste: 1) overdue "
                     f"customers ko reminder bhejein")
             text += (f"; 2) {el['lender']} se {inr(el['amount'])} Supplier Advance lein (fee {inr(el['fee'])}), jo "
                      f"seedha {el['distributor']} ko jayega aur udhaar wapsi ke 20% se chukega." if el["eligible"] else ".")
         else:
+            back = (f"Only {inr(coll['total'])} of udhaar is expected back before then ({payers})." if coll["total"]
+                    else "No udhaar is expected back before then.")
             text = (f"You owe {el['distributor']} {inr(gap['amount'])} on {_day(el['due'], lang)}. You will have about "
-                    f"{inr(gap['available'])}, so {inr(gap['gap'])} short. Only {inr(coll['total'])} of udhaar is "
-                    f"expected back before then ({payers}). Two options: 1) send reminders to overdue customers")
+                    f"{inr(gap['available'])}, so {inr(gap['gap'])} short. {back} Two options: 1) send reminders to "
+                    f"overdue customers")
             text += (f"; 2) take a {inr(el['amount'])} Supplier Advance from {el['lender']} (fee {inr(el['fee'])}), "
                      f"paid straight to {el['distributor']} and repaid from 20% of udhaar collections."
                      if el["eligible"] else ".")

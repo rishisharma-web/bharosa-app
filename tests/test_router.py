@@ -15,19 +15,20 @@ def test_snapshot_shape(fresh):
     snap = fresh.get("/api/snapshot").json()
     for key in ("now", "lang", "demo", "soundbox", "merchant", "customer", "risk_console", "trace_tail"):
         assert key in snap
+    assert snap["demo"]["beat"] == 0 and snap["demo"]["next"]["label"] == "Play Munim's morning briefing"
     m = snap["merchant"]
     assert m["store"] == {"id": "S1", "name": "Lakshmi Stores", "area": "Jayanagar, Bengaluru",
                           "vpa": "lakshmistores@ptyes", "advance_blocked": False}
-    assert m["udhaar"]["outstanding"] == 45_000
-    assert m["udhaar"]["verified"] == 38_000
+    assert m["udhaar"]["outstanding"] == 18_000
+    assert m["udhaar"]["verified"] == 17_000
     assert m["udhaar"]["pending_confirm"] == 0
-    assert m["today_collection"] == 980  # early-morning walk-in sales on demo day
+    assert m["today_collection"] == 1_000  # early-morning walk-in sales on demo day
     assert m["due_soon"][0]["bill_id"] == "B1"
     assert snap["now"] == "2026-10-26T09:00:00+05:30"
     c = snap["customer"]
-    assert c["id"] == "C_RAMESH" and c["score"] == 680 and c["score_band"] == "Good"
-    assert c["dues"] == [{"store": "Lakshmi Stores", "store_id": "S1", "amount": 1800, "verified": 1800,
-                          "oldest_overdue_days": 19}]
+    assert c["id"] == "C_RAMESH" and c["score"] == 660 and c["score_band"] == "Good"
+    assert c["dues"] == [{"store": "Lakshmi Stores", "store_id": "S1", "amount": 1500, "verified": 1500,
+                          "oldest_overdue_days": 20}]
     assert c["mandates"] == [] and c["pending_confirms"] == []
 
 
@@ -70,11 +71,11 @@ def test_focus_customer_switches_customer_view(fresh):
     r = fresh.post("/api/events", json={"type": "set_focus_customer", "payload": {"customer_id": "C_VIKRAM"}})
     assert r.status_code == 200
     c = fresh.get("/api/snapshot").json()["customer"]
-    assert c["name"] == "Vikram Rao" and c["dues"][0]["oldest_overdue_days"] == 41
+    assert c["name"] == "Vikram Rao" and c["dues"][0]["oldest_overdue_days"] == 45
 
 
 def test_customers_list(client):
     rows = client.get("/api/customers?store_id=S1").json()
-    assert len(rows) == 60
+    assert len(rows) == 9
     ramesh = next(r for r in rows if r["id"] == "C_RAMESH")
-    assert ramesh["outstanding"] == 1800 and ramesh["overdue_days"] == 19
+    assert ramesh["outstanding"] == 1500 and ramesh["overdue_days"] == 20

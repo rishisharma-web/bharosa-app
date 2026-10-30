@@ -4,7 +4,8 @@
 document.addEventListener('alpine:init', () => {
   Alpine.data('bharosa', () => ({
     U: window.U,
-    snap: null, trace: [], view: 'live', connected: false, toast: null, soundOn: false, started: false, playing: false,
+    snap: null, trace: [], view: 'live', connected: false, toast: null, soundOn: false, started: false,
+    playing: false, nowPlaying: null, audioQ: [], _demoKey: null,
     notif: { merchant: null, customer: null },
     sb: { panel: true, why: false, text: '', keypad: '', newName: '' },
     m: { screen: 'home', book: [], q: '', detail: null, thread: null, threadMsgs: [], adv: null, elig: null,
@@ -40,10 +41,10 @@ document.addEventListener('alpine:init', () => {
     },
     handle(msg) {
       const d = msg.data;
-      if (msg.type === 'snapshot') { this.snap = d; this.scheduleRefresh(); }
+      if (msg.type === 'snapshot') { this.snap = d; this.scheduleRefresh(); this.followDemo(); }
       else if (msg.type === 'trace') { this.trace.push(d); if (this.trace.length > 300) this.trace.splice(0, 100); this.light(d.node); }
       else if (msg.type === 'notify') this.onNotify(d);
-      else if (msg.type === 'audio') this.speak(d.text, d.lang, d.url);
+      else if (msg.type === 'audio') this.speak(d.text, d.lang, d.url, d.kind);
       else if (msg.type === 'toast') this.flashToast(d.text, d.level);
       else if (msg.type === 'caption') { /* captions arrive inside the snapshot (demo.caption) */ }
     },
@@ -92,24 +93,37 @@ document.addEventListener('alpine:init', () => {
       clearTimeout(el._t);
       el._t = setTimeout(() => el.classList.remove('lit'), 1200);
     },
-    speak(text, lang, url) {
-      if (!this.soundOn || !text) return;
-      if (url) {
-        const a = this.$refs.audio; a.src = url; this.playing = true;
-        a.onended = () => { this.playing = false; }; a.play().catch(() => { this.playing = false; });
-        return;
-      }
-      // Until the TTS adapter returns audio, use the browser's own voice if it has one for this language.
-      if (!('speechSynthesis' in window)) return;
-      const u = new SpeechSynthesisUtterance(text);
-      u.lang = lang || 'hi-IN'; u.rate = 1.02;
-      u.onstart = () => { this.playing = true; }; u.onend = () => { this.playing = false; };
-      speechSynthesis.cancel(); speechSynthesis.speak(u);
+    // Speech is queued so lines never cut each other off; Stop clears the queue at once.
+    speak(text, lang, url, kind = 'alert', force = false) {
+      if ((!this.soundOn && !force) || !text) return;
+      this.audioQ.push({ text, lang, url, kind });
+      if (!this.playing) this.playNext();
     },
-    start(withSound) {
-      this.started = true; this.soundOn = withSound;
-      if (withSound && this.snap?.merchant?.briefing) this.speak(this.snap.merchant.briefing.text, this.snap.merchant.briefing.lang);
+    playNext() {
+      const it = this.audioQ.shift();
+      if (!it) { this.playing = false; this.nowPlaying = null; return; }
+      this.playing = true; this.nowPlaying = it;
+      const done = () => { if (this.nowPlaying === it) this.playNext(); };
+      if (it.url) {
+        const a = this.$refs.audio; a.src = it.url; a.onended = done; a.onerror = done;
+        a.play().catch(done);
+      } else if ('speechSynthesis' in window) {
+        // Until Sarvam TTS returns audio, the browser's own voice reads the line (text is always shown).
+        const u = new SpeechSynthesisUtterance(it.text);
+        u.lang = it.lang || 'hi-IN'; u.rate = 1.02; u.onend = done; u.onerror = done;
+        speechSynthesis.speak(u);
+      } else setTimeout(done, Math.min(9000, 70 * it.text.length));
     },
+    stopSpeech() {
+      this.audioQ = []; this.nowPlaying = null; this.playing = false;
+      if ('speechSynthesis' in window) speechSynthesis.cancel();
+      const a = this.$refs.audio; if (a) { a.pause(); a.removeAttribute('src'); }
+    },
+    toggleSound() {
+      this.started = true; this.soundOn = !this.soundOn;
+      if (!this.soundOn) this.stopSpeech();
+    },
+    start(withSound) { this.started = true; this.soundOn = withSound; },
     scheduleRefresh() {
       clearTimeout(this._refresh);
       this._refresh = setTimeout(() => this.refreshScreens(), 200);
@@ -125,48 +139,62 @@ document.addEventListener('alpine:init', () => {
     get front() { return this.snap?.soundbox?.front || { mode: 'idle' }; },
     get M() { return this.snap?.merchant; },
     get C() { return this.snap?.customer; },
-    msLabel(t) { return !t.source && t.ms !== null && t.ms !== undefined ? t.ms + ' ms' : ''; },
-    get traceTail() { return this.trace.slice(-8).reverse(); },
     get traceLong() { return this.trace.slice(-80).reverse(); },
+    get D() { return this.snap?.demo; },
+    // The next step in this beat is something the presenter does on screen.
+    get yourTurn() { const d = this.D; return !!(d && d.next?.presenter && d.next.beat === d.beat && d.step < d.steps); },
 
     // ------------------------------------------------------------ top bar
     setLang(lang) { this.post('set_language', { lang }); },
     nextDay() { this.post('advance_day', { days: 1 }); },
     async reset() {
       this.demo.busy = true;
-      this.trace = [];
+      this.stopSpeech(); this.trace = [];
       await this.api('/api/demo/reset', { method: 'POST' });
-      this.m.screen = 'home'; this.m.chat = []; this.c.screen = 'home'; this.c.sheet = null; this.sb.why = false;
+      this.resetScreens();
       this.demo.busy = false;
     },
 
-    // ------------------------------------------------------------ Demo Mode
-    async demoNext() {
+    // ------------------------------------------------------------ Demo Mode (step by step)
+    resetScreens() {
+      this.m.screen = 'home'; this.m.chat = []; this.c.screen = 'home'; this.c.sheet = null; this.sb.why = false;
+      this._demoKey = null;
+    },
+    async demoCall(path) {
       if (this.demo.busy) return;
       this.demo.busy = true;
-      const r = await this.api('/api/demo/next', { method: 'POST' });
-      this.demo.busy = false;
-      if (r && r.beat === 2 && r.awaiting) { /* presenter: click the QR on the Soundbox */ }
-      if (r && r.beat === 4 && !r.awaiting) this.openAdvance();
-    },
-    async demoPrev() {
-      const b = this.snap?.demo?.beat || 0;
-      if (b <= 0 || this.demo.busy) return;
-      this.demo.busy = true;
-      this.trace = [];
-      await this.api(`/api/demo/goto/${b - 1}`, { method: 'POST' });
-      this.m.screen = 'home'; this.c.screen = 'home'; this.c.sheet = null;
+      await this.api(path, { method: 'POST' });
       this.demo.busy = false;
     },
+    demoNext() { return this.demoCall('/api/demo/next'); },
+    demoRunBeat() { return this.demoCall('/api/demo/run_beat'); },
+    async demoBack() {
+      // Restart the current beat; at its very start, go back one beat.
+      const d = this.D; if (!d) return;
+      const target = d.step > 0 ? d.beat : Math.max(0, d.beat - 1);
+      this.stopSpeech(); this.trace = [];
+      await this.demoCall(`/api/demo/goto/${target}`);
+      this.resetScreens();
+    },
+    // Put the phones on the screen the next step needs, so the presenter never has to hunt for it.
+    followDemo() {
+      const d = this.D; if (!d || this.view === 'overview') return;
+      const key = `${d.beat}:${d.step}`;
+      if (key === this._demoKey) return;
+      this._demoKey = key;
+      const ui = d.next?.ui || {};
+      if (ui.merchant === 'advance') this.openAdvance();
+      else if (ui.merchant) this.m.screen = ui.merchant;
+      if (ui.customer) { this.c.screen = ui.customer; if (ui.customer !== 'home') this.c.sheet = null; }
+    },
+    whoPill(kind) { return { code: ['Code', 'pill-navy'], ai: ['AI agent', 'pill-violet'], customer: ['Customer', 'pill-green'], merchant: ['Merchant', 'pill-amber'] }[kind] || ['', 'pill-grey']; },
 
     // ------------------------------------------------------------ Soundbox
     say(preset) { this.post(preset.cash ? 'cash_reported' : 'udhaar_spoken', { store_id: 'S1', customer_id: preset.id, amount: preset.amount }); },
     presets: [
-      { label: 'Priya 340 udhaar', id: 'C_PRIYA', amount: 340 },
-      { label: 'Ramesh 340 udhaar', id: 'C_RAMESH', amount: 340 },
-      { label: 'Vikram 340 udhaar', id: 'C_VIKRAM', amount: 340 },
-      { label: 'Anita 300 udhaar (new)', id: 'C_ANITA', amount: 300 },
-      { label: 'Suresh 300 cash diye', id: 'C_SURESH', amount: 300, cash: true },
+      { label: 'Priya 500 udhaar', id: 'C_PRIYA', amount: 500 },
+      { label: 'Vikram 500 udhaar', id: 'C_VIKRAM', amount: 500 },
+      { label: 'Ramesh 500 udhaar', id: 'C_RAMESH', amount: 500 },
     ],
     sayText() {
       const t = this.sb.text.trim();
@@ -268,7 +296,17 @@ document.addEventListener('alpine:init', () => {
       else if (a.type === 'offer_advance') this.offerAdvance(p.bill_id);
       else if (a.type === 'open_customer') this.openCustomer(p.customer_id);
     },
-    playBriefing() { const b = this.M?.briefing; if (b) { const was = this.soundOn; this.soundOn = true; this.speak(b.text, b.lang, b.audio_url); this.soundOn = was; } },
+    get briefingPlaying() { return this.nowPlaying?.kind === 'briefing'; },
+    toggleBriefing() {
+      if (this.briefingPlaying) { this.stopSpeech(); return; }
+      const b = this.M?.briefing;
+      if (b) { this.stopSpeech(); this.speak(b.text, b.lang, b.audio_url, 'briefing', true); }
+    },
+    suggestion(card) {
+      const a = card.action;
+      if (a.type === 'send_nudges') this.post('nudges_requested', { store_id: 'S1', customer_ids: a.customer_ids });
+      else if (a.type === 'ask_munim') this.askMunim(a.question);
+    },
     get escalations() { return (this.M?.threads || []).filter(t => t.escalated); },
 
     // ------------------------------------------------------------ customer app
