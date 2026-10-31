@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bharosa · How to run the demo</title>
+<link rel="stylesheet" href="/static/shared/tokens.css">
+<link rel="stylesheet" href="/static/shared/base.css">
+<link rel="stylesheet" href="/static/guide/guide.css">
+<script src="/static/vendor/qrcode.min.js"></script>
+<script src="/static/shared/format.js"></script>
+</head>
+<body>
+<!-- A walkthrough for anyone given the deployed address. Like the overview and the slides, this is a static
+     document about the fixed demo world, so it names the demo customers and amounts. Every link and QR code
+     is built from this page's own address, so the guide works on any host. -->
+<main class="gd">
+
+  <section class="hero">
+    <div class="wm">Bharosa <span>on Paytm</span></div>
+    <h1>How to run the demo</h1>
+    <p>Everything runs at one address. Open the Soundbox on a laptop, the merchant and customer apps on phones, and follow the steps below. The whole demo takes about ten minutes.</p>
+    <div class="base" data-base></div>
+    <div class="need">
+      <div><b>A laptop</b>For the AI Soundbox and the presenter screen</div>
+      <div><b>One or two phones</b>For the merchant and customer apps. No install: they open in the browser</div>
+      <div><b>No phone?</b>The presenter screen has the merchant and customer apps built in</div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">1</span>Open the apps</h2>
+    <p class="intro">On a phone, scan the code with the camera app, or type the address. Use the addresses shown here, not <code>localhost</code>.</p>
+    <div class="apps">
+      <div class="app"><div><b>Merchant app</b><div class="url" data-url="/merchant"></div>
+        <div class="small muted">Lakshmi Stores, the shop. Open on the merchant's phone.</div></div><div class="qr" data-qr="/merchant"></div></div>
+      <div class="app"><div><b>Customer app</b><div class="url" data-url="/customer"></div>
+        <div class="small muted">The customer's Paytm app, with a QR scanner. Open on the customer's phone.</div></div><div class="qr" data-qr="/customer"></div></div>
+      <div class="app"><div><b>AI Soundbox</b><div class="url" data-url="/soundbox"></div>
+        <div class="small muted">The device on the counter. No login. Open on the laptop.</div></div><div class="qr" data-qr="/soundbox"></div></div>
+      <div class="app"><div><b>Presenter screen</b><div class="url" data-url="/#demo"></div>
+        <div class="small muted">The Soundbox, both apps, login QRs, the activity log and <b>Reset</b>. Needs the admin key.</div></div><div class="qr" data-qr="/#demo"></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">2</span>Logins</h2>
+    <p class="intro">The OTP is always <code>123456</code>. No SMS is sent. Customers can also log in by scanning their login QR on the presenter screen.</p>
+    <table>
+      <tr><th>App</th><th>Who</th><th>Phone number</th><th>OTP</th><th>Starting point</th></tr>
+      <tr><td>Merchant</td><td>Lakshmi Stores</td><td><code>9000000001</code></td><td><code>123456</code></td><td>₹25,800 udhaar outstanding, ₹4,300 overdue</td></tr>
+      <tr><td>Customer</td><td>Priya Nair</td><td><code>9000000011</code></td><td><code>123456</code></td><td>Score 780 Strong · owes nothing</td></tr>
+      <tr><td>Customer</td><td>Ramesh Kumar</td><td><code>9000000012</code></td><td><code>123456</code></td><td>Score 662 Good · owes ₹1,700, 19 days overdue</td></tr>
+      <tr><td>Customer</td><td>Vikram Rao</td><td><code>9000000013</code></td><td><code>123456</code></td><td>Score 438 Building · owes ₹2,600, 41 days overdue</td></tr>
+      <tr><td>Customer</td><td>Anita Desai</td><td><code>9000000014</code></td><td><code>123456</code></td><td>Score 770 Strong from other Paytm shops · new to this shop</td></tr>
+      <tr><td>Presenter</td><td>The team</td><td colspan="2">Admin key (ask the team)</td><td>Needed only for Reset and the login QRs</td></tr>
+    </table>
+    <div class="tip"><b>Switching customers on one phone:</b> tap <b>Log out</b> at the top right of the customer app, then log in with the next number. The merchant and customer apps keep separate logins, so one browser can be logged in as both.</div>
+  </section>
+
+  <section>
+    <h2><span class="n">3</span>Before you start</h2>
+    <ol class="check">
+      <li><b>Wake the server.</b> Open the address above and wait for the page to load. A free hosting plan puts the server to sleep after about 15 minutes without visits, and the first visit can take up to a minute.</li>
+      <li><b>Reset the demo.</b> On the presenter screen, enter the admin key and press <b>Reset</b>. This restores the starting numbers in the table above in about a second. Without the admin key, skip this step: the server starts from the same numbers whenever it restarts.</li>
+      <li><b>Log in.</b> The merchant phone as <code>9000000001</code>, the customer phone as Ramesh, <code>9000000012</code>.</li>
+      <li><b>Allow the camera</b> on the customer phone the first time you tap <b>Scan QR</b>.</li>
+      <li><b>Keep one page open</b> during the demo (the presenter screen or the Soundbox), so the server doesn't go back to sleep.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2><span class="n">4</span>The demo, step by step</h2>
+    <p class="intro">Each step says where to tap and what you should see. Screens update by themselves within about a second; you never need to refresh.
+      <span class="where w-sb">Soundbox</span> laptop · <span class="where w-m">Merchant</span> merchant phone · <span class="where w-c">Customer</span> customer phone · <span class="where w-p">Presenter</span> presenter screen</p>
+
+    <div class="act"><header><b>A · The merchant's week</b><span>The growth plan</span></header>
+      <table><tr><th>Where</th><th>Do</th><th>You should see</th></tr>
+        <tr><td><span class="where w-m">Merchant</span></td><td>Log in with <code>9000000001</code> / <code>123456</code>.</td>
+          <td>Home: UPI sales today, ₹25,800 udhaar outstanding, and <b>This week's growth plan</b> with three actions: Stock up for Diwali, Remind 2 overdue customers, Offer Priya her monthly basket.</td></tr>
+      </table></div>
+
+    <div class="act"><header><b>B · Sell more, safely</b><span>The Udhaar Guardrail: green, amber, red</span></header>
+      <table><tr><th>Where</th><th>Do</th><th>You should see</th></tr>
+        <tr><td><span class="where w-sb">Soundbox</span></td><td>Tap the chip <b>Priya 340</b>.</td>
+          <td>Green: "Safe. Priya can take up to ₹4,100." Tap <b>Why?</b> for the reasons.</td></tr>
+        <tr><td><span class="where w-sb">Soundbox</span></td><td>Tap <b>Vikram 340</b>.</td>
+          <td>Red: "High risk. Collect full payment (₹340)." He's 41 days overdue.</td></tr>
+        <tr><td><span class="where w-sb">Soundbox</span></td><td>Tap <b>Ramesh 340</b>, then <b>Why?</b>.</td>
+          <td>Amber: "Caution. Give ₹200 on credit, collect ₹140 now." Reasons: score 662 → base ₹3,215, ₹1,700 overdue for 19 days → ×0.6, already owes ₹1,700.</td></tr>
+        <tr><td><span class="where w-sb">Soundbox</span></td><td>Tap <b>Use suggestion</b>.</td>
+          <td>A large QR: "Scan to confirm ₹200 udhaar · Lakshmi Stores", with "₹140 to pay now".</td></tr>
+      </table></div>
+
+    <div class="act"><header><b>C · Scan-to-Confirm</b><span>The customer confirms on their own phone</span></header>
+      <table><tr><th>Where</th><th>Do</th><th>You should see</th></tr>
+        <tr><td><span class="where w-c">Customer</span></td><td>Logged in as Ramesh, tap <b>Scan QR</b> and point it at the large QR. (Or tap <b>Open</b> on the "Action needed" card.)</td>
+          <td>The confirm sheet: ₹200 on credit, due 30 Nov, "Pay ₹140 now" with UPI selected.</td></tr>
+        <tr><td><span class="where w-c">Customer</span></td><td>Tap <b>Pay ₹140 &amp; confirm</b>.</td>
+          <td>"Confirmed ✓" on the phone. The Soundbox shows "✓ Confirmed by Ramesh". On the merchant phone, <b>At the counter</b> shows Ramesh as Verified. He now owes ₹1,900.</td></tr>
+      </table></div>
+
+    <div class="act"><header><b>D · Portable Trust</b><span>Credit for a customer the shop has never met</span></header>
+      <table><tr><th>Where</th><th>Do</th><th>You should see</th></tr>
+        <tr><td><span class="where w-c">Customer</span></td><td>Tap <b>Log out</b> and log in as Anita, <code>9000000014</code>. (Or hand a second phone to a judge.)</td>
+          <td>Anita's home: score 770 Strong.</td></tr>
+        <tr><td><span class="where w-sb">Soundbox</span></td><td>Tap <b>Anita 2000</b>.</td>
+          <td>"New customer. Ask them to scan to share their Bharosa Score. Starter limit ₹500." and a share QR. Don't tap anything else on the Soundbox yet.</td></tr>
+        <tr><td><span class="where w-c">Customer</span></td><td>Tap <b>Scan QR</b>, scan it, and tap <b>Share</b>.</td>
+          <td>The phone moves straight to the confirm sheet: ₹1,500 on credit, "Pay ₹500 now". The Soundbox switches to the confirm QR by itself.</td></tr>
+        <tr><td><span class="where w-c">Customer</span></td><td>Choose <b>Credit line on UPI</b>, then <b>Pay ₹500 &amp; confirm</b>.</td>
+          <td>"✓ Confirmed by Anita". The merchant's counter feed shows Anita with the tag <b>New · Paytm network</b>, never her other shops or amounts.</td></tr>
+      </table>
+      <div class="tip" style="margin:0;border-radius:0"><b>Tap Not now instead of Share</b> to see the other path: the starter limit of ₹500 on credit and ₹1,500 to pay now.</div></div>
+
+    <div class="act"><header><b>E · Stock up without cash</b><span>The Diwali plan and the Stock Advance</span></header>
+      <table><tr><th>Where</th><th>Do</th><th>You should see</th></tr>
+        <tr><td><span class="where w-m">Merchant</span></td><td>On Home, tap <b>Approve</b> on "Stock up for Diwali".</td>
+          <td>The Stock card: an ₹18,000 order from Sharma Traders due Fri 6 Nov, "₹9,200 short", and a Stock Advance offer of ₹9,200 with a ₹138 fee, repaid from 20% of repayments.</td></tr>
+        <tr><td><span class="where w-m">Merchant</span></td><td>Tap <b>Accept</b>.</td>
+          <td>"Partner NBFC paid Sharma Traders ₹9,200 ✓". The action is marked Done.</td></tr>
+      </table></div>
+
+    <div class="act"><header><b>F · Get paid without chasing</b><span>Reminder → promise → auto-pay → payment</span></header>
+      <table><tr><th>Where</th><th>Do</th><th>You should see</th></tr>
+        <tr><td><span class="where w-m">Merchant</span></td><td>Tap <b>Approve</b> on "Remind 2 overdue customers".</td>
+          <td>Reminders go to Ramesh and Vikram. The action shows "Sent to 2 · 0 replied · 0 promises".</td></tr>
+        <tr><td><span class="where w-c">Customer</span></td><td><b>Log out</b>, log in as Ramesh (<code>9000000012</code>), open <b>Messages</b>.</td>
+          <td>The reminder from Lakshmi Stores about his ₹1,900.</td></tr>
+        <tr><td><span class="where w-c">Customer</span></td><td>Type <code>Salary 1 tareekh ko aati hai, tab de dunga</code> and tap <b>Send</b>.</td>
+          <td>The shop's reply notes "₹1,900 on 1 Nov", with buttons <b>Set up salary-week auto-pay</b> and <b>Pay now</b>. The merchant's <b>Collect</b> tab shows the promise.</td></tr>
+        <tr><td><span class="where w-c">Customer</span></td><td>Tap <b>Set up salary-week auto-pay</b>, keep ₹3,000 and the 2nd, tap <b>Activate</b>.</td>
+          <td>"Auto-pay is active ✓". Home shows the next collection, Mon 2 Nov, with a notice the day before.</td></tr>
+        <tr><td><span class="where w-c">Customer</span></td><td>Tap <b>Pay now</b> (or <b>Pay</b> next to Lakshmi Stores on Home), change the amount to <code>500</code>, tap <b>Pay ₹500 by UPI</b>.</td>
+          <td>"Paid ₹500 ✓". The activity log (presenter screen, or the bell in the merchant app) shows "₹500 received from Ramesh Kumar · ₹400 to shop, ₹100 to Partner NBFC". The split only happens after step E.</td></tr>
+      </table></div>
+
+    <div class="act"><header><b>G · The monthly basket</b><span>A predicted order for a regular</span></header>
+      <table><tr><th>Where</th><th>Do</th><th>You should see</th></tr>
+        <tr><td><span class="where w-m">Merchant</span></td><td>Tap <b>Approve</b> on "Offer Priya her monthly basket".</td>
+          <td>"Offer sent to Priya".</td></tr>
+        <tr><td><span class="where w-c">Customer</span></td><td><b>Log out</b>, log in as Priya (<code>9000000011</code>), tap <b>View basket</b> on the "Action needed" card.</td>
+          <td>8 items worth ₹1,850, on credit.</td></tr>
+        <tr><td><span class="where w-c">Customer</span></td><td>Tap <b>Accept</b>.</td>
+          <td>"Basket ordered on credit ✓".</td></tr>
+        <tr><td><span class="where w-m">Merchant</span></td><td>Open the <b>Orders</b> tab and tap <b>Mark delivered</b>.</td>
+          <td>Delivered ✓. All three growth actions are now Done.</td></tr>
+      </table></div>
+
+    <div class="act"><header><b>H · Extras</b><span>Optional, if there's time</span></header>
+      <table><tr><th>Where</th><th>Do</th><th>You should see</th></tr>
+        <tr><td><span class="where w-m">Merchant</span></td><td>Open <b>Ask Munim</b> and ask <code>What is Ramesh's due?</code> or <code>Who is overdue?</code>. (Shown only when AI is on.)</td>
+          <td>An answer from the shop's live data, with an <b>AI</b> badge. TEMPLATE means the AI answer was rejected or timed out, and a safe summary was shown instead.</td></tr>
+        <tr><td><span class="where w-sb">Soundbox</span></td><td>Type <code>Ramesh ko 100 ka udhaar</code> in the text box and tap <b>Send</b>.</td>
+          <td>Rules understand the shopkeeper's own words and run the guardrail for ₹100.</td></tr>
+        <tr><td><span class="where w-sb">Soundbox</span></td><td>Tap <b>Vikram 340</b>, then <b>Override</b>. Log the customer phone in as Vikram (<code>9000000013</code>) and confirm.</td>
+          <td>The shopkeeper can always give credit; the counter feed tags it <b>Override</b>.</td></tr>
+        <tr><td><span class="where w-c">Customer</span></td><td>On any confirm sheet, tap <b>Dispute</b>, pick "Wrong amount", tap <b>Send dispute</b>.</td>
+          <td>The Soundbox shows "Disputed by …". In the merchant's <b>Udhaar Book</b>, open the customer and tap <b>Cancel entry</b>.</td></tr>
+        <tr><td><span class="where w-c">Customer</span></td><td>Open the <b>Score</b> tab.</td>
+          <td>How the score is calculated, line by line, and <b>Stop sharing</b> for each shop that can see it.</td></tr>
+      </table></div>
+  </section>
+
+  <section>
+    <h2><span class="n">5</span>Only a laptop?</h2>
+    <p>Open the <b>presenter screen</b>. It shows the Soundbox and the merchant and customer apps side by side. Log in to both phone frames with the numbers above. Instead of scanning, <b>click the large QR</b> on the Soundbox: it opens the same request in a new tab, logged in as the customer in the frame.</p>
+  </section>
+
+  <section>
+    <h2><span class="n">6</span>If something goes wrong</h2>
+    <table>
+      <tr><th>You see</th><th>Why, and what to do</th></tr>
+      <tr><td>"This QR is for payments. Use your UPI app to pay."</td><td>You scanned the shop's normal "Scan to pay" QR. Tap a chip and <b>Use suggestion</b> first, then scan the large QR that appears.</td></tr>
+      <tr><td>"This request is for another customer."</td><td>The phone is logged in as someone else. Tap <b>Log out</b> and log in as the customer named on the Soundbox.</td></tr>
+      <tr><td>"This request has expired."</td><td>Requests last 15 minutes. Tap the chip on the Soundbox again.</td></tr>
+      <tr><td>The camera doesn't open</td><td>Allow camera access for the site in the browser. Or tap <b>Open</b> on the "Action needed" card instead of scanning.</td></tr>
+      <tr><td>A ₹340 request comes back red for Ramesh, or the numbers look wrong</td><td>Earlier runs changed the data. Press <b>Reset</b> on the presenter screen.</td></tr>
+      <tr><td>Suddenly logged out, and the numbers are back to the start</td><td>The server restarted (for example after sleeping). Log in again; the demo starts from the beginning.</td></tr>
+      <tr><td>The first page load takes a long time</td><td>The server is waking up. Wait up to a minute.</td></tr>
+      <tr><td>A screen looks stale</td><td>Pull down to refresh, or reload the page.</td></tr>
+      <tr><td>The presenter screen asks for an admin key</td><td>Ask the team. The merchant, customer and Soundbox apps don't need it.</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2><span class="n">7</span>What's real and what's simulated</h2>
+    <div class="cols">
+      <table><tr><th>Real, in this prototype</th></tr>
+        <tr><td>The Bharosa Score, safe limits and every rupee figure, computed live from the ledger</td></tr>
+        <tr><td>Customer confirmation by QR, disputes, consent to share a score</td></tr>
+        <tr><td>Oldest-debt-first repayments and the 20% lender split</td></tr>
+        <tr><td>AI (Sarvam) for language only, behind validators, when switched on</td></tr></table>
+      <table><tr><th>Simulated</th></tr>
+        <tr><td>No real money moves: UPI, the credit line and the lender are stand-ins</td></tr>
+        <tr><td>The OTP is always <code>123456</code>; no SMS is sent</td></tr>
+        <tr><td>Auto-pay is set up and scheduled, but never collects</td></tr>
+        <tr><td>The date is fixed at Sat 31 Oct 2026, so the overdue days and the Diwali countdown stay the same</td></tr></table>
+    </div>
+  </section>
+
+  <div class="footer-note">Concept prototype · Team MerchantMavericks. All names, shops, the lender and the distributor are fictional.</div>
+</main>
+<script>
+// Links and QR codes point at wherever this page is served from.
+const base = location.origin;
+document.querySelectorAll('[data-base]').forEach(e => { e.textContent = base; });
+document.querySelectorAll('[data-url]').forEach(e => {
+  const a = document.createElement('a');
+  a.href = e.dataset.url; a.textContent = base + e.dataset.url;
+  a.target = e.dataset.url.startsWith('/#') ? '_top' : '_blank';
+  e.appendChild(a);
+});
+document.querySelectorAll('[data-qr]').forEach(e => { e.innerHTML = F.qr(base + e.dataset.qr, '#111418'); });
+</script>
+</body>
+</html>

@@ -13,13 +13,14 @@
   <!-- 1 -->
   <section class="hero">
     <div class="wordmark light">Bharosa <span>on Paytm</span></div>
-    <h1>Udhaar, from a cost into a growth engine.</h1>
-    <p class="sub">Every kirana gives credit on trust. Bharosa makes it safe, verified and self-collecting, on the Soundbox the merchant already has and the Paytm app the customer already uses.</p>
+    <h1>Trust, turned into growth.</h1>
+    <p class="sub">Every kirana gives credit on trust, and lends blind. Bharosa makes that trust verifiable: a two-way ledger where every udhaar entry is confirmed by the customer on their own phone, on the Soundbox the merchant already has and the Paytm app the customer already uses.</p>
     <div class="pillars">
-      <div><b>Sell more, safely</b><span>A safe limit for every request · Portable Trust for new customers · a predicted monthly basket for regulars</span></div>
-      <div><b>Get paid without chasing</b><span>Customers confirm in their own app · reminders that understand replies · compliant salary-week auto-pay</span></div>
+      <div><b>Sell more, safely</b><span>Udhaar Guardrail: a safe limit in under a second, with reasons · Override: the shopkeeper decides · Portable Trust for new customers · a predicted monthly basket</span></div>
+      <div><b>Get paid without chasing</b><span>Scan-to-Confirm in the customer's own app · reminders that understand the reply · compliant salary-week auto-pay</span></div>
       <div><b>Stock up without cash</b><span>A Diwali stock plan funded by a Stock Advance, paid straight to the distributor and repaid from 20% of repayments</span></div>
     </div>
+    <p class="cta"><a href="/#guide" target="_top">How to run the demo →</a> every login, every step, and what you should see.</p>
   </section>
 
   <!-- 2 -->
@@ -40,8 +41,9 @@
       <table><tr><th>AI does (Sarvam)</th></tr>
         <tr><td>Understands the shopkeeper's Hindi, Kannada or Hinglish (Counter Agent)</td></tr>
         <tr><td>Writes reminders and reads customers' replies (Recovery Agent)</td></tr>
-        <tr><td>Words the weekly plan and answers questions with read-only tools (Growth Agent)</td></tr>
-        <tr><td>Speech to text and one spoken line on the Soundbox</td></tr></table>
+        <tr><td>Words the weekly plan, and answers "Ask Munim" questions from five read-only tools: shop totals, the plan, stock, the overdue list and every customer's dues and limit (Growth Agent)</td></tr>
+        <tr><td>Speech to text and one spoken Kannada line on the Soundbox</td></tr>
+        <tr><td>Sarvam <code>sarvam-105b</code> with its "thinking" switched off: about 1.5 s a call, and an 8 s limit before a rule takes over</td></tr></table>
       <table><tr><th>Code does (always)</th></tr>
         <tr><td>Bharosa Score, safe limits, network exposure cap</td></tr>
         <tr><td>Ledger, payments, FIFO allocation, the 20% lender split</td></tr>
@@ -50,6 +52,18 @@
     </div>
     <ol class="rules"><li>The AI proposes; code decides.</li><li>No AI output changes money, limits or scores without a validator.</li>
       <li>Every AI answer can fall back to a rule or template.</li><li>Merchants never see other shops' data.</li><li>Every decision is logged, with its source.</li></ol>
+  </section>
+
+  <!-- 3b -->
+  <section><h2>Under the hood</h2>
+    <div class="cards3">
+      <div><b>One server, one write lock</b><span>A single FastAPI process with SQLite. Every change runs one at a time inside one transaction, so "confirm only once", the 20% split and "one active mandate" can't be broken by two taps at once.</span></div>
+      <div><b>Live updates that carry no data</b><span>After each change the server sends a ping naming what changed (e.g. <code>merchant:S1</code>); each app refetches its own view with its own login. Server-Sent Events first, long-polling when a proxy holds SSE back.</span></div>
+      <div><b>Views computed on read</b><span>The score, limits, totals and growth plan are worked out from the ledger every time they're shown. Nothing cached can drift from the entries.</span></div>
+      <div><b>The QR bridge</b><span>A one-time token per request, 15-minute expiry, owner-only. The customer app's scanner opens any Bharosa request QR; the server checks it belongs to the logged-in customer.</span></div>
+      <div><b>Logins</b><span>Phone + OTP or a one-time login QR. Separate merchant and customer sessions, HTTPS-only cookies when hosted, and <strong>Log out</strong> in the customer app to switch customers.</span></div>
+      <div><b>Tested and hosted</b><span>52 automated tests of the spec's contracts. Runs on any always-on host with HTTPS (one copy, no extra services), or on a laptop behind a Cloudflare tunnel.</span></div>
+    </div>
   </section>
 
   <!-- 4 -->
@@ -84,12 +98,14 @@
   <!-- 8 -->
   <section><h2>Stack · prototype vs production</h2>
     <table class="wide"><tr><th>Concern</th><th>Prototype</th><th>Production</th></tr>
-      <tr><td>Backend</td><td>FastAPI, SQLite, one process</td><td>Same code; Postgres, queue, idempotent consumers</td></tr>
-      <tr><td>Apps</td><td>Five web apps, Alpine.js, live “changed” pings</td><td>Paytm for Business, the Paytm app, Soundbox firmware</td></tr>
-      <tr><td>AI</td><td>Sarvam chat, speech-to-text, text-to-speech, off by default</td><td>Same, with evaluation sets and monitoring</td></tr>
+      <tr><td>Backend</td><td>FastAPI, SQLite, one process, one write lock</td><td>Same code; Postgres with row locks and unique constraints, a shared event bus, idempotent consumers</td></tr>
+      <tr><td>Apps</td><td>Five web apps, Alpine.js, live “changed” pings (SSE, with a long-poll fallback)</td><td>Paytm for Business, the Paytm app, Soundbox firmware</td></tr>
+      <tr><td>AI</td><td>Sarvam chat (reasoning off), speech-to-text, text-to-speech; off by default; every output validated</td><td>Same, with evaluation sets and monitoring of the AI-vs-template rate</td></tr>
       <tr><td>Payments</td><td>Simulated UPI, credit line on UPI, AutoPay schedule</td><td>Paytm UPI, partner credit lines, UPI AutoPay mandates</td></tr>
       <tr><td>Lending</td><td>Simulated Partner NBFC</td><td>Paytm lending partners; scoring via a licensed partner</td></tr>
-      <tr><td>Phones</td><td>QR over an HTTPS tunnel</td><td>Standard Paytm/UPI QR codes</td></tr></table>
+      <tr><td>Hosting</td><td>One always-on web service with HTTPS (e.g. Render), or a laptop behind a Cloudflare quick tunnel</td><td>Paytm's infrastructure</td></tr>
+      <tr><td>Phones</td><td>Any phone browser; the in-app scanner needs HTTPS</td><td>Standard Paytm/UPI QR codes</td></tr>
+      <tr><td>Secrets</td><td><code>.env</code> locally (git-ignored), environment variables on the host</td><td>A secrets vault</td></tr></table>
   </section>
 
   <!-- 9 -->

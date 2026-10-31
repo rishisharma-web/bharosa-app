@@ -128,9 +128,9 @@ app/
   api/               auth · soundbox · customer · merchant · voice · admin routes
 static/
   shared/            tokens.css, base.css, api.js (fetch + live updates), format.js (money, dates, QR, gauge)
-  soundbox/ merchant/ customer/ demo/ home/ overview/ presentation/
+  soundbox/ merchant/ customer/ demo/ guide/ home/ overview/ presentation/
   vendor/            alpine.min.js, qrcode.min.js, html5-qrcode.min.js
-tests/               51 tests: the spec's contracts
+tests/               52 tests: the spec's contracts
 scripts/             sarvam_smoke.py (one real AI call), build_pdf.py (slides → PDF)
 tasks.py             run · seed · test · smoke · pdf (Windows has no make)
 ```
@@ -611,7 +611,9 @@ Each app is one `index.html` with an Alpine.js component in one JS file. All of 
 
 ### 10.1 Home (`/`)
 
-One page with three tabs: **Live Demo** (`/demo`), **Overview** (`/overview`) and **Presentation** (`/presentation`). Each tab is an iframe loaded the first time it's opened and then kept alive, so switching tabs never resets the demo. Slide keys (arrows, space, F, N) are forwarded to the deck.
+One page with four tabs: **How to run the demo** (`/guide`), **Live Demo** (`/demo`), **Overview** (`/overview`) and **Presentation** (`/presentation`). With no `#` in the address it opens on the guide; presenters use `/#demo`. Each tab is an iframe loaded the first time it's opened and then kept alive, so switching tabs never resets the demo. Slide keys (arrows, space, F, N) are forwarded to the deck.
+
+The guide is a static page: links and QR codes are built from `location.origin`, so the same file works on a laptop, behind a tunnel or on a host. The presentation is 16 slides; its screenshots are images in `static/presentation/img/`, and `presentation.js` builds the footer from each slide's `data-act` and the HUD from its `data-group`.
 
 ### 10.2 Presenter screen (`/demo`)
 
@@ -867,7 +869,7 @@ Prototype gaps you would close before production: the Soundbox and voice endpoin
 
 ## 15. Testing
 
-`python tasks.py test` runs 51 tests in about 25 s. `tests/conftest.py` points the app at a temporary database, turns AI off and sets a test admin key. The `world` fixture resets the seed and logs in one HTTP client per role, each with its own cookies.
+`python tasks.py test` runs 52 tests in about 20 s. `tests/conftest.py` points the app at a temporary database, turns AI off and sets a test admin key. The `world` fixture resets the seed and logs in one HTTP client per role, each with its own cookies.
 
 | File | Contract |
 |---|---|
@@ -881,8 +883,8 @@ Prototype gaps you would close before production: the Soundbox and voice endpoin
 | `test_recovery_rules.py` | Reply rules with AI off; salary → promise on 1 Nov; drafts with a fee are rejected; auto-pay schedule |
 | `test_auth_privacy.py` | Merchant never sees other shops; customer isolation; 401s; one-time magic links |
 | `test_ai_off.py` | Every flow completes with outbound network blocked |
-| `test_pages.py` | Every page serves; slides and PDFs exist |
-| `test_no_mock_ui.py` | No demo names or `₹<digit>` amounts in app JS/HTML; no mock files |
+| `test_pages.py` | Home has four sections; every page serves; the guide lists every login and step; 16 slides with notes and served screenshots; both PDFs have 16 pages |
+| `test_no_mock_ui.py` | No demo names or `₹<digit>` amounts in app JS/HTML outside `guide/`, `overview/`, `presentation/`; no mock files |
 
 `python tasks.py smoke` makes one real Sarvam chat call and one text-to-speech call to check the key.
 

@@ -1,6 +1,6 @@
 """No hard-coded names, amounts or statuses in frontend code (spec §10.1, §14). Same check as
-test_no_mock_ui.sh, in Python so it runs on Windows too: only the static pitch pages
-(static/overview/ and static/presentation/) may match."""
+test_no_mock_ui.sh, in Python so it runs on Windows too: only the static documents about the
+demo world (static/guide/, static/overview/ and static/presentation/) may match."""
 import re
 from pathlib import Path
 
@@ -13,7 +13,7 @@ def test_frontend_has_no_mock_data():
     for f in list(STATIC.rglob("*.js")) + list(STATIC.rglob("*.html")):
         if PATTERN.search(f.read_text(encoding="utf-8", errors="ignore")):
             hits.append(f.relative_to(STATIC).as_posix())
-    assert all(h.startswith(("overview/", "presentation/")) for h in hits), hits
+    assert all(h.startswith(("guide/", "overview/", "presentation/")) for h in hits), hits
 
 
 def test_no_mock_files():

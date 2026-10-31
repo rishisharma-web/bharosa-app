@@ -18,7 +18,7 @@ from app.errors import EventError
 from app.models import Store
 
 STATIC = Path(__file__).resolve().parent.parent / "static"
-APPS = ("merchant", "customer", "soundbox", "demo", "overview", "presentation")
+APPS = ("merchant", "customer", "soundbox", "demo", "guide", "overview", "presentation")
 
 
 @asynccontextmanager

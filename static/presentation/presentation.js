@@ -5,13 +5,15 @@
   const params = new URLSearchParams(location.search);
   const slides = [...document.querySelectorAll('.slide')];
   const total = slides.length;
-  const ACTS = ['Problem', 'Challenge', 'Solution', 'Architecture', 'Risks'];
+  // The HUD shows each section (data-group) once, in slide order.
+  const GROUPS = [...new Set(slides.map(s => s.dataset.group).filter(Boolean))];
 
-  // Footer on every slide: product, act, number.
+  // Footer on every content slide: product, section label (data-act), number. Title and close have none.
   slides.forEach((s, k) => {
+    if (!s.dataset.act) return;
     const foot = document.createElement('div');
     foot.className = 'foot';
-    foot.innerHTML = `<span><b>Bharosa on Paytm</b> · Team MerchantMavericks</span><span>${s.dataset.act || ''}</span><span>${k + 1} / ${total}</span>`;
+    foot.innerHTML = `<span><b>Bharosa <span>on Paytm</span></b> · Team MerchantMavericks</span><span>${s.dataset.act}</span><span>${k + 1} / ${total}</span>`;
     s.appendChild(foot);
   });
 
@@ -36,7 +38,7 @@
 
   // ----- screen mode -----
   const hud = document.querySelector('.hud');
-  hud.innerHTML = ACTS.map(a => `<span data-act="${a}">${a}</span>`).join('') + '<span class="count"></span><span class="hint">← → move · F fullscreen · N notes</span>';
+  hud.innerHTML = GROUPS.map(g => `<span data-group="${g}">${g}</span>`).join('') + '<span class="count"></span><span class="hint">← → move · F fullscreen · N notes</span>';
   const panel = document.querySelector('.notes-panel');
   let i = 0;
 
@@ -50,8 +52,8 @@
   function go(n) {
     i = Math.max(0, Math.min(total - 1, n));
     slides.forEach((s, k) => s.classList.toggle('active', k === i));
-    const act = slides[i].dataset.act;
-    hud.querySelectorAll('[data-act]').forEach(e => e.classList.toggle('on', e.dataset.act === act));
+    const group = slides[i].dataset.group;
+    hud.querySelectorAll('[data-group]').forEach(e => e.classList.toggle('on', e.dataset.group === group));
     hud.querySelector('.count').textContent = `${i + 1} / ${total}`;
     const notes = slides[i].querySelector('.notes');
     panel.innerHTML = notes ? notes.innerHTML : '';

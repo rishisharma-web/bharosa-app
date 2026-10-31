@@ -17,7 +17,7 @@ where the agents sit and why, the pitch, tough questions) is [`bharosa-explained
 works (architecture, design choices, every engine, the AI layer, live updates, each flow end to end) is
 [`bharosa-technical-deep-dive.md`](bharosa-technical-deep-dive.md).
 
-**The pitch deck as PDF:** [`static/presentation/bharosa-pitch.pdf`](static/presentation/bharosa-pitch.pdf) (18 slides) and
+**The pitch deck as PDF:** [`static/presentation/bharosa-pitch.pdf`](static/presentation/bharosa-pitch.pdf) (16 slides) and
 [`bharosa-pitch-notes.pdf`](static/presentation/bharosa-pitch-notes.pdf) (each slide with its speaker notes, for rehearsal).
 
 ---
@@ -78,7 +78,7 @@ the git history.
 |---|---|
 | `python tasks.py run` | Start the server on port 8000 (all interfaces) |
 | `python tasks.py seed` | Rebuild the database from the seed |
-| `python tasks.py test` | Run the tests (51, about 15 s) |
+| `python tasks.py test` | Run the tests (52, about 20 s) |
 | `python tasks.py smoke` | One real Sarvam call (only when AI is on) |
 | `python tasks.py pdf` | Print the presentation to both PDFs (needs Chrome or Edge; no server needed) |
 
@@ -88,16 +88,23 @@ the git history.
 
 ## 2. The home page and the five apps
 
-**http://localhost:8000/** is one page with three sections (tabs at the top; `/#demo`, `/#overview`, `/#presentation`):
+**http://localhost:8000/** (or your hosted address) is one page with four sections (tabs at the top; `/#guide`,
+`/#demo`, `/#overview`, `/#presentation`). With no `#`, it opens on **How to run the demo**.
 
-1. **Live Demo**: the presenter screen below. Switching tabs never resets it.
-2. **Overview**: the one-page summary.
-3. **Presentation**: the pitch as 18 slides: Problem → Challenge → Solution → Architecture & flow (where the agents sit
-   and why) → Risks & answers. Keys: ← → / Space, **F** fullscreen, **N** speaker notes. The header has **Fullscreen**,
-   **PDF** and **PDF with notes**.
+1. **How to run the demo** (`/#guide`, also `/guide`): for anyone given the address. Every app's link and a QR code to
+   open it on a phone, every login, a checklist before starting, the whole flow step by step (where to tap and what
+   you should see), a laptop-only option and a troubleshooting table. Links and QR codes use the page's own address,
+   so it works on any host.
+2. **Live Demo** (`/#demo`): the presenter screen below. Switching tabs never resets it.
+3. **Overview**: the one-page summary, including how it's built (write lock, live updates, the QR bridge, logins, hosting).
+4. **Presentation**: the pitch as 16 slides: the opportunity, the problem and the insight → the solution and its five
+   features, with screenshots from the running app → how it works (where AI fits) → who benefits, the business model
+   and what we built → risks → close. Keys: ← → / Space, **F** fullscreen, **N** speaker notes. The header has
+   **Fullscreen**, **PDF** and **PDF with notes**.
 
 | App | URL | Who | Login |
 |---|---|---|---|
+| How to run the demo | `/guide` | Anyone running the demo | None |
 | Presenter screen | `/demo` | The team on stage | Admin key (asked once, kept in the browser) |
 | AI Soundbox simulator | `/soundbox` | The counter (laptop) | None, fixed to Lakshmi Stores |
 | Merchant app | `/merchant` | Lakshmi Stores owner | Phone `9000000001` + OTP |
@@ -132,9 +139,12 @@ Sharma Traders (+₹27,400 expected sales). The shop will have ₹8,800, so **�
 
 ## 4. Presenting (about 5 minutes of demo; the app does not enforce an order)
 
-Open `/` full screen. Start in **Presentation** (slides 1–6: problem, challenge, solution), switch to **Live Demo** for
-the steps below, then go back to **Presentation** for the architecture, the agents and the risks (slides 7–18).
-Rehearse from `bharosa-pitch-notes.pdf`.
+Open `/#presentation` full screen. Slides 1–5 set up the problem and the solution. Slides 6–10 each show one
+feature: switch to **Live Demo** to run that part live, then come back. Slide 11 is where AI fits, and 12–16 cover who
+benefits, the business model, what we built, risks and the close. Each slide's speaker notes say what to tap; rehearse
+from `bharosa-pitch-notes.pdf`. The full walkthrough, with what each screen should show, is the **How to run the demo** tab.
+
+The slide screenshots are images in `static/presentation/img/`. After changing the slides, run `python tasks.py pdf`.
 
 1. **Merchant** logs in → Home shows the growth plan (3 actions).
 2. **Soundbox**: tap **Priya 340** (green), then **Ramesh 340** (amber) → **Use suggestion** → a QR appears.
@@ -218,8 +228,9 @@ app/
 static/
   shared/             tokens.css · base.css · api.js (fetch + SSE pings) · format.js
   merchant/ customer/ soundbox/ demo/ overview/    one Alpine.js page each
-  home/               the three-section home page (/)
-  presentation/       the slides (plain JS) and the two committed PDFs
+  guide/              "How to run the demo": logins, every step, troubleshooting (static page, QR codes from its own address)
+  home/               the four-section home page (/)
+  presentation/       the 16 slides (plain JS), their screenshots in img/, and the two committed PDFs
   vendor/             Alpine 3.14.1 · qrcode-generator 1.4.4 · html5-qrcode 2.3.8
 tests/                spec §14 contracts (score, risk, requests, split, Diwali, growth, basket, recovery, privacy, AI off, no mock UI, pages)
 scripts/sarvam_smoke.py   scripts/build_pdf.py (slides → PDF with headless Chrome/Edge)
@@ -229,7 +240,8 @@ scripts/sarvam_smoke.py   scripts/build_pdf.py (slides → PDF with headless Chr
   on `/api/stream`. No data travels in the ping; each app refetches its own view.
 * **Privacy:** the merchant API never returns other shops' names, entries or amounts; a customer can only open
   their own requests; Portable Trust needs the customer's consent and can be revoked.
-* **No mock data:** frontend code contains no names or amounts (`tests/test_no_mock_ui.py`).
+* **No mock data:** app code contains no names or amounts (`tests/test_no_mock_ui.py`). Only the static documents about
+  the demo world (`guide/`, `overview/`, `presentation/`) may name the demo customers.
 
 API docs: **http://localhost:8000/docs**.
 

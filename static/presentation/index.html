@@ -8,490 +8,348 @@
 <link rel="stylesheet" href="/static/presentation/presentation.css">
 </head>
 <body>
+<!-- 16 slides, following Bharosa-pitch-deck.pdf. data-act = footer label, data-group = section in the HUD.
+     Screenshots in img/ come from the running prototype. -->
 <div class="stage"><div class="deck">
 
 <!-- 1 · Title -->
 <section class="slide dark title-slide" data-act="">
-  <div class="wm">Bharosa <span>on Paytm</span></div>
-  <h1>Trust, turned<br>into growth.</h1>
-  <div class="sub">Udhaar made safe, verified and self-collecting, on the Soundbox the merchant already has and the Paytm app the customer already uses.</div>
-  <div class="team"><b>Team MerchantMavericks</b> · Sujay Mohanty · Sukruth N · Rishi Sharma<br>
-    <span style="opacity:.75">Paytm Build for India AI Hackathon, Bengaluru · Track 1: Merchant Growth AI</span></div>
-  <aside class="notes"><b>Open (10 s).</b> "Every kirana in India is secretly a lender. We built Bharosa to make that lending safe, verified and a source of growth, using pieces Paytm already has."
-    <br>Who leads: business judges → lost sales, new customers, Diwali; technical mentors → the verified receivable and the AI firewall; risk people → consent, caps and who carries which risk.</aside>
+  <div class="title-grid">
+    <div>
+      <div class="wm">Bharosa <span>on Paytm</span></div>
+      <h1>Trust, turned<br>into growth.</h1>
+      <div class="sub">A trust layer for udhaar, built on the Soundbox the merchant already has and the Paytm app the customer already uses.</div>
+      <div class="team"><b>Team MerchantMavericks</b> · Sujay Mohanty · Sukruth N · Rishi Sharma<br>
+        <span style="opacity:.75">Paytm Build for India AI Hackathon, Bengaluru · Track 1: Merchant Growth AI</span></div>
+    </div>
+    <div class="title-shots">
+      <div class="shot sbshot"><img src="/static/presentation/img/sb-ramesh-confirmed.png" alt="AI Soundbox showing Confirmed by Ramesh"></div>
+      <div class="shot phone"><img src="/static/presentation/img/phone-ramesh-confirm.png" alt="Ramesh confirming ₹200 on credit in the Paytm app"></div>
+    </div>
+  </div>
+  <aside class="notes"><b>Open (10 s).</b> "Every kirana in India is secretly a lender. Bharosa makes that lending safe, verified and a source of growth, using pieces Paytm already has."
+    <br>The two screens are real: the Soundbox at the counter and Ramesh confirming his credit on his own phone. Who leads: business judges → lost sales and new customers; technical mentors → the verified receivable and the AI firewall; risk people → consent, caps and who carries which risk.</aside>
 </section>
 
-<!-- 2 · Problem -->
-<section class="slide" data-act="Problem">
-  <div class="kicker">The problem</div>
-  <h2>Every kirana is secretly a lender, and it lends blind.</h2>
-  <p class="lead">A customer takes ₹340 of goods today and pays "later". The shop has just made an <b>unsecured, interest-free loan</b>, with none of a lender's tools.</p>
+<!-- 2 · The opportunity -->
+<section class="slide" data-act="The opportunity" data-group="Problem">
+  <div class="kicker">The opportunity</div>
+  <h2>Every kirana in India is secretly a lender.</h2>
+  <p class="lead">Udhaar is how a neighbourhood shop wins and keeps customers, and its best weapon against quick commerce. Paytm is already on the counter.</p>
   <div class="body">
-    <div class="grid g4">
-      <div class="card bad"><b>No risk check</b><p>Decided by gut feel, at a busy counter, in seconds.</p></div>
-      <div class="card bad"><b>No proof</b><p>A line in a notebook. The customer never agreed to it.</p></div>
-      <div class="card bad"><b>No collection</b><p>Chasing a neighbour for money is awkward, so it doesn't happen.</p></div>
-      <div class="card bad"><b>No funding</b><p>Credit is paid for out of the money meant for stock.</p></div>
-    </div>
-    <div class="arrow">▼</div>
     <div class="grid g3">
-      <div class="card tint"><b>Refuses new customers</b><p>"I don't know you" means no credit, and no sale.</p></div>
-      <div class="card tint"><b>Caps good customers</b><p>Reliable regulars are rationed with everyone else.</p></div>
-      <div class="card tint"><b>Can't stock up</b><p>Cash stuck in udhaar means a thin shelf at Diwali.</p></div>
+      <div class="tc stat"><div class="n">4.5 cr</div><p>merchants accept payments with Paytm</p></div>
+      <div class="tc cy stat"><div class="n">1.57 cr</div><p>have a Paytm device like the Soundbox on the counter</p></div>
+      <div class="tc fill stat"><div class="n">Daily</div><p>credit decisions at every kirana, made on gut feel, with no tools</p></div>
     </div>
-    <div class="quote">So the shopkeeper rations credit out of fear, and every "no" is a lost sale.</div>
+    <div class="quote">A huge share of those merchants are kiranas, and every one of them gives credit.</div>
   </div>
-  <aside class="notes"><b>Problem (20 s).</b> "Udhaar is a kirana's loyalty programme and its weapon against quick commerce. But the shopkeeper lends blind: no risk check, no proof, no collections, no funding. So they ration it, and lose sales."
-    <br>Point at the four red boxes left to right, then the bottom line.</aside>
+  <aside class="notes"><b>The opportunity (20 s).</b> Udhaar isn't a side issue: it's how a kirana keeps customers from quick-commerce apps. Paytm already reaches 4.5 crore merchants and has 1.57 crore devices on counters, so the distribution already exists. What's missing is a tool for the credit decision the shopkeeper makes many times a day.</aside>
 </section>
 
-<!-- 3 · Challenge -->
-<section class="slide" data-act="Challenge">
-  <div class="kicker">The challenge</div>
-  <h2>The problem isn't the notebook. Trust is invisible.</h2>
-  <p class="lead">Khata apps already digitised the notebook. They record udhaar; they don't make it <b>trustworthy to anyone else</b>. If trust became visible and verifiable, credit would stop being a risk to ration and become a tool to grow with.</p>
+<!-- 3 · The problem -->
+<section class="slide" data-act="The problem" data-group="Problem">
+  <div class="kicker">The problem</div>
+  <h2>The shop lends blind, so it rations credit out of fear.</h2>
+  <p class="lead">A customer takes ₹340 of goods and pays "later". The shop has just made an unsecured, interest-free loan, with none of a lender's tools.</p>
   <div class="body">
-    <div class="big" style="font-size:22px">Making trust verifiable needs four things at once:</div>
     <div class="grid g4">
-      <div class="card"><b>A device at the counter</b><p>Where the credit happens, at the moment it happens.</p><p class="green-t" style="margin-top:8px;font-weight:700">Paytm Soundbox ✓</p></div>
-      <div class="card"><b>An app in the customer's hand</b><p>So the customer can agree to the debt themselves.</p><p class="green-t" style="margin-top:8px;font-weight:700">Paytm app ✓</p></div>
-      <div class="card"><b>A payment rail</b><p>So repayment leaves a digital trail and can be automated.</p><p class="green-t" style="margin-top:8px;font-weight:700">UPI · UPI AutoPay ✓</p></div>
-      <div class="card"><b>Lenders</b><p>So verified receivables can fund the shop's growth.</p><p class="green-t" style="margin-top:8px;font-weight:700">Paytm lending partners ✓</p></div>
+      <div class="tc"><h4>No risk check</h4><p>Decided by gut feel, at a busy counter, in seconds.</p></div>
+      <div class="tc"><h4>No proof</h4><p>A one-sided notebook. The customer never agreed to it.</p></div>
+      <div class="tc"><h4>No collection</h4><p>Chasing a neighbour is awkward, so it doesn't happen.</p></div>
+      <div class="tc"><h4>No funding</h4><p>Every rupee lent comes out of stock money.</p></div>
     </div>
-    <div class="quote">Paytm already has all four. Nobody else has them together.</div>
+    <div class="grid g3">
+      <div class="tc bl"><h4>Refuses new customers</h4><p>"I don't know you" means no credit, and no sale.</p></div>
+      <div class="tc bl"><h4>Caps good customers</h4><p>Reliable regulars are rationed with everyone else.</p></div>
+      <div class="tc bl"><h4>Can't stock up</h4><p>Cash stuck in udhaar means a thin shelf at Diwali.</p></div>
+    </div>
+    <div class="quote">Every "no" is a lost sale.</div>
   </div>
-  <aside class="notes"><b>Insight (15 s).</b> "The problem isn't the notebook. It's that trust is invisible. Make it verifiable and credit becomes a growth tool."
-    <br><b>Why Paytm (15 s).</b> "Only Paytm has the device on the counter, the app in the customer's hand, the payment rail and the lenders, plus a merchant network that makes portable trust possible."</aside>
+  <aside class="notes"><b>The problem (25 s).</b> Top row: the four tools a lender has and a shop doesn't. Bottom row: what the shop does about it. Because it can't tell good risk from bad, it says no to strangers, caps its best regulars, and has no cash left for festive stock. "Every no is a lost sale" is the line to land.</aside>
 </section>
 
-<!-- 4 · Solution picture -->
-<section class="slide" data-act="Solution">
+<!-- 4 · The insight -->
+<section class="slide" data-act="The insight" data-group="Problem">
+  <div class="kicker">The insight</div>
+  <h2>The problem isn't the notebook. Trust is invisible.</h2>
+  <p class="lead">Khata apps already digitised the record. What's missing is trust that anyone else can verify: a <b>two-way ledger</b>, where every credit entry is confirmed by the customer on their own phone.</p>
+  <div class="body">
+    <div style="display:grid;grid-template-columns:1fr 60px 1fr;align-items:center">
+      <div class="tc gr"><h4 style="color:#4A5568">Today: a khata app</h4><p>The shopkeeper writes "Ramesh ₹200". A one-sided claim: possibly wrong, inflated or disputed. <b>Useless to anyone else.</b></p></div>
+      <div class="arrow" style="color:var(--cyan);font-size:30px">→</div>
+      <div class="tc cy"><h4>Bharosa: a verified receivable</h4><p>Ramesh confirms ₹200 in his own Paytm app. Both sides see the same record, with a UPI repayment trail. <b>Now it can be used.</b></p></div>
+    </div>
+    <div class="grid g3">
+      <div class="tc fill"><h4>Safe limits</h4><p>How much credit is safe, for whom, right now</p></div>
+      <div class="tc fill"><h4>New customers</h4><p>Trust that travels between Paytm shops, with consent</p></div>
+      <div class="tc fill"><h4>Funding</h4><p>Verified udhaar backs a Stock Advance for the shop</p></div>
+    </div>
+    <div class="why">Why Paytm: <span class="chip">Soundbox on the counter</span><span class="chip">Paytm app in the customer's hand</span><span class="chip">UPI and UPI AutoPay</span><span class="chip">Lending partners</span> Only Paytm has all four.</div>
+  </div>
+  <aside class="notes"><b>The insight (25 s).</b> The obvious answer, "digitise the notebook", already exists and didn't fix this. A khata entry is the shop's word only. Once the customer confirms it in their own app, it becomes a verified receivable, and three things open up: safe limits, trust for new customers, and funding. Only Paytm has the device, the app, the rails and the lenders together.</aside>
+</section>
+
+<!-- 5 · The solution -->
+<section class="slide" data-act="The solution" data-group="Solution">
   <div class="kicker">The solution</div>
   <h2>Bharosa: sell more, get paid, stock up.</h2>
-  <p class="lead">Three merchant benefits, built on one trust layer and pulled together by a weekly growth plan.</p>
+  <p class="lead">Three merchant benefits on one trust layer, pulled together by a weekly growth plan.</p>
   <div class="body">
     <div class="grid g3">
-      <div class="card"><b>1 · Sell more, safely</b>
-        <p><span class="chip">Udhaar Guardrail</span> a safe limit for every request, in a second</p>
-        <p style="margin-top:6px"><span class="chip">Portable Trust</span> new customers bring their Bharosa Score, with consent</p>
-        <p style="margin-top:6px"><span class="chip">Monthly basket</span> regular orders, predicted and offered</p></div>
-      <div class="card"><b>2 · Get paid without chasing</b>
-        <p><span class="chip">Scan-to-Confirm</span> the customer agrees to the debt on their own phone</p>
-        <p style="margin-top:6px"><span class="chip">Smart reminders</span> that understand the reply</p>
-        <p style="margin-top:6px"><span class="chip">Salary-week auto-pay</span> UPI AutoPay, the compliant way</p></div>
-      <div class="card"><b>3 · Stock up without cash</b>
-        <p><span class="chip">Festive plan</span> Diwali demand from last year's sales</p>
-        <p style="margin-top:6px"><span class="chip">Stock Advance</span> a partner lender pays the distributor directly</p>
-        <p style="margin-top:6px"><span class="chip">20% of repayments</span> repay the lender automatically</p></div>
+      <div class="tc"><h4>1 · Sell more, safely</h4><ul class="ck">
+        <li><b>Udhaar Guardrail:</b> a safe limit in under a second, with reasons</li>
+        <li><b>Override:</b> the shopkeeper always decides</li>
+        <li><b>Portable Trust:</b> new customers bring their Bharosa Score</li></ul></div>
+      <div class="tc"><h4>2 · Get paid without chasing</h4><ul class="ck">
+        <li><b>Scan-to-Confirm:</b> the customer verifies every entry</li>
+        <li><b>Smart nudges:</b> reminders that understand the reply</li>
+        <li><b>Salary-week auto-pay:</b> UPI AutoPay, the compliant way</li></ul></div>
+      <div class="tc"><h4>3 · Stock up without cash</h4><ul class="ck">
+        <li><b>Festive plan:</b> Diwali demand from last year's sales</li>
+        <li><b>Stock Advance:</b> the lender pays the distributor directly</li>
+        <li><b>Self-repaying:</b> from 20% of customer repayments</li></ul></div>
     </div>
-    <div class="card tint" style="text-align:center"><b style="color:var(--navy)">Growth plan</b><p>A weekly to-do list for the merchant, ranked by impact in rupees. One tap to approve each action.</p></div>
-    <div class="card navy" style="text-align:center"><b>Trust layer</b><p>Verified receivables · Bharosa Score · consent · exposure caps · fraud checks</p></div>
+    <div class="tc bl center"><h4>Weekly growth plan</h4><p>The top three actions for the shop, ranked by rupee impact. One tap to approve each.</p></div>
+    <div class="tc fill center"><h4>Trust layer</h4><p>Verified receivables · Bharosa Score · consent · exposure caps · fraud checks</p></div>
   </div>
-  <aside class="notes"><b>Product (40 s), part 1.</b> "At the counter, the Guardrail suggests a safe limit in a second. The customer confirms on their own phone, so the debt is verified. A customer new to the shop can share their Bharosa Score and get credit safely: a new customer won. Reminders understand replies; auto-pay collects in salary week. And for Diwali, Bharosa plans the stock and a partner lender pays the distributor directly, repaid from 20% of incoming repayments."</aside>
+  <aside class="notes"><b>The solution (30 s).</b> Three benefits, each answering a row of the problem slide. Under all of them is one trust layer; on top, the weekly growth plan turns it into three concrete actions the merchant approves with one tap. The next five slides show each piece, using screens from the running app.</aside>
 </section>
 
-<!-- 5 · Verified receivable -->
-<section class="slide" data-act="Solution">
-  <div class="kicker">The core idea</div>
-  <h2>One step changes everything: the verified receivable.</h2>
-  <p class="lead">A debt both sides acknowledged, with a digital repayment trail, is no longer a note. It is <b>data</b>, and data can be used.</p>
+<!-- 6 · Udhaar Guardrail -->
+<section class="slide" data-act="Sell more, safely" data-group="Solution">
+  <div class="kicker">Sell more, safely · Udhaar Guardrail</div>
+  <h2>A safe limit in under a second, for every customer.</h2>
+  <p class="lead">The shopkeeper says "Ramesh 340". Bharosa checks the customer's repayment history and suggests a limit: green, amber or red, always with the reasons.</p>
+  <div class="body" style="justify-content:flex-end">
+    <div style="display:grid;grid-template-columns:repeat(3,1fr) 300px;gap:22px;align-items:end">
+      <div><div class="shot sbshot" style="width:240px;margin:0 auto"><img src="/static/presentation/img/sb-priya-safe.png" alt="Soundbox: Safe, Priya can take up to ₹4,100"></div>
+        <div class="cap"><b>Priya · score 780 · Strong</b>Green: go ahead, limit ₹4,100</div></div>
+      <div><div class="shot sbshot" style="width:240px;margin:0 auto"><img src="/static/presentation/img/sb-ramesh-caution.png" alt="Soundbox: Caution, ₹200 on credit and ₹140 now, with reasons"></div>
+        <div class="cap"><b>Ramesh · score 662 · Good</b>Amber: ₹200 credit + ₹140 now · 19 days overdue</div></div>
+      <div><div class="shot sbshot" style="width:240px;margin:0 auto"><img src="/static/presentation/img/sb-vikram-risk.png" alt="Soundbox: High risk, collect full payment"></div>
+        <div class="cap"><b>Vikram · score 438 · Building</b>Red: collect payment first</div></div>
+      <div class="tc cy" style="align-self:center"><h4>The shopkeeper decides</h4>
+        <p>Bharosa suggests; it never blocks. If the shopkeeper knows Vikram, one tap on <b>Override</b> gives the credit, and the override is recorded.</p>
+        <div class="shot cardshot" style="margin-top:12px"><img src="/static/presentation/img/counter-feed.png" alt="At the counter: Anita, Vikram with Override, Ramesh"></div></div>
+    </div>
+  </div>
+  <aside class="notes"><b>Guardrail (40 s, demo).</b> On the Soundbox tap <b>Priya 340</b> (green), then <b>Ramesh 340</b> (amber) and tap <b>Why?</b>: score 662 gives a base of ₹3,215, ×0.6 for 19 days overdue, minus ₹1,700 already owed, so ₹200 on credit and ₹140 now. The formula is code, not AI, and runs in about a millisecond. <b>Vikram 340</b> is red. The shopkeeper can still Override; it's logged and shows in the merchant's counter feed.</aside>
+</section>
+
+<!-- 7 · Scan-to-Confirm -->
+<section class="slide" data-act="Get paid" data-group="Solution">
+  <div class="kicker">Scan-to-Confirm · the two-way ledger</div>
+  <h2>The customer confirms the credit on their own phone.</h2>
+  <p class="lead">One scan turns a notebook line into a verified debt. It works with any Paytm Soundbox, even the printed QR, and the counter updates in about a second.</p>
   <div class="body">
-    <div class="grid g2">
-      <div class="card" style="background:#F7F8FB">
-        <div class="kicker" style="color:var(--muted)">Today · khata app</div>
-        <p class="big" style="font-size:20px">Shopkeeper writes "Ramesh ₹200"</p>
-        <div class="arrow">▼</div>
-        <p><b style="display:inline;font-size:17px">A one-sided claim.</b> Could be wrong, inflated or disputed.</p>
-        <div class="arrow">▼</div>
-        <p class="red-t" style="font-weight:800;font-size:18px">Useless to anyone else.</p>
-      </div>
-      <div class="card" style="border:2px solid var(--green)">
-        <div class="kicker" style="color:var(--green)">Bharosa</div>
-        <p class="big" style="font-size:20px">Shopkeeper records "Ramesh ₹200"</p>
-        <div class="arrow">▼</div>
-        <p><b style="display:inline;font-size:17px">Ramesh confirms on his own phone</b>, in his logged-in Paytm account.</p>
-        <div class="arrow">▼</div>
-        <p class="green-t" style="font-weight:800;font-size:18px">A verified receivable + a UPI repayment trail.</p>
-      </div>
-    </div>
-    <div class="grid g3">
-      <div class="card navy"><b>Bharosa Score</b><p>A credit identity built from everyday life.</p></div>
-      <div class="card navy"><b>Safe limits</b><p>For the next request, here and at other Paytm shops.</p></div>
-      <div class="card navy"><b>Collateral</b><p>For a Stock Advance from a partner lender.</p></div>
+    <div class="flowrow">
+      <div><div class="shot sbshot" style="width:215px;margin:0 auto"><img src="/static/presentation/img/sb-ramesh-qr.png" alt="Soundbox: scan to confirm ₹200 udhaar, ₹140 to pay now"></div>
+        <div class="cap"><b>1 · A one-time QR for Ramesh</b>₹200 on credit, ₹140 to pay now</div></div>
+      <div class="to">→</div>
+      <div><div class="shot phone" style="width:168px;margin:0 auto"><img src="/static/presentation/img/phone-ramesh-confirm.png" alt="Ramesh's app: Pay ₹140 and confirm"></div>
+        <div class="cap"><b>2 · Ramesh confirms in his app</b>Only his logged-in account can open it</div></div>
+      <div class="to">→</div>
+      <div><div class="shot sbshot" style="width:235px;margin:0 auto"><img src="/static/presentation/img/sb-ramesh-confirmed.png" alt="Soundbox: Confirmed by Ramesh"></div>
+        <div class="cap"><b>3 · Verified on both sides</b>Shop ledger and customer app agree</div></div>
+      <div class="tc fill" style="width:270px;align-self:center"><h4>Why customers do it</h4><p>Confirmed credit, repaid on time, raises their Bharosa Score and their limits at every Paytm shop.</p></div>
     </div>
   </div>
-  <aside class="notes">"Everything in Bharosa flows from this one step. Once a debt is confirmed by the customer, it can decide limits, build a credit identity, and get the shop funded."
-    <br>Why would a customer confirm? One scan, and on-time repayment of confirmed credit raises their score: higher limits at every Paytm shop.</aside>
+  <aside class="notes"><b>Scan-to-Confirm (40 s, demo).</b> After <b>Use suggestion</b>, the Soundbox shows a one-time QR. On Ramesh's phone: <b>Scan QR</b> → the confirm sheet → <b>Pay ₹140 &amp; confirm</b>. Watch the Soundbox change to "Confirmed by Ramesh" within a second; the merchant's counter feed shows Verified. The QR is useless to anyone else: the server checks it belongs to the logged-in customer and expires it after 15 minutes.</aside>
 </section>
 
-<!-- 6 · One transaction -->
-<section class="slide" data-act="Solution">
-  <div class="kicker">How it works</div>
-  <h2>One transaction, end to end: Ramesh asks for ₹340.</h2>
-  <p class="lead" style="margin-bottom:10px">He already owes ₹1,700 here, 19 days overdue.</p>
+<!-- 8 · Portable Trust -->
+<section class="slide" data-act="Sell more, safely" data-group="Solution">
+  <div class="kicker">Portable Trust · new customers</div>
+  <h2>A shop can safely give credit to someone it has never met.</h2>
+  <p class="lead">Anita is new to Lakshmi Stores, so she'd only get a ₹500 starter limit. She chooses to share the Bharosa Score she built at other Paytm shops.</p>
   <div class="body">
-    <div class="lanes">
-      <div class="lane-h">Shopkeeper</div><div class="lane-h">Soundbox</div><div class="lane-h">Bharosa platform</div><div class="lane-h">Ramesh's phone</div>
-      <div class="lane-bg" style="grid-column:1"></div><div class="lane-bg" style="grid-column:2"></div><div class="lane-bg" style="grid-column:3"></div><div class="lane-bg" style="grid-column:4"></div>
-      <div class="step human" style="grid-column:1;grid-row:2"><i>1</i>Says "Ramesh 340"</div>
-      <div class="step aiy" style="grid-column:3;grid-row:2"><i>2</i>Who is "Ramesh"? Rule match; the <b class="violet-t">Counter Agent</b> only if the sentence is messy</div>
-      <div class="step code" style="grid-column:3;grid-row:3"><i>3</i>Risk engine: score 662 → base ₹3,215 · 19 days overdue → ×0.6 · minus ₹1,700 owed → <b>₹200</b></div>
-      <div class="step code" style="grid-column:2;grid-row:4"><i>4</i><b class="amber-t">Caution.</b> Give ₹200 on credit, collect ₹140 now. <span class="muted-s">Why? shows the reasons</span></div>
-      <div class="step human" style="grid-column:1;grid-row:5"><i>5</i>Taps <b>Use suggestion</b></div>
-      <div class="step code" style="grid-column:3;grid-row:5"><i>6</i>Entry <b>proposed</b> · one-time request for Ramesh, 15 minutes</div>
-      <div class="step code" style="grid-column:2;grid-row:6"><i>7</i>Shows the request QR</div>
-      <div class="step human" style="grid-column:4;grid-row:6"><i>8</i>Scans · "Pay ₹140 &amp; confirm"</div>
-      <div class="step code" style="grid-column:3;grid-row:7"><i>9</i>Is this Ramesh? · ₹140 recorded as a sale · entry <b class="green-t">verified</b> · shared-device check · notify every screen</div>
-      <div class="step code" style="grid-column:2;grid-row:8"><i>10</i>"✓ Confirmed by Ramesh", within a second</div>
-      <div class="step human" style="grid-column:4;grid-row:8"><i>11</i>Sees ₹200 in My dues; score explained</div>
-    </div>
-    <div class="row" style="gap:18px;font-size:14px">
-      <span><span class="chip" style="background:#fff;border-left:5px solid var(--cyan)">a person acts</span></span>
-      <span><span class="chip" style="background:#fff;border-left:5px solid var(--navy)">code decides</span></span>
-      <span><span class="chip" style="background:#fff;border-left:5px solid var(--violet)">AI may help</span></span>
-      <b style="color:var(--navy);margin-left:auto;font-size:17px">AI understood one sentence, at most. Everything after it is deterministic code.</b>
+    <div class="flowrow" style="gap:14px">
+      <div><div class="shot phone" style="width:165px;margin:0 auto"><img src="/static/presentation/img/phone-anita-share.png" alt="Anita's app: share your Bharosa Score with Lakshmi Stores"></div>
+        <div class="cap"><b>1 · Anita taps Share</b>Her choice; she can revoke it</div></div>
+      <div class="to">→</div>
+      <div><div class="shot sbshot" style="width:205px;margin:0 auto"><img src="/static/presentation/img/sb-anita-qr.png" alt="Soundbox: network-trusted new customer, ₹1,500 on credit"></div>
+        <div class="cap"><b>2 · ₹1,500 credit + ₹500 now</b>Score 770 · 40% of the network limit</div></div>
+      <div class="to">→</div>
+      <div><div class="shot cardshot" style="width:320px;margin:0 auto"><img src="/static/presentation/img/counter-feed.png" alt="At the counter: Anita tagged New · Paytm network"></div>
+        <div class="cap"><b>3 · "New · Paytm network"</b>A new customer won</div></div>
+      <div class="tc cy" style="width:255px;align-self:center"><h4>Privacy by design</h4><ul class="ck">
+        <li>Only with the customer's consent</li>
+        <li>The shop sees a band and a limit, never other shops or amounts</li>
+        <li>An exposure cap across all shops</li></ul></div>
     </div>
   </div>
-  <aside class="notes">Walk the numbers once, slowly: 662 → ₹3,215 → ×0.6 because he's 19 days overdue → minus the ₹1,700 he owes → ₹200. "The shopkeeper still makes the sale: ₹200 on credit, ₹140 now."
-    <br><b>Switch to Live Demo now</b> (tab at the top): Priya 340 (green) → Ramesh 340 (amber) → Use suggestion → scan on Ramesh's phone → confirm. Then Anita 2000 (Portable Trust), Diwali, reminders, basket. Come back to slide 7 for the architecture.</aside>
+  <aside class="notes"><b>Portable Trust (40 s, demo).</b> Hand a judge a phone logged in as Anita (or scan her login QR). On the Soundbox tap <b>Anita 2000</b>: she's new here, so the Soundbox asks her to share. She taps <b>Share</b>, her phone moves straight to the confirm sheet, ₹1,500 on credit and ₹500 now by Credit line on UPI. The merchant sees "New · Paytm network" but never her other shops or what she owes there.</aside>
 </section>
 
-<!-- 7 · Architecture -->
-<section class="slide" data-act="Architecture">
-  <div class="kicker">The architecture</div>
-  <h2 style="font-size:34px">Where everything sits, and where the agents sit.</h2>
-  <div class="body" style="margin-top:6px">
-    <div class="arch">
-      <div style="display:flex;flex-direction:column;min-height:0">
-        <div class="surfaces">
-          <div class="surface"><b>Soundbox</b>classic or AI · voice, displays, QR</div>
-          <div class="surface"><b>Paytm for Business</b>the merchant · approvals, views</div>
-          <div class="surface"><b>Paytm app</b>the customer · scan, confirm, pay, consent</div>
-        </div>
-        <div class="platform">
-          <div class="ptitle">BHAROSA PLATFORM</div>
-          <div class="layer"><b><span class="ln">1</span> Access<small>who you are, what you may see</small></b><div><span class="chip">identity &amp; roles</span><span class="chip">consent checks</span><span class="chip">privacy in one place</span></div></div>
-          <div class="layer l-ai"><b><span class="ln">2</span> AI layer: the agents<small style="color:var(--violet)">proposes, never decides</small></b><div><span class="chip ai">Speech</span><span class="chip ai">Counter Agent</span><span class="chip ai">Recovery Agent</span><span class="chip ai">Growth Agent (Munim)</span></div></div>
-          <div class="layer l-val"><b><span class="ln">3</span> Validation: the firewall<small style="color:#9A5B00">every AI output crosses it</small></b><div><span class="chip" style="background:#fff">strict JSON schema</span><span class="chip" style="background:#fff">policy rules</span><span class="chip" style="background:#fff">every ₹ and name must exist</span><span class="chip" style="background:#fff">else rule / template</span></div></div>
-          <div class="layer l-core"><b><span class="ln">4</span> Trust core<small>deterministic · the source of truth</small></b><div><span class="chip light">ledger &amp; entry states</span><span class="chip light">score</span><span class="chip light">risk: limits, exposure cap</span><span class="chip light">Portable Trust</span><span class="chip light">QR request service</span></div></div>
-          <div class="layer l-core" style="background:var(--navy-deep)"><b><span class="ln">5</span> Money &amp; growth<small>deterministic maths</small></b><div><span class="chip light">payments · FIFO</span><span class="chip light">20% split</span><span class="chip light">AutoPay schedule</span><span class="chip light">festive plan</span><span class="chip light">basket</span><span class="chip light">Stock Advance</span><span class="chip light">growth candidates</span></div></div>
-          <div class="grid g2" style="gap:6px">
-            <div class="layer" style="grid-template-columns:120px 1fr"><b><span class="ln">6</span> Protection</b><div><span class="chip">shared-device check</span><span class="chip">audit log</span></div></div>
-            <div class="layer" style="grid-template-columns:120px 1fr"><b><span class="ln">7</span> Events</b><div><span class="chip">"changed" pings</span><span class="chip">spoken lines</span></div></div>
-          </div>
-        </div>
-        <div class="rails"><b>Rails:</b> UPI · UPI AutoPay · credit line on UPI (partner banks) · lending partners · distributor payments · licensed credit-information partner</div>
-      </div>
-      <div class="side">
-        <div class="card ai"><b>Agents live only in <span class="ln">2</span></b><p>They turn messy language into structured proposals, and numbers into words.</p></div>
-        <div class="card wall"><b><span class="ln">3</span> is the firewall</b><p>Nothing an agent says reaches <span class="ln">4</span> or <span class="ln">5</span> without a validator.</p></div>
-        <div class="card navy"><b><span class="ln">4</span>–<span class="ln">5</span> decide</b><p>Same input, same output. Exact, auditable, explainable.</p></div>
-        <div class="card tint"><b>Humans approve money</b><p>The merchant taps Approve; the customer confirms.</p></div>
+<!-- 9 · Get paid without chasing -->
+<section class="slide" data-act="Get paid" data-group="Solution">
+  <div class="kicker">Get paid without chasing</div>
+  <h2>Polite nudges that understand the reply, and pay on salary day.</h2>
+  <div class="body">
+    <div style="display:grid;grid-template-columns:auto auto 1fr;gap:26px;align-items:center">
+      <div><div class="shot phone" style="width:205px"><img src="/static/presentation/img/phone-ramesh-messages.png" alt="Ramesh's messages: reminder, his reply and the promise"></div>
+        <div class="cap"><b>The reminder, his reply, and the promise</b></div></div>
+      <div><div class="shot phone" style="width:205px"><img src="/static/presentation/img/phone-ramesh-autopay.png" alt="Salary-week auto-pay set-up"></div>
+        <div class="cap"><b>Salary-week auto-pay in one tap</b></div></div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="tc"><h4><span class="num-dot">1</span>A reminder in his language</h4><p>The shopkeeper approves; Bharosa sends it. No awkward chasing.</p></div>
+        <div class="tc"><h4><span class="num-dot">2</span>His reply is understood</h4><p>"Salary 1 tareekh ko aati hai, tab de dunga" becomes a promise: <b>₹1,900 on 1 Nov</b>, tracked for the shop.</p></div>
+        <div class="tc cy"><h4><span class="num-dot">3</span>UPI AutoPay, the compliant way</h4><p>He picks a collection date in salary week and a cap, gets a notice the day before, and can skip a month.</p></div>
       </div>
     </div>
   </div>
-  <aside class="notes"><b>For technical judges, lead here.</b> Read the stack top to bottom: Paytm surfaces in, rails out. "The agents sit in one layer only, layer two. Everything they produce crosses a validator, layer three, before deterministic code in layers four and five does anything. Agents can read; they can never write."
-    <br>Prototype mapping: <span class="ln">2</span> = app/agents + app/ai/sarvam.py, <span class="ln">3</span> = the validators in each agent module, <span class="ln">4</span> = app/core/score, risk, requests, <span class="ln">5</span> = payments, advance, festive, basket, mandates, growth, <span class="ln">7</span> = app/bus.py.</aside>
+  <aside class="notes"><b>Get paid (40 s, demo).</b> On the merchant app approve <b>Remind 2 overdue customers</b>. On Ramesh's phone open Messages and reply "Salary 1 tareekh ko aati hai, tab de dunga". The reply is read as a promise of ₹1,900 (his ₹1,700 plus today's ₹200) on 1 Nov, and he's offered auto-pay. Keyword rules catch this one in microseconds; the Recovery Agent only handles replies the rules miss, and code checks its promise date and amount.</aside>
 </section>
 
-<!-- 8 · Where AI stops -->
-<section class="slide" data-act="Architecture">
-  <div class="kicker">Where AI stops</div>
+<!-- 10 · Stock Advance -->
+<section class="slide" data-act="Stock up" data-group="Solution">
+  <div class="kicker">Stock up without cash · Stock Advance</div>
+  <h2>Diwali stock, funded by the trust the shop has built.</h2>
+  <div class="body">
+    <div style="display:grid;grid-template-columns:340px 1fr;gap:28px;align-items:center">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div class="shot cardshot"><img src="/static/presentation/img/stock-offer.png" alt="Stock card: ₹18,000 order, ₹9,200 short, Stock Advance offer"></div>
+        <div class="shot cardshot"><img src="/static/presentation/img/stock-paid.png" alt="Partner NBFC paid Sharma Traders ₹9,200"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="grid g2">
+          <div class="tc stat"><div class="n" style="font-size:54px">1.6×</div><p>Last year's Diwali week vs a normal week</p></div>
+          <div class="tc stat"><div class="n" style="font-size:54px">₹27,400</div><p>expected extra sales from a ₹18,000 order</p></div>
+          <div class="tc cy stat"><div class="n" style="font-size:54px">₹9,200</div><p>short on the bill, so a Stock Advance (fee ₹138)</p></div>
+          <div class="tc fill stat"><div class="n" style="font-size:54px">20%</div><p>of customer repayments repay the lender automatically</p></div>
+        </div>
+        <div class="tc bl"><p><b>The partner lender pays the distributor directly</b>, so the money can only become stock. It is sized at most 40% of verified udhaar from reliable customers. The shop's verified udhaar is what makes the lender say yes.</p></div>
+        <div class="quote">Trust becomes working capital.</div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><b>Stock up (40 s, demo).</b> Approve <b>Stock up for Diwali</b>: last year's Diwali week was 1.6× normal, so an ₹18,000 order from Sharma Traders should bring about ₹27,400 in extra sales. The shop will only have ₹8,800, so it's ₹9,200 short. Tap <b>Accept</b> on the Stock Advance: "Partner NBFC paid Sharma Traders ₹9,200 ✓". From now on 20% of every UPI repayment goes to the lender until the ₹9,338 is repaid. Every figure is code: the AI can only reword the plan.</aside>
+</section>
+
+<!-- 11 · How it works -->
+<section class="slide" data-act="How it works" data-group="How it works">
+  <div class="kicker">How it works · where AI fits</div>
   <h2>AI where the world is messy. Code where money moves.</h2>
-  <div class="body" style="margin-top:8px">
-    <div class="zones">
-      <div class="zone nd">
-        <h4>Non-deterministic · AI (may vary)</h4>
-        <div class="zrow"><span class="chip">voice</span><span class="to">→</span><span class="chip ai">Speech-to-text</span><span class="to">→</span><span class="chip ai">Counter Agent</span></div>
-        <div class="zrow"><span class="chip">customer's reply</span><span class="to">→</span><span class="chip ai">Recovery Agent</span></div>
-        <div class="zrow"><span class="chip code">growth candidates (code)</span><span class="to">→</span><span class="chip ai">Growth Agent</span> writes words</div>
-        <div class="zrow"><span class="chip">merchant's question</span><span class="to">→</span><span class="chip ai">Munim</span> + read-only tools</div>
-        <div class="zrow"><span class="chip code">verdict (code)</span><span class="to">→</span><span class="chip ai">translate + speak</span></div>
-      </div>
-      <div class="fw"><div class="bar"><span>VALIDATOR</span><span>FIREWALL</span></div></div>
-      <div class="zone d">
-        <h4>Deterministic · code (same input, same output)</h4>
-        <div class="zrow"><span class="to">→</span> risk engine → <b>safe limit + reasons</b></div>
-        <div class="zrow"><span class="to">→</span> <b>promise stored</b>, auto-pay offered</div>
-        <div class="zrow"><span class="to">→</span> <b>plan text shown</b>; the order stays code's</div>
-        <div class="zrow"><span class="to">→</span> <b>answer shown</b>, every ₹ from a tool</div>
-        <div class="zrow"><span class="to">→</span> <b>one spoken line</b>, same ₹ figures</div>
-      </div>
-    </div>
-    <div class="grid g2">
-      <div class="card wall"><b>If a proposal fails the check</b><p>Bad JSON, an unknown customer, a ₹ figure not in our data, or an 8-second timeout → the rule or template result is used instead, and logged as such.</p></div>
-      <div class="card navy"><b>Never AI</b><p>Score · limits · ledger · payments · the 20% split · Stock Advance sizing · mandates · fraud checks.</p></div>
-    </div>
+  <div class="body" style="gap:10px">
+    <div class="surf3"><div>Soundbox · voice, displays, QR</div><div>Paytm for Business · the merchant</div><div>Paytm app · the customer</div></div>
+    <div class="lyr ai"><b>AI layer: 4 agents<small>proposes, never decides</small></b>
+      <div><span class="chip">Speech (Kannada, Hindi, English)</span><span class="chip">Counter Agent: "Ramesh ne 340 liya"</span><span class="chip">Recovery Agent: reminders, replies</span><span class="chip">Growth Agent (Munim): explains the plan</span></div></div>
+    <div class="lyr val"><b>Validation firewall<small>every AI output is checked</small></b>
+      <div><span class="chip">strict formats</span><span class="chip">customer must exist</span><span class="chip">every ₹ must match the ledger</span><span class="chip">else a simple rule takes over</span></div></div>
+    <div class="lyr core"><b>Trust core<small>deterministic, explainable</small></b>
+      <div><span class="chip">two-way ledger</span><span class="chip">Bharosa Score</span><span class="chip">safe limits + exposure cap</span><span class="chip">consent</span><span class="chip">QR request bridge</span></div></div>
+    <div class="lyr core"><b>Money &amp; growth<small>exact maths</small></b>
+      <div><span class="chip">payments</span><span class="chip">20% lender split</span><span class="chip">AutoPay schedule</span><span class="chip">festive plan</span><span class="chip">Stock Advance</span><span class="chip">fraud checks</span></div></div>
+    <div class="lyr rail"><b>Rails<small>Paytm's existing pipes</small></b>
+      <div><span class="chip">UPI</span><span class="chip">UPI AutoPay</span><span class="chip">credit line on UPI</span><span class="chip">lending partners</span><span class="chip">distributor payments</span></div></div>
+    <div class="quote" style="margin-top:6px">The AI suggests; people decide; code moves the money. AI never sets a score, decides a limit or moves money.</div>
   </div>
-  <aside class="notes"><b>AI (20 s).</b> "AI handles what's messy: Kannada and Hindi speech, conversations, explanations. Code handles money: scores, limits, payments. The AI suggests; it never decides."
-    <br>Why this split: LLMs are good at messy language, many languages and code-mixing, polite writing and explanations. They are bad at exact arithmetic, consistency, auditability and not inventing facts. So we use them only where their strengths matter.</aside>
+  <aside class="notes"><b>How it works (45 s).</b> Read top to bottom. AI sits only where input is messy: speech, the shopkeeper's words, customers' replies, and wording the plan. Every AI output goes through a validator: the format must be right, the customer must exist, and every rupee must match a figure the code computed. If anything fails or Sarvam takes over 8 s, a rule or template answers, and the badge on screen shows which. Score, limits, payments, the split and the advance are plain code. With AI switched off, the whole demo still works.</aside>
 </section>
 
-<!-- 9 · Anatomy of an agent -->
-<section class="slide" data-act="Architecture">
-  <div class="kicker">What "agent" means here</div>
-  <h2>An agent = LLM + one job + a validator + a fallback.</h2>
-  <p class="lead" style="margin-bottom:6px"><span class="chip">one job</span><span class="chip">optional read-only tools</span><span class="chip">strict JSON output</span><span class="chip">validator</span><span class="chip">fallback</span> Rules always run first; the LLM is only called when they can't answer.</p>
-  <div class="body">
-    <div class="svgwrap">
-      <svg viewBox="0 0 1180 350" role="img" aria-label="Agent pipeline">
-        <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#8A94A6"/></marker></defs>
-        <rect x="318" y="104" width="488" height="232" rx="18" fill="#EFEBFD"/>
-        <text x="332" y="326" font-size="13" font-weight="800" fill="#6B4FD8" letter-spacing="1.5">NON-DETERMINISTIC</text>
-        <!-- boxes -->
-        <g font-size="17" font-weight="800" text-anchor="middle">
-          <rect x="10" y="140" width="112" height="60" rx="12" fill="#E8EEF8"/><text x="66" y="166" fill="#042E6F">Input</text>
-          <text x="66" y="186" font-size="12" font-weight="600" fill="#4A5568">words · voice · question</text>
-          <rect x="150" y="140" width="140" height="60" rx="12" fill="#042E6F"/><text x="220" y="166" fill="#fff">Rules first</text>
-          <text x="220" y="186" font-size="12" font-weight="600" fill="#C9D6EE">regex · keywords</text>
-          <rect x="334" y="140" width="138" height="60" rx="12" fill="#fff" stroke="#CFC3FA" stroke-width="2"/><text x="403" y="166" fill="#6B4FD8">Prompt</text>
-          <text x="403" y="186" font-size="12" font-weight="600" fill="#4A5568">job + rules + facts</text>
-          <rect x="504" y="140" width="112" height="60" rx="12" fill="#6B4FD8"/><text x="560" y="166" fill="#fff">LLM</text>
-          <text x="560" y="186" font-size="12" font-weight="600" fill="#E2DAFD">Sarvam</text>
-          <rect x="648" y="140" width="144" height="60" rx="12" fill="#fff" stroke="#CFC3FA" stroke-width="2"/><text x="720" y="166" fill="#6B4FD8">JSON proposal</text>
-          <text x="720" y="186" font-size="12" font-weight="600" fill="#4A5568">fixed shape</text>
-          <rect x="828" y="132" width="132" height="76" rx="12" fill="#FFF4E0" stroke="#E08A00" stroke-width="2.5" stroke-dasharray="7 5"/><text x="894" y="164" fill="#9A5B00">VALIDATOR</text>
-          <text x="894" y="184" font-size="12" font-weight="600" fill="#4A5568">schema · ₹ · names</text>
-          <text x="894" y="199" font-size="12" font-weight="600" fill="#4A5568">· policy</text>
-          <rect x="504" y="262" width="112" height="56" rx="12" fill="#fff" stroke="#8A94A6" stroke-width="1.5"/><text x="560" y="285" font-size="14" fill="#111418">Read-only tools</text>
-          <text x="560" y="303" font-size="12" font-weight="600" fill="#4A5568">Munim only</text>
-          <rect x="828" y="262" width="132" height="56" rx="12" fill="#FDECEA"/><text x="894" y="285" font-size="15" fill="#D93025">Fallback</text>
-          <text x="894" y="303" font-size="12" font-weight="600" fill="#4A5568">rule / template</text>
-          <!-- results -->
-          <rect x="996" y="18" width="176" height="56" rx="12" fill="#E6F6EE"/><text x="1084" y="42" fill="#1E9E5A">Result</text>
-          <text x="1084" y="61" font-size="12" font-weight="600" fill="#4A5568">source = rule</text>
-          <rect x="996" y="142" width="176" height="56" rx="12" fill="#E6F6EE"/><text x="1084" y="166" fill="#1E9E5A">Result</text>
-          <text x="1084" y="185" font-size="12" font-weight="600" fill="#4A5568">source = ai</text>
-          <rect x="996" y="262" width="176" height="56" rx="12" fill="#E6F6EE"/><text x="1084" y="286" fill="#1E9E5A">Result</text>
-          <text x="1084" y="305" font-size="12" font-weight="600" fill="#4A5568">source = template</text>
-        </g>
-        <!-- arrows -->
-        <g stroke="#8A94A6" stroke-width="2.2" fill="none" marker-end="url(#ah)">
-          <path d="M122,170 H148"/>
-          <path d="M220,140 V46 H994"/>
-          <path d="M290,170 H332"/>
-          <path d="M472,170 H502"/>
-          <path d="M616,170 H646"/>
-          <path d="M792,170 H826"/>
-          <path d="M960,170 H994"/>
-          <path d="M894,208 V260"/>
-          <path d="M960,290 H994"/>
-          <path d="M560,262 V202" marker-start="url(#ah)"/>
-        </g>
-        <g font-size="13" font-weight="700" fill="#4A5568">
-          <text x="232" y="98">match (e.g. "Ramesh 340"): no AI call</text>
-          <text x="296" y="160" font-size="12">no match,</text><text x="300" y="214" font-size="12">AI on</text>
-          <text x="964" y="160" font-size="12" fill="#1E9E5A">pass</text>
-          <text x="902" y="236" font-size="12" fill="#D93025">fail · timeout 8 s · bad JSON</text>
-        </g>
-      </svg>
-    </div>
-    <div class="grid g3">
-      <div class="card"><b>Agents read, never write</b><p>Tools only fetch. Any change goes through deterministic services, usually after a human taps.</p></div>
-      <div class="card"><b>Every result is labelled</b><p>The activity log shows rule, ai or template for each decision.</p></div>
-      <div class="card"><b>AI off? Still works</b><p>With the switch off, every flow runs on rules and templates. A test makes sure no AI call is made.</p></div>
-    </div>
-  </div>
-  <aside class="notes">"In Bharosa an agent is a narrow thing: an LLM with one job, a strict JSON format, a validator and a fallback. Simple inputs like 'Ramesh 340' never touch the LLM. The LLM only proposes; the validator decides; if anything goes wrong, the rule or template answer is used and the product keeps working."
-    <br>If asked: the demo runs with AI off by default (SARVAM_ENABLED=false); test_ai_off.py asserts zero outbound calls.</aside>
-</section>
-
-<!-- 10 · The four agents -->
-<section class="slide" data-act="Architecture">
-  <div class="kicker">The agents, and why each one</div>
-  <h2>Four agents, each where rules alone fall short.</h2>
-  <div class="body" style="margin-top:8px">
-    <div class="grid g4">
-      <div class="card ai"><b>Speech</b><p style="font-size:14.5px"><b style="display:inline;font-size:14.5px;color:var(--ink)">Job:</b> voice → text; one short Kannada line back</p>
-        <p style="font-size:14.5px;margin-top:6px"><b style="display:inline;font-size:14.5px;color:var(--ink)">Why AI:</b> speech recognition is inherently AI</p>
-        <p style="font-size:14.5px;margin-top:6px"><b style="display:inline;font-size:14.5px;color:var(--red)">Never:</b> decides anything</p></div>
-      <div class="card ai"><b>Counter Agent</b><p style="font-size:14.5px"><b style="display:inline;font-size:14.5px;color:var(--ink)">Job:</b> "Ramesh ne 340 ka saaman liya" → {customer, amount}</p>
-        <p style="font-size:14.5px;margin-top:6px"><b style="display:inline;font-size:14.5px;color:var(--ink)">Why AI:</b> many languages, code-mixing, number words</p>
-        <p style="font-size:14.5px;margin-top:6px"><b style="display:inline;font-size:14.5px;color:var(--red)">Never:</b> invents a customer or amount; sets a limit</p></div>
-      <div class="card ai"><b>Recovery Agent</b><p style="font-size:14.5px"><b style="display:inline;font-size:14.5px;color:var(--ink)">Job:</b> polite reminders; "salary 1 tareekh ko" → promise ₹ on 1 Nov</p>
-        <p style="font-size:14.5px;margin-top:6px"><b style="display:inline;font-size:14.5px;color:var(--ink)">Why AI:</b> replies are open-ended; templates can't read them</p>
-        <p style="font-size:14.5px;margin-top:6px"><b style="display:inline;font-size:14.5px;color:var(--red)">Never:</b> changes dues; accepts a promise outside policy</p></div>
-      <div class="card ai"><b>Growth Agent (Munim)</b><p style="font-size:14.5px"><b style="display:inline;font-size:14.5px;color:var(--ink)">Job:</b> words the weekly plan; answers "How do I pay Sharma on Friday?"</p>
-        <p style="font-size:14.5px;margin-top:6px"><b style="display:inline;font-size:14.5px;color:var(--ink)">Why AI:</b> turns several data sources into plain advice</p>
-        <p style="font-size:14.5px;margin-top:6px"><b style="display:inline;font-size:14.5px;color:var(--red)">Never:</b> changes a number or the ranking; acts without a tap</p></div>
-    </div>
-    <div class="grid g4" style="font-size:14px">
-      <div class="card wall" style="padding:8px 12px"><p style="font-size:13.5px"><b style="display:inline;font-size:13.5px">Checks:</b> spoken line keeps the same ₹ figures</p></div>
-      <div class="card wall" style="padding:8px 12px"><p style="font-size:13.5px"><b style="display:inline;font-size:13.5px">Checks:</b> customer in the list · amount ₹1–₹50,000</p></div>
-      <div class="card wall" style="padding:8px 12px"><p style="font-size:13.5px"><b style="display:inline;font-size:13.5px">Checks:</b> only ₹ = dues · promise ≤ dues, within 30 days</p></div>
-      <div class="card wall" style="padding:8px 12px"><p style="font-size:13.5px"><b style="display:inline;font-size:13.5px">Checks:</b> same actions, code's order · every ₹ from the facts</p></div>
-    </div>
-    <div class="grid g2">
-      <div class="card tint"><b>Why not more agents?</b><p>Each one adds non-determinism, latency and cost. Scores, limits, payments, the split, advance sizing, auto-pay and fraud checks are exact maths: they stay code.</p></div>
-      <div class="card tint"><b>Why not zero agents?</b><p>Then the shopkeeper types exact formats at a busy counter, reminders are generic and replies are ignored. That's just another khata app.</p></div>
-    </div>
-  </div>
-  <aside class="notes">"We didn't add agents for the sake of it. There are exactly four, and each one sits where the input is genuinely messy human language. Look at the bottom of every card: what it can never do. And the amber row: the check its output must pass."
-    <br>Judge question "why agents at all?": only where the input is messy human language; each output is validated by code, with a fallback.</aside>
-</section>
-
-<!-- 11 · Agents along the journey -->
-<section class="slide" data-act="Architecture">
-  <div class="kicker">The flow</div>
-  <h2>Where each agent works along the journey.</h2>
-  <p class="lead">Six steps from the counter to growth. AI appears at the edges, where people speak; code holds the middle, where money moves.</p>
-  <div class="body">
-    <div class="journey">
-      <div></div>
-      <div class="st">Ask<small>at the counter</small></div><div class="st">Check<small>safe limit</small></div><div class="st">Decide<small>the offer</small></div>
-      <div class="st">Confirm<small>on the phone</small></div><div class="st">Collect<small>get paid</small></div><div class="st">Grow<small>weekly plan</small></div>
-      <div class="rh">Who acts</div>
-      <div class="c">Shopkeeper speaks or types</div><div class="c">Code</div><div class="c">Code; shopkeeper accepts or overrides</div>
-      <div class="c">Customer scans and confirms</div><div class="c">Customer replies, pays, sets up auto-pay</div><div class="c">Merchant approves</div>
-      <div class="rh">Agent</div>
-      <div class="c ai">Speech → Counter Agent (only if rules fail)</div><div class="c none">none</div><div class="c ai">Speech says the verdict</div>
-      <div class="c ai">Speech says "confirmed"</div><div class="c ai">Recovery Agent: writes reminders, reads replies</div><div class="c ai">Growth Agent: words the plan; Munim answers</div>
-      <div class="rh">Code that decides</div>
-      <div class="c code">Rule parser · validator</div><div class="c code">Score · overdue penalty · exposure cap · Portable Trust</div><div class="c code">Request service · ledger (proposed)</div>
-      <div class="c code">Identity check · sale · entry verified · device check</div><div class="c code">Promise · AutoPay schedule · FIFO · 20% split</div><div class="c code">Festive plan · Stock Advance · basket · ranking</div>
-    </div>
-    <div class="grid g3">
-      <div class="card"><b>Counter → Confirm</b><p>One QR request ties the counter to the right customer's phone. Any Soundbox works: printed QR, AI display or the merchant's phone.</p></div>
-      <div class="card"><b>Collect</b><p>"Salary 1 tareekh ko aati hai" → a promise on 1 Nov → salary-week auto-pay, with a notice the day before.</p></div>
-      <div class="card"><b>Grow</b><p>Code ranks Diwali stock, overdue reminders and the monthly basket by rupee impact; the agent only explains them.</p></div>
-    </div>
-  </div>
-  <aside class="notes">Tie this back to what they just saw in the Live Demo: Ask/Check/Decide/Confirm was the Soundbox and Ramesh's phone; Collect was the reminder and the reply; Grow was the plan on the merchant home. "Every violet cell is optional: switch AI off and the same journey runs on rules and templates."</aside>
-</section>
-
-<!-- 12 · Containment -->
-<section class="slide" data-act="Architecture">
-  <div class="kicker">Containing non-determinism</div>
-  <h2>Six controls keep the AI honest.</h2>
-  <div class="body" style="margin-top:12px">
-    <div class="grid g3">
-      <div class="card"><div class="row"><span class="num-dot">1</span><b style="margin:0">Strict output formats</b></div><p style="margin-top:6px">The LLM must return JSON of a fixed shape. Anything else is rejected.</p></div>
-      <div class="card"><div class="row"><span class="num-dot">2</span><b style="margin:0">Grounding checks</b></div><p style="margin-top:6px">Every ₹ figure and every customer the AI names must already exist in our data.</p></div>
-      <div class="card"><div class="row"><span class="num-dot">3</span><b style="margin:0">Rules first, AI second</b></div><p style="margin-top:6px">"Ramesh 340" never reaches the LLM. Faster, cheaper, predictable.</p></div>
-      <div class="card"><div class="row"><span class="num-dot">4</span><b style="margin:0">Humans approve money</b></div><p style="margin-top:6px">The merchant taps Approve or Accept; the customer confirms every credit.</p></div>
-      <div class="card"><div class="row"><span class="num-dot">5</span><b style="margin:0">Fallbacks everywhere</b></div><p style="margin-top:6px">AI down, slow or wrong? Templates and rules take over. The product keeps working.</p></div>
-      <div class="card"><div class="row"><span class="num-dot">6</span><b style="margin:0">In production, measure</b></div><p style="margin-top:6px">Phrase test sets per language, accuracy monitoring, a log of every proposal and verdict.</p></div>
-    </div>
-    <div class="quote" style="margin-top:8px">"We use AI where the world is messy (speech, languages, conversations, explanations) and code where money moves. The AI can suggest; it can never decide or pay."</div>
-  </div>
-  <aside class="notes">This is the one-sentence answer for judges; say the quote verbatim. If asked about hallucinated numbers: control 2. If asked about the AI being down on stage: control 5, and the demo already runs with AI off.</aside>
-</section>
-
-<!-- 13 · Prototype vs production -->
-<section class="slide" data-act="Architecture">
-  <div class="kicker">Prototype vs production</div>
-  <h2>The intelligence is real. The rails are adapters.</h2>
-  <div class="body" style="margin-top:10px">
-    <table>
-      <tr><th style="width:24%">Part</th><th style="width:38%">In the real solution</th><th>In our prototype</th></tr>
-      <tr><td>Soundbox</td><td>Paytm devices send voice and text</td><td>A web page that behaves like the AI Soundbox</td></tr>
-      <tr><td>Customer and merchant apps</td><td>Bharosa inside the Paytm app and Paytm for Business</td><td>Phone web apps styled like them, with phone + OTP login</td></tr>
-      <tr><td>Ledger, score, limits, requests, split, advance sizing, fraud check</td><td><b>Same logic</b></td><td><b>Real code</b>, covered by tests</td></tr>
-      <tr><td>UPI, AutoPay, credit line, lender, distributor</td><td>Real rails and partners</td><td>Simulated adapters with the same shape</td></tr>
-      <tr><td>AI</td><td>Sarvam (or Paytm's own models), with evaluation sets</td><td>Sarvam behind an on/off switch; off by default</td></tr>
-      <tr><td>Infrastructure</td><td>Paytm cloud: Postgres, event streaming, caches</td><td>FastAPI + SQLite on a laptop; a secure tunnel for real phones</td></tr>
-    </table>
-    <div class="quote">Swap the adapters, and this runs on Paytm.</div>
-  </div>
-  <aside class="notes">"The intelligence is real; the rails are simulated behind adapters shaped like Paytm's. Swap the adapters, and this runs on Paytm."</aside>
-</section>
-
-<!-- 14 · Who benefits -->
-<section class="slide" data-act="Solution">
+<!-- 12 · Who benefits -->
+<section class="slide" data-act="Who benefits" data-group="Impact">
   <div class="kicker">Who benefits</div>
-  <h2>Good for the merchant, good for Paytm, no balance-sheet risk.</h2>
-  <div class="body" style="margin-top:10px">
+  <h2>A win for the merchant, the customer and Paytm.</h2>
+  <div class="body">
     <div class="grid g3">
-      <div class="card"><b>The merchant</b>
-        <p>• <b style="display:inline;font-size:16px">More customers:</b> serve people they've never met</p>
-        <p>• <b style="display:inline;font-size:16px">More per customer:</b> clear limits, monthly baskets</p>
-        <p>• <b style="display:inline;font-size:16px">Seasonal growth:</b> Diwali stock planned and funded</p>
-        <p>• <b style="display:inline;font-size:16px">Money back faster:</b> confirmed debts, smart reminders, auto-pay</p>
-        <p>• <b style="display:inline;font-size:16px">Fewer losses, no awkwardness</b></p></div>
-      <div class="card navy"><b>Paytm</b>
-        <p>• <b style="display:inline;font-size:16px">Soundbox engagement</b> beyond payment alerts</p>
-        <p>• <b style="display:inline;font-size:16px">Lending distribution</b> via Stock Advances</p>
-        <p>• <b style="display:inline;font-size:16px">New consumers</b> install the app to confirm and build a score</p>
-        <p>• <b style="display:inline;font-size:16px">More UPI and AutoPay volume</b></p>
-        <p>• <b style="display:inline;font-size:16px">A network moat:</b> Portable Trust grows with every merchant</p></div>
-      <div class="card"><b>Customers and lenders</b>
-        <p>• <b style="display:inline;font-size:16px">Customers:</b> credit at more shops and a credit identity from everyday life</p>
-        <p style="margin-top:8px">• <b style="display:inline;font-size:16px">Lenders:</b> short, self-repaying advances backed by verified receivables, and new pre-verified borrowers</p></div>
+      <div class="tc"><h4 style="font-size:24px">The merchant</h4><ul class="ck">
+        <li><b>More customers:</b> safely serve people never met before</li>
+        <li><b>Bigger, repeat sales:</b> clear safe limits for every regular</li>
+        <li><b>Fewer losses:</b> stops over-extending to overdue customers</li>
+        <li><b>Money back faster:</b> confirmed debts, nudges, salary-week auto-pay</li>
+        <li><b>Festive growth:</b> Diwali stock planned and funded</li>
+        <li><b>No awkwardness:</b> Bharosa reminds, not the shopkeeper</li></ul></div>
+      <div class="tc cy"><h4 style="font-size:24px">The customer</h4><ul class="ck">
+        <li><b>Credit at more shops:</b> the Bharosa Score travels, with consent</li>
+        <li><b>A credit identity</b> built from everyday shopping</li>
+        <li><b>Transparency:</b> sees every entry and how the score is calculated</li>
+        <li><b>Pay on salary day:</b> AutoPay with notice, and skip a month</li>
+        <li><b>Privacy:</b> shops see a band and a limit, never other shops</li>
+        <li><b>Fair disputes:</b> a wrong entry can be disputed in the app</li></ul></div>
+      <div class="tc fill"><h4 style="font-size:24px">Paytm</h4><ul class="ck">
+        <li><b>Soundbox engagement:</b> daily use beyond payment alerts</li>
+        <li><b>Lending distribution:</b> Stock Advances and better-timed loans</li>
+        <li><b>New consumers in the Paytm app</b> to confirm and build a score</li>
+        <li><b>More UPI and AutoPay volume</b> from repayments and mandates</li>
+        <li><b>A network moat:</b> Portable Trust grows with every merchant</li>
+        <li><b>No balance-sheet risk:</b> regulated partners carry credit risk</li></ul></div>
     </div>
-    <div class="card good"><b>No balance-sheet risk for Paytm</b><p>Paytm doesn't lend udhaar. The shop keeps its udhaar risk, now capped and informed; regulated partners carry advances and above-limit credit.</p></div>
   </div>
-  <aside class="notes"><b>Close the business case.</b> "Bharosa grows merchants, grows Paytm's lending and app usage, and carries no balance-sheet risk."
-    <br>Revenue lines if asked: lending distribution fees on advances and loans, bank fees for credit-line customers acquired at the counter, collections, an optional premium tier.</aside>
+  <aside class="notes"><b>Who benefits (25 s).</b> Don't read the lists. Pick one line per column: the merchant serves customers it used to refuse; the customer builds a credit identity from groceries; Paytm gets daily Soundbox use and lending distribution with no balance-sheet risk.</aside>
 </section>
 
-<!-- 15 · Design decisions -->
-<section class="slide" data-act="Risks">
+<!-- 13 · Business model -->
+<section class="slide" data-act="Business model" data-group="Impact">
+  <div class="kicker">Business model and moat</div>
+  <h2>Revenue on Paytm's existing rails, with no credit risk.</h2>
+  <div class="body">
+    <div class="grid g4">
+      <div class="tc"><h4>Lending distribution</h4><p>Fees on Stock Advances and better-timed merchant loans, backed by verified receivables.</p></div>
+      <div class="tc"><h4>Credit line on UPI</h4><p>Bank fees for credit-line customers acquired at the counter, when the bill is above the shop's limit.</p></div>
+      <div class="tc"><h4>Payments volume</h4><p>Repayments, sales and AutoPay mandates all flow through Paytm UPI.</p></div>
+      <div class="tc"><h4>Premium tier</h4><p>Optional advanced plans and insights for growing merchants.</p></div>
+    </div>
+    <div class="grid g2">
+      <div class="tc fill"><h4>Why only Paytm can do this</h4><p>It needs the device on the counter, the app in the customer's hand, the payment rail and the lenders, at once. Paytm already has all four, and the merchant network that makes Portable Trust valuable.</p></div>
+      <div class="tc cy"><h4>Who carries which risk</h4><p>The shop keeps its udhaar risk as today, but capped and informed. Advances and above-limit credit sit with regulated partners. Paytm takes <b>no balance-sheet risk</b>.</p></div>
+    </div>
+  </div>
+  <aside class="notes"><b>Business model (30 s).</b> Four revenue lines, all on rails Paytm already runs. The strongest is lending distribution: verified receivables are exactly what a lender needs to price a Stock Advance. The moat is the network: every merchant who joins makes Portable Trust more valuable to the next. Risk stays where it is today (with the shop, now capped) or with regulated partners.</aside>
+</section>
+
+<!-- 14 · What we built -->
+<section class="slide" data-act="What we built" data-group="Impact">
+  <div class="kicker">What we built</div>
+  <h2>A working product, not a mock-up.</h2>
+  <p class="lead">Every screen and number in this deck comes from the running prototype.</p>
+  <div class="body">
+    <div style="display:grid;grid-template-columns:1fr 250px;gap:30px;align-items:center">
+      <div class="grid g2">
+        <div class="tc"><h4>Five connected apps</h4><p>AI Soundbox simulator, merchant app, phone-first customer app with a QR scanner, presenter screen and pitch pages, all live-updating in about a second.</p></div>
+        <div class="tc"><h4>The real trust core</h4><p>Two-way ledger with entry states, Bharosa Score, safe limits with exposure caps, Portable Trust with consent, the QR request bridge, shared-device check.</p></div>
+        <div class="tc"><h4>Money and growth</h4><p>Sales vs repayments, oldest-debt-first allocation, 20% lender split, Stock Advance sizing, AutoPay schedules, Diwali plan, monthly basket.</p></div>
+        <div class="tc"><h4>AI, safely</h4><p>Four Sarvam-powered agents behind validators and an on/off switch. With AI off, everything still works on rules. 52 automated tests.</p></div>
+      </div>
+      <div><div class="shot phone" style="width:196px;margin:0 auto"><img src="/static/presentation/img/phone-merchant-home.png" alt="The merchant's home after the demo"></div>
+        <div class="cap"><b>The merchant's home, after the demo</b></div></div>
+    </div>
+  </div>
+  <aside class="notes"><b>What we built (25 s).</b> This isn't a Figma file. It's one FastAPI server, SQLite, and five web apps that update each other live. The phone shows the merchant's home after the demo: Diwali done, reminders sent with one promise, the basket waiting. It's deployed and anyone can run it: the "How to run the demo" tab lists every login and step.</aside>
+</section>
+
+<!-- 15 · Risks -->
+<section class="slide" data-act="Risks" data-group="Risks">
   <div class="kicker">Risks, designed out</div>
-  <h2>Key design decisions, and what we rejected.</h2>
-  <div class="body" style="margin-top:8px">
-    <table style="font-size:14.5px">
-      <tr><th style="width:31%">We chose</th><th style="width:25%">Instead of</th><th>Because</th></tr>
-      <tr><td>Customer confirms on their own phone</td><td>Shopkeeper-only records</td><td>A one-sided record can't be trusted by anyone else</td></tr>
-      <tr><td>Any Soundbox + a printed QR</td><td>Requiring the AI Soundbox</td><td>Most merchants have speaker-only devices: no new hardware</td></tr>
-      <tr><td>A transparent score formula</td><td>A black-box ML score</td><td>Customers, merchants and regulators must understand it</td></tr>
-      <tr><td>Suggested limit, override allowed</td><td>A hard block</td><td>It's the shopkeeper's money and relationship</td></tr>
-      <tr><td>Consent before using the network score</td><td>Sharing by default</td><td>Privacy, and likely regulation</td></tr>
-      <tr><td>Merchant sees a band + limit only</td><td>Full history</td><td>Minimal disclosure: no neighbourhood gossip</td></tr>
-      <tr><td>Exposure cap across shops</td><td>Per-shop limits only</td><td>Stops one customer borrowing everywhere at once</td></tr>
-      <tr><td>Lender pays the distributor directly</td><td>A cash loan to the merchant</td><td>Can't be misspent; lower risk; cheaper</td></tr>
-      <tr><td>Repay from 20% of repayments</td><td>Fixed instalments</td><td>Follows the shop's cash flow</td></tr>
-      <tr><td>Merchant-triggered AutoPay, notice the day before</td><td>"Debit when salary lands"</td><td>That's how UPI AutoPay actually works</td></tr>
-      <tr><td>AI never touches money</td><td>AI decides limits</td><td>Non-determinism + money = unacceptable</td></tr>
-    </table>
-  </div>
-  <aside class="notes"><b>For risk and compliance people, lead here.</b> Pick two or three rows depending on who is asking: consent and minimal disclosure, the exposure cap, the lender paying the distributor directly, and AutoPay compliance.</aside>
-</section>
-
-<!-- 16 · Risks & answers 1 -->
-<section class="slide" data-act="Risks">
-  <div class="kicker">Risks &amp; answers · 1 of 2</div>
-  <h2>The questions we expect, and how the design answers them.</h2>
-  <div class="body" style="margin-top:8px">
-    <div class="qa">
-      <div class="card"><span class="num-dot">1</span><div class="q">Isn't this just Khatabook?</div><div class="a">Khatabook records. We check risk before credit, get the customer's confirmation, win new customers through the network, collect automatically and fund stock.</div><div class="m">Built in: Guardrail · Scan-to-Confirm · Portable Trust · Stock Advance</div></div>
-      <div class="card"><span class="num-dot">2</span><div class="q">Why would a customer confirm their own debt?</div><div class="a">One scan, and on-time repayment of confirmed credit raises their score: higher limits at every Paytm shop.</div><div class="m">Built in: score breakdown shown to the customer</div></div>
-      <div class="card"><span class="num-dot">3</span><div class="q">Is AI deciding who gets credit?</div><div class="a">No. A transparent formula decides; the shopkeeper has the final say. AI handles language only.</div><div class="m">Built in: validator firewall · "Why?" reasons · override</div></div>
-      <div class="card"><span class="num-dot">4</span><div class="q">Why agents at all?</div><div class="a">Only where the input is messy human language. Each agent's output is validated by code, with a fallback if it fails.</div><div class="m">Built in: rules first · AI switch · source on every log line</div></div>
-      <div class="card wide"><span class="num-dot">5</span><div class="q">Who takes the loss if a customer defaults?</div><div class="a">The shopkeeper, as today, but with far better information and a capped limit. Paytm takes no credit risk; advances come from regulated lenders, backed by verified receivables and repaid from 20% of collections.</div><div class="m">Built in: overdue penalty · exposure cap · lender split</div></div>
+  <h2>The questions we expect, answered by design.</h2>
+  <div class="body">
+    <div class="grid g3">
+      <div class="tc"><h4>Isn't this a khata app?</h4><p>Khata apps record. Bharosa checks risk before credit, gets the customer's confirmation, wins new customers, collects and funds stock.</p></div>
+      <div class="tc"><h4>Is AI deciding credit?</h4><p>No. A transparent formula suggests; the shopkeeper decides. AI only handles language, and every output is checked by code.</p></div>
+      <div class="tc"><h4>Isn't sharing scores regulated?</h4><p>Likely. So sharing is consent-based and revocable, disclosure is minimal, and production scoring runs through a licensed partner.</p></div>
+      <div class="tc"><h4>Who takes the loss on a default?</h4><p>The shop, as today, but with far better information and a capped limit. Paytm carries no credit risk.</p></div>
+      <div class="tc"><h4>Can shops fake receivables?</h4><p>Shared devices, instant confirmations, round amounts and circular money are flagged and kept out of advance eligibility.</p></div>
+      <div class="tc"><h4>Does it need new hardware?</h4><p>No. Any Paytm Soundbox and the printed QR work; the AI Soundbox adds voice and screens.</p></div>
     </div>
   </div>
-  <aside class="notes">Answer in one breath each; point at the green "built in" line, which is what they can see in the demo. If a judge asks something here live, jump to this slide (press End, then ←).</aside>
+  <aside class="notes"><b>Risks (30 s, or skip to Q&amp;A).</b> Answer from this slide when the questions come. The two that usually come first: "Is AI deciding credit?" (no: show the Why? reasons, which are code) and "Can shops fake receivables?" (only customer-confirmed entries count, and the prototype already flags a phone confirming for two customers).</aside>
 </section>
 
-<!-- 17 · Risks & answers 2 -->
-<section class="slide" data-act="Risks">
-  <div class="kicker">Risks &amp; answers · 2 of 2</div>
-  <h2>Regulation, fraud, hardware and money.</h2>
-  <div class="body" style="margin-top:8px">
-    <div class="qa">
-      <div class="card"><span class="num-dot">6</span><div class="q">Isn't sharing scores regulated?</div><div class="a">Likely. So sharing is customer-controlled and revocable, disclosure is minimal, and production scoring would run through a licensed partner.</div><div class="m">Built in: Share / Not now · Revoke · band + limit only</div></div>
-      <div class="card"><span class="num-dot">7</span><div class="q">Can auto-pay debit on salary day?</div><div class="a">Not instantly. UPI AutoPay needs notice the day before, so we collect on a date the customer picks in salary week, and they can skip.</div><div class="m">Built in: cap · collection day · pre-debit notice</div></div>
-      <div class="card"><span class="num-dot">8</span><div class="q">Can shops fake receivables to get advances?</div><div class="a">We look for shared devices, instant confirmations, round amounts and money going in circles, and exclude suspicious entries from advance eligibility.</div><div class="m">Built in: shared-device flag · verified-only eligibility</div></div>
-      <div class="card"><span class="num-dot">9</span><div class="q">Does it need the new AI Soundbox?</div><div class="a">No. Any Soundbox and the printed QR work; the AI Soundbox just adds voice and screens.</div><div class="m">Built in: the QR request service works from any device</div></div>
-      <div class="card wide"><span class="num-dot">10</span><div class="q">How does Paytm make money?</div><div class="a">Lending distribution fees on advances and loans, bank fees for credit-line customers acquired at the counter, collections, and an optional premium tier, with no balance-sheet risk.</div><div class="m">Built in: Stock Advance · credit line on UPI at the counter · AutoPay</div></div>
-    </div>
-  </div>
-  <aside class="notes">Fraud-ring follow-up: "A dishonest shop could invent customers and confirm from one phone. A confirmation from a device already used by another customer at the same shop is flagged and kept out of advance eligibility."</aside>
-</section>
-
-<!-- 18 · Close -->
+<!-- 16 · Close -->
 <section class="slide dark title-slide" data-act="">
   <div class="wm">Bharosa <span>on Paytm</span></div>
-  <h1 style="font-size:58px">Make trust verifiable, and credit becomes a growth engine.</h1>
+  <h1 style="font-size:58px;max-width:960px">Make trust verifiable, and credit becomes a growth engine.</h1>
   <div class="sub">AI handles the language. Code handles the money. Paytm already has every piece.</div>
-  <div class="grid g3" style="margin-top:34px;max-width:1000px">
-    <div class="card" style="background:rgba(255,255,255,.1);border:0;color:#fff"><b style="color:#fff">Sell more, safely</b><p>Guardrail · Portable Trust · basket</p></div>
-    <div class="card" style="background:rgba(255,255,255,.1);border:0;color:#fff"><b style="color:#fff">Get paid without chasing</b><p>Scan-to-Confirm · reminders · auto-pay</p></div>
-    <div class="card" style="background:rgba(255,255,255,.1);border:0;color:#fff"><b style="color:#fff">Stock up without cash</b><p>Diwali plan · Stock Advance</p></div>
+  <div class="grid g3" style="margin-top:34px;max-width:1080px">
+    <div class="tc"><h4>Sell more, safely</h4><p>Guardrail · Override · Portable Trust</p></div>
+    <div class="tc"><h4>Get paid without chasing</h4><p>Scan-to-Confirm · nudges · auto-pay</p></div>
+    <div class="tc"><h4>Stock up without cash</h4><p>Festive plan · Stock Advance</p></div>
   </div>
-  <div class="team" style="font-size:26px;font-weight:800;opacity:1">Bharosa: trust, turned into growth.</div>
+  <div class="closing">Bharosa: trust, turned into growth.</div>
+  <div class="team" style="margin-top:14px;font-size:16px;opacity:.75">Team MerchantMavericks · Sujay Mohanty · Sukruth N · Rishi Sharma</div>
   <aside class="notes"><b>Close (10 s).</b> "Bharosa grows merchants, grows Paytm's lending and app usage, and carries no balance-sheet risk. Trust, turned into growth."
-    <br>Then offer the phone: "Scan this and try it yourself" (login QRs are on the Live Demo strip).</aside>
+    <br>Then offer the phone: "Scan this and try it yourself." The login QRs are on the Live Demo strip, and the How to run the demo tab has every step.</aside>
 </section>
 
 </div></div>

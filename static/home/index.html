@@ -26,7 +26,8 @@
   @media (max-width: 760px) {
     .top { grid-template-columns: 1fr; height: auto; padding: 8px 12px; justify-items: center; }
     .acts { display: none; }
-    .tab { padding: 6px 12px; font-size: 13px; }
+    .tab { padding: 6px 10px; font-size: 12px; }
+    .tabs { flex-wrap: wrap; justify-content: center; border-radius: 18px; }
   }
 </style>
 </head>
@@ -34,11 +35,13 @@
   <header class="top">
     <div class="brand">Bharosa <span>on Paytm</span></div>
     <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" data-pane="guide">How to run the demo</button>
       <button class="tab" role="tab" data-pane="demo">Live Demo</button>
       <button class="tab" role="tab" data-pane="overview">Overview</button>
       <button class="tab" role="tab" data-pane="presentation">Presentation</button>
     </nav>
     <div class="acts">
+      <span data-for="guide"><a href="/guide" target="_blank">Open on its own ↗</a></span>
       <span data-for="demo"><a href="/demo" target="_blank">Open on its own ↗</a></span>
       <span data-for="overview"><a href="/overview" target="_blank">Open on its own ↗</a></span>
       <span data-for="presentation" style="display:flex;gap:6px">
@@ -49,19 +52,21 @@
     </div>
   </header>
   <main class="panes">
+    <iframe data-pane="guide" title="How to run the demo" hidden></iframe>
     <iframe data-pane="demo" title="Live Demo" hidden></iframe>
     <iframe data-pane="overview" title="Overview" hidden></iframe>
     <iframe data-pane="presentation" title="Presentation" allow="fullscreen" allowfullscreen hidden></iframe>
   </main>
 <script>
-// Three sections (spec §10.7). Each iframe loads the first time its tab opens and then stays alive,
-// so switching to the slides and back never resets the live demo.
-const PANES = ['demo', 'overview', 'presentation'];
+// Four sections. Each iframe loads the first time its tab opens and then stays alive, so switching to the
+// slides and back never resets the live demo. With no #hash, visitors land on "How to run the demo";
+// presenters open /#demo.
+const PANES = ['guide', 'demo', 'overview', 'presentation'];
 const frame = name => document.querySelector(`iframe[data-pane="${name}"]`);
 let current = null;
 
 function show(name) {
-  if (!PANES.includes(name)) name = 'demo';
+  if (!PANES.includes(name)) name = 'guide';
   current = name;
   document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.pane === name)));
   document.querySelectorAll('[data-for]').forEach(a => { a.style.display = a.dataset.for === name ? '' : 'none'; });

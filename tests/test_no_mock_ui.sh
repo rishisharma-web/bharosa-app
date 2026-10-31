@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Spec §14: frontend code may contain no literal names or ₹ amounts; only the static pitch pages may match.
+# Spec §14: frontend code may contain no literal names or ₹ amounts; only the static documents about the demo world may match.
 cd "$(dirname "$0")/.."
-bad=$(grep -rlnE "₹ ?[0-9]|Ramesh|Priya|Vikram|Anita|Lakshmi|Sharma" static --include=*.js --include=*.html | grep -vE '^static/(overview|presentation)/')
+bad=$(grep -rlnE "₹ ?[0-9]|Ramesh|Priya|Vikram|Anita|Lakshmi|Sharma" static --include=*.js --include=*.html | grep -vE '^static/(guide|overview|presentation)/')
 if [ -n "$bad" ]; then echo "Mock data found in:"; echo "$bad"; exit 1; fi
-echo "OK: no mock data outside static/overview/ and static/presentation/"
+echo "OK: no mock data outside static/guide/, static/overview/ and static/presentation/"
