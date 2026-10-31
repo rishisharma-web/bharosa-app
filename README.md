@@ -13,7 +13,9 @@ own app; reminders that understand replies; compliant salary-week auto-pay) and 
 > With AI switched off (the default) everything works on rules and templates.
 
 The full specification is [`bharosa-arch-v2.md`](bharosa-arch-v2.md). The complete explanation (problem, production architecture,
-where the agents sit and why, the pitch, tough questions) is [`bharosa-explained.md`](bharosa-explained.md).
+where the agents sit and why, the pitch, tough questions) is [`bharosa-explained.md`](bharosa-explained.md). How the code
+works (architecture, design choices, every engine, the AI layer, live updates, each flow end to end) is
+[`bharosa-technical-deep-dive.md`](bharosa-technical-deep-dive.md).
 
 **The pitch deck as PDF:** [`static/presentation/bharosa-pitch.pdf`](static/presentation/bharosa-pitch.pdf) (18 slides) and
 [`bharosa-pitch-notes.pdf`](static/presentation/bharosa-pitch-notes.pdf) (each slide with its speaker notes, for rehearsal).
@@ -27,7 +29,7 @@ Needs **Python 3.11+** and Chrome or Edge. No Node, no database server.
 **Windows (PowerShell)**
 ```powershell
 cd bharosa-app
-py -3.11 -m venv .venv
+py -3.11 -m venv .venv          # any Python 3.11 or newer works, e.g. py -3.12
 .venv\Scripts\python -m pip install -r requirements.txt
 copy .env.example .env          # then set ADMIN_KEY in .env
 .venv\Scripts\python tasks.py run
@@ -44,6 +46,33 @@ cp .env.example .env            # then set ADMIN_KEY in .env
 
 Open **http://localhost:8000**. The database is created and seeded on first start. Exact tested versions
 are in `requirements.lock.txt` if you ever need them.
+
+`.venv` can't be copied between machines: it points at the Python install that created it. On a new machine,
+delete it and run the `venv` step again.
+
+### Secrets and `.env`
+
+All settings, including every credential, live in **`.env`**, which you create from `.env.example`. `.env` is
+git-ignored and must never be committed. `.env.example` is committed and holds only placeholders.
+
+| Secret | Where it goes | Notes |
+|---|---|---|
+| `SARVAM_API_KEY` | `.env` only | Get it from the Sarvam dashboard. The code reads it in `app/config.py` and never logs it |
+| `ADMIN_KEY` | `.env` only | Presenter key for Reset and login QRs. Change the default `change-me` before showing the app on a shared network |
+| `PUBLIC_BASE_URL` | `.env` only | Not secret, but it's your current tunnel address, so it stays local |
+
+`.gitignore` also keeps out the local database (`bharosa.db*`, which holds sessions and test activity), any other
+`.env.*` file, certificate and key files (`*.pem`, `*.key`), cloudflared credentials, and the smoke-test audio file.
+
+Before pushing to GitHub, check that nothing secret is staged:
+
+```powershell
+git status                      # .env and bharosa.db* must not appear
+git check-ignore -v .env        # prints the .gitignore rule that excludes it
+```
+
+If a key is ever committed or shared, rotate it in the Sarvam dashboard. Deleting the file in a later commit leaves it in
+the git history.
 
 | Command | What it does |
 |---|---|
@@ -78,7 +107,8 @@ are in `requirements.lock.txt` if you ever need them.
 
 **The OTP is always `123456`** (set by `DEMO_OTP`; no SMS is sent). The presenter screen shows one login QR per
 customer; each works once and they refresh every 9 minutes. The merchant and customer apps use separate
-cookies, so one browser can be logged in as both.
+cookies, so one browser can be logged in as both. To switch customers on one phone, tap **Log out** in the
+customer app's header.
 
 **Reset:** the **Reset** button on the presenter screen rebuilds everything in under a second.
 
@@ -127,8 +157,8 @@ Soundbox QR opens the same request.
 Phone cameras only work on HTTPS. Expose the laptop with a Cloudflare quick tunnel:
 
 ```powershell
-winget install --id Cloudflare.cloudflared      # once (macOS: brew install cloudflared)
-cloudflared tunnel --url http://localhost:8000
+winget install --id Cloudflare.cloudflared      # once (macOS: brew install cloudflared); then open a NEW terminal
+cloudflared tunnel --protocol http2 --url http://127.0.0.1:8000
 ```
 
 Copy the `https://….trycloudflare.com` address into `PUBLIC_BASE_URL` in `.env`, **restart the server**, and open
@@ -136,12 +166,27 @@ the presenter screen through that address. QR codes then point at the tunnel. Th
 Wi-Fi or a hotspot); phones can use mobile data. On the phone: scan the login QR (or log in by phone + OTP),
 then use the app's **Scan QR** button, or the phone's own camera app.
 
+* **`--protocol http2`**: many networks block the UDP traffic cloudflared uses by default, and the tunnel then never
+  connects. HTTP/2 runs over normal HTTPS.
+* **`127.0.0.1` rather than `localhost`**: `localhost` tries IPv6 first, but the server listens on IPv4.
+* **The address changes every time `cloudflared` restarts.** Each time, update `PUBLIC_BASE_URL`, restart the server, and
+  log in again on every device. Restarting only the server keeps the address.
+* **Use the tunnel address on the laptop too.** With an `https` `PUBLIC_BASE_URL`, login cookies are HTTPS-only, so logins
+  on `http://localhost:8000` won't stick.
+* **Live updates through the tunnel:** a quick tunnel buffers Server-Sent Events, so pages that hear nothing on
+  `/api/stream` within 4 s switch to long-polling `/api/changes`. That's why the server log shows a steady stream of
+  `GET /api/changes` lines.
+
 ---
 
 ## 6. AI (Sarvam), off by default
 
 In `.env` set `SARVAM_ENABLED=true` and `SARVAM_API_KEY=…` (never commit the key; `.env` is git-ignored), restart,
-and run `python tasks.py smoke` once. With AI on:
+and run `python tasks.py smoke` once.
+
+Keep `SARVAM_REASONING_EFFORT=none`. `sarvam-105b` otherwise "thinks" before answering: one Ask Munim step took 6–11 s
+(once 90 s) with reasoning on and about 1.5 s with it off. Calls over 8 s fall back to templates, so with reasoning on
+most AI answers show as TEMPLATE. Every AI output is validated by code either way. With AI on:
 
 | Feature | AI off | AI on |
 |---|---|---|
@@ -150,7 +195,7 @@ and run `python tasks.py smoke` once. With AI on:
 | Spoken line on the Soundbox | Off | One short Kannada line per event |
 | Reminders / reply reading | Templates / keyword rules | Recovery Agent (validated) |
 | Growth plan wording | Templates | Growth Agent (validated; order stays code) |
-| Ask Munim | "Available when AI is enabled" | Answers from read-only tools |
+| Ask Munim | "Available when AI is enabled" | Answers from read-only tools (shop summary, growth plan, stock, overdue list, every customer's dues and limit) |
 | Score, limits, payments, split, advance | Code | **Code (never AI)** |
 
 Every AI call times out after 8 s and falls back to the rule/template result; the activity log shows the source.
@@ -204,6 +249,14 @@ API docs: **http://localhost:8000/docs**.
 | Slides changed but the PDF didn't | `python tasks.py pdf`. If Chrome/Edge isn't found, set `BROWSER_PATH` to its executable |
 | A page looks stale after an update | Hard-refresh (Ctrl+Shift+R) |
 | Mic button missing | It only appears with AI on |
+| `cloudflared` is "not recognized" right after installing | Open a new terminal so it picks up the updated PATH |
+| Tunnel log: `failed to dial a quic connection` | Start the tunnel with `--protocol http2` |
+| Tunnel log: `connectex: … actively refused it` | The server isn't running: start it |
+| Tunnel log: `context canceled` | Harmless: a browser closed or reloaded a page while a request was open |
+| Phone says "site can't be reached" | The tunnel was restarted and has a new address: use the current one |
+| Login doesn't stick on the laptop | Open the tunnel address, not `localhost`, once `PUBLIC_BASE_URL` is `https` |
+| Ask Munim answers show TEMPLATE | Check `SARVAM_REASONING_EFFORT=none` and run `python tasks.py smoke` |
+| Screens don't update without a refresh | Hard-refresh once so the page loads the current `api.js` |
 
 ---
 
@@ -212,6 +265,8 @@ API docs: **http://localhost:8000/docs**.
 ```bash
 git archive --format=zip -o bharosa-app.zip HEAD
 ```
-Or zip the folder **without** `.venv/`, `.env`, `*.db*`, `__pycache__/`, `.pytest_cache/`. The recipient follows section 1.
+`git archive` only includes committed files, so `.env` and the database are left out automatically. Or zip the folder
+**without** `.venv/`, `.env`, `*.db*`, `__pycache__/`, `.pytest_cache/`. The recipient follows section 1 and creates their
+own `.env`.
 
 *Concept prototype · Team MerchantMavericks. All names, shops, the lender and the distributor are fictional.*

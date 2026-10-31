@@ -35,6 +35,12 @@ def _extract_json(text: str) -> dict:
     return json.loads(text[start:end + 1])
 
 
+def _reasoning_effort() -> str | None:
+    """None (sent as JSON null) switches the model's reasoning off; omitting the field means "medium"."""
+    effort = get_settings().sarvam_reasoning_effort.strip().lower()
+    return None if effort in ("", "none", "off") else effort
+
+
 async def chat_json(system: str, user: str) -> dict | None:
     if not enabled():
         return None
@@ -43,6 +49,7 @@ async def chat_json(system: str, user: str) -> dict | None:
         "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
         "temperature": 0.2,
         "response_format": {"type": "json_object"},
+        "reasoning_effort": _reasoning_effort(),
     }
     try:
         async with httpx.AsyncClient(timeout=_timeout()) as client:

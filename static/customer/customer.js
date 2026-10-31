@@ -41,6 +41,11 @@ document.addEventListener('alpine:init', () => {
         this.me = await API.get('/api/me/customer'); await this.start();
       } catch (e) { this.flash(e.message, true); }
     },
+    async logout() {
+      await this.stopScanner();
+      try { await API.post('/api/auth/logout?app=customer'); } catch (e) { /* the session may already be gone */ }
+      location.replace('/customer');  // a fresh page drops this customer's state and live-update listener
+    },
 
     // ---------------------------------------------------- requests (the QR bridge)
     act(a) {
@@ -99,11 +104,16 @@ document.addEventListener('alpine:init', () => {
       await this.stopScanner();
       try {
         const u = new URL(text, location.origin);
-        const m = u.pathname.match(/^\/c\/r\/([\w-]+)/);
-        if (u.host === location.host && m) return this.openRequest(m[1]);
-        if (u.host === location.host) { location.href = u.pathname + u.search; return; }
+        if (u.protocol === 'https:' || u.protocol === 'http:') {
+          // A request QR is opened on this server whatever host it names (a tunnel address changes
+          // on every restart); the server still checks the request belongs to this customer.
+          const m = u.pathname.match(/^\/c\/r\/([\w-]+)/);
+          if (m) return this.openRequest(m[1]);
+          if (u.host === location.host || u.pathname.startsWith('/api/auth/magic/')) { location.href = u.pathname + u.search; return; }
+        }
       } catch (e) { /* not a URL */ }
-      this.notice = 'This QR is for payments. Use your UPI app to pay.'; this.sheet = 'notice';
+      this.notice = /^upi:/i.test(text) ? 'This QR is for payments. Use your UPI app to pay.' : 'This QR is not a Bharosa request.';
+      this.sheet = 'notice';
     },
     async stopScanner() { try { await this._scanner?.stop(); } catch (e) { /* already stopped */ } this._scanner = null; },
     async closeSheet() { await this.stopScanner(); this.sheet = null; this.req = null; },

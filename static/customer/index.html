@@ -39,6 +39,7 @@
     <div class="avatar cyan" x-text="F.initials(me.name)"></div>
     <div class="grow"><div class="title" x-text="me.name"></div><div class="sub">Paytm · Bharosa</div></div>
     <button class="icon-btn" @click="tab='messages'; loadMessages()" title="Messages">🔔<i x-show="home?.action_needed"></i></button>
+    <button class="btn btn-ghost btn-sm logout" @click="logout()" title="Log out to switch customer">Log out</button>
   </div>
 
   <!-- HOME -->

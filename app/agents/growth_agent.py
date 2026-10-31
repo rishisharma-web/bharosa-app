@@ -19,7 +19,10 @@ WORD_SYSTEM = ("You word a kirana shop's weekly growth plan for the shopkeeper. 
 
 ASK_SYSTEM = ("You are Munim, a copilot for a kirana shopkeeper. Answer using only facts from tools. "
               "Each turn reply with JSON: either {\"tool\": \"<name>\"} or {\"final\": \"<answer, <= 80 words>\"}. "
-              "Tools: get_summary, get_growth_plan, get_stock, list_overdue. Never invent numbers.")
+              "Tools: get_summary (shop totals), get_growth_plan, get_stock, list_overdue (overdue customers only), "
+              "list_customers (every customer of this shop: amount owed, days overdue, safe limit, score band). "
+              "For a question about a named customer, call list_customers. Amounts are in rupees; write them as ₹. "
+              "Never invent numbers.")
 MAX_TOOLS = 3
 
 

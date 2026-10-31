@@ -18,3 +18,4 @@
 .pin { display: flex; gap: 12px; justify-content: center; margin: 10px 0 14px; }
 .pin i { width: 13px; height: 13px; border-radius: 50%; background: var(--ink); }
 .reader { width: 100%; min-height: 260px; border-radius: 16px; overflow: hidden; background: #000; }
+.app-head .logout { padding: 7px 10px; font-weight: 700; }

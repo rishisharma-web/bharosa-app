@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     sarvam_tts_model: str = "bulbul:v3"
     sarvam_tts_speaker: str = "shubh"
     sarvam_timeout_s: float = 8.0
+    # sarvam-105b "thinks" before answering unless told not to: 6–90 s per call with reasoning on,
+    # about 1.5 s with it off. Every AI output is validated by code, so the default is "none".
+    sarvam_reasoning_effort: str = "none"  # none | low | medium | high
 
 
 @lru_cache

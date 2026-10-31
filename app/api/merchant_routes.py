@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
-from app import auth, bus
+from app import auth, bus, db
 from app.agents import growth_agent
 from app.ai import sarvam
 from app.config import start_of_day, today
@@ -261,16 +261,20 @@ async def ask(body: AskIn, me: Me = Depends(auth.merchant)):
     if not sarvam.enabled():
         return {"answer": "Ask Munim is available when AI is enabled.", "steps": [], "source": "template",
                 "enabled": False}
-    async with bus.tx() as t:
-        s = t.s
+    # Read-only tools on their own session: the AI loop can take several seconds, and holding the
+    # write lock (bus.tx) that long would freeze the Soundbox and every other write meanwhile.
+    with db.session() as s:
         tools = {
             "get_summary": lambda: summary(s, me.store_id),
             "get_growth_plan": lambda: [{k: a[k] for k in ("title", "impact", "state", "outcome")}
                                         for a in growth.view(s, me.store_id)],
             "get_stock": lambda: _stock(s, me.store_id),
             "list_overdue": lambda: [r for r in udhaar_book(s, me.store_id) if r["overdue_days"]],
+            "list_customers": lambda: [{k: r[k] for k in ("name", "outstanding", "overdue_days", "safe_limit", "score_band")}
+                                       for r in udhaar_book(s, me.store_id)],
         }
         out = await growth_agent.ask(body.question, tools)
-        activity.log(s, me.store_id, "ai", f"Munim answered: {body.question[:60]}", out["source"])
+    async with bus.tx() as t:
+        activity.log(t.s, me.store_id, "ai", f"Munim answered: {body.question[:60]}", out["source"])
         t.touch(f"merchant:{me.store_id}")
     return {**out, "enabled": True}
