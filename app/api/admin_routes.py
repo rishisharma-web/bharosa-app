@@ -2,6 +2,7 @@
 import asyncio
 
 from fastapi import APIRouter, Cookie, Depends, Header, HTTPException, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from sqlmodel import select
 from sse_starlette.sse import EventSourceResponse
@@ -37,6 +38,14 @@ async def stream(request: Request):
             bus.unsubscribe(q)
 
     return EventSourceResponse(gen(), ping=15)
+
+
+@router.get("/changes")
+async def changes(after: int = -1, wait: float = 20):
+    """Long-poll fallback for /api/stream (same pings, same no-data rule), for proxies that buffer
+    SSE, such as a Cloudflare quick tunnel. Returns as soon as a ping newer than `after` exists."""
+    seq, events, reset = await bus.wait_since(after, min(max(wait, 0.0), 25.0))
+    return JSONResponse({"seq": seq, "reset": reset, "events": events}, headers={"Cache-Control": "no-store"})
 
 
 @router.get("/activity")

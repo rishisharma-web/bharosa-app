@@ -12,7 +12,11 @@ own app; reminders that understand replies; compliant salary-week auto-pay) and 
 > *AI proposes, code decides.* No AI output changes money, limits or scores without a validator.
 > With AI switched off (the default) everything works on rules and templates.
 
-The full specification is [`bharosa-arch-v2.md`](bharosa-arch-v2.md).
+The full specification is [`bharosa-arch-v2.md`](bharosa-arch-v2.md). The complete explanation (problem, production architecture,
+where the agents sit and why, the pitch, tough questions) is [`bharosa-explained.md`](bharosa-explained.md).
+
+**The pitch deck as PDF:** [`static/presentation/bharosa-pitch.pdf`](static/presentation/bharosa-pitch.pdf) (18 slides) and
+[`bharosa-pitch-notes.pdf`](static/presentation/bharosa-pitch-notes.pdf) (each slide with its speaker notes, for rehearsal).
 
 ---
 
@@ -38,21 +42,30 @@ cp .env.example .env            # then set ADMIN_KEY in .env
 .venv/bin/python tasks.py run
 ```
 
-Open **http://localhost:8000/demo**. The database is created and seeded on first start. Exact tested versions
+Open **http://localhost:8000**. The database is created and seeded on first start. Exact tested versions
 are in `requirements.lock.txt` if you ever need them.
 
 | Command | What it does |
 |---|---|
 | `python tasks.py run` | Start the server on port 8000 (all interfaces) |
 | `python tasks.py seed` | Rebuild the database from the seed |
-| `python tasks.py test` | Run the tests (47, about 15 s) |
+| `python tasks.py test` | Run the tests (51, about 15 s) |
 | `python tasks.py smoke` | One real Sarvam call (only when AI is on) |
+| `python tasks.py pdf` | Print the presentation to both PDFs (needs Chrome or Edge; no server needed) |
 
-`make run|seed|test|smoke` does the same on macOS/Linux.
+`make run|seed|test|smoke|pdf` does the same on macOS/Linux.
 
 ---
 
-## 2. The five apps
+## 2. The home page and the five apps
+
+**http://localhost:8000/** is one page with three sections (tabs at the top; `/#demo`, `/#overview`, `/#presentation`):
+
+1. **Live Demo**: the presenter screen below. Switching tabs never resets it.
+2. **Overview**: the one-page summary.
+3. **Presentation**: the pitch as 18 slides: Problem → Challenge → Solution → Architecture & flow (where the agents sit
+   and why) → Risks & answers. Keys: ← → / Space, **F** fullscreen, **N** speaker notes. The header has **Fullscreen**,
+   **PDF** and **PDF with notes**.
 
 | App | URL | Who | Login |
 |---|---|---|---|
@@ -60,7 +73,8 @@ are in `requirements.lock.txt` if you ever need them.
 | AI Soundbox simulator | `/soundbox` | The counter (laptop) | None, fixed to Lakshmi Stores |
 | Merchant app | `/merchant` | Lakshmi Stores owner | Phone `9000000001` + OTP |
 | Customer app | `/customer` | Priya `…11`, Ramesh `…12`, Vikram `…13`, Anita `…14` (`90000000xx`) | Phone + OTP, or a login QR |
-| Overview (pitch page) | `/overview` | Anyone | None |
+| Overview (one-page summary) | `/overview` | Anyone | None |
+| Presentation (slides) | `/presentation` | Anyone | None |
 
 **The OTP is always `123456`** (set by `DEMO_OTP`; no SMS is sent). The presenter screen shows one login QR per
 customer; each works once and they refresh every 9 minutes. The merchant and customer apps use separate
@@ -86,7 +100,11 @@ Sharma Traders (+₹27,400 expected sales). The shop will have ₹8,800, so **�
 
 ---
 
-## 4. Presenting (about 5 minutes; the app does not enforce an order)
+## 4. Presenting (about 5 minutes of demo; the app does not enforce an order)
+
+Open `/` full screen. Start in **Presentation** (slides 1–6: problem, challenge, solution), switch to **Live Demo** for
+the steps below, then go back to **Presentation** for the architecture, the agents and the risks (slides 7–18).
+Rehearse from `bharosa-pitch-notes.pdf`.
 
 1. **Merchant** logs in → Home shows the growth plan (3 actions).
 2. **Soundbox**: tap **Priya 340** (green), then **Ramesh 340** (amber) → **Use suggestion** → a QR appears.
@@ -155,9 +173,11 @@ app/
 static/
   shared/             tokens.css · base.css · api.js (fetch + SSE pings) · format.js
   merchant/ customer/ soundbox/ demo/ overview/    one Alpine.js page each
+  home/               the three-section home page (/)
+  presentation/       the slides (plain JS) and the two committed PDFs
   vendor/             Alpine 3.14.1 · qrcode-generator 1.4.4 · html5-qrcode 2.3.8
-tests/                spec §14 contracts (score, risk, requests, split, Diwali, growth, basket, recovery, privacy, AI off, no mock UI)
-scripts/sarvam_smoke.py
+tests/                spec §14 contracts (score, risk, requests, split, Diwali, growth, basket, recovery, privacy, AI off, no mock UI, pages)
+scripts/sarvam_smoke.py   scripts/build_pdf.py (slides → PDF with headless Chrome/Edge)
 ```
 
 * **Real-time:** after every change the server sends `{"type": "changed", "scopes": ["merchant:S1", "customer:C_RAMESH", …]}`
@@ -181,6 +201,8 @@ API docs: **http://localhost:8000/docs**.
 | QR opens `localhost` on the phone | Set `PUBLIC_BASE_URL` to the tunnel address and restart |
 | Port 8000 busy | `.venv\Scripts\python -m uvicorn app.main:app --port 8001` |
 | Numbers look wrong | **Reset** on the presenter screen, or `python tasks.py seed` |
+| Slides changed but the PDF didn't | `python tasks.py pdf`. If Chrome/Edge isn't found, set `BROWSER_PATH` to its executable |
+| A page looks stale after an update | Hard-refresh (Ctrl+Shift+R) |
 | Mic button missing | It only appears with AI on |
 
 ---

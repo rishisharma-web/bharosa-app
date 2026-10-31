@@ -2,7 +2,7 @@
 
 **Team MerchantMavericks** · Sujay Mohanty · Sukruth N · Rishi Sharma
 Paytm Build for India AI Hackathon, Bengaluru · Track 1: Merchant Growth AI · Finals: Sat 31 Oct 2026
-**Companion document:** `bharosa-overview-v2.md` (human-readable explanation)
+**Companion documents:** `bharosa-overview-v2.md` (human-readable overview) and `bharosa-explained.md` (the complete explanation: problem, production architecture, the role of AI and the agents, the pitch and tough questions). The Presentation (§10.8) is built from `bharosa-explained.md`.
 
 ---
 
@@ -25,15 +25,17 @@ Paytm Build for India AI Hackathon, Bengaluru · Track 1: Merchant Growth AI · 
 - **Get paid without chasing:** customers confirm credit in their own phone app by scanning a QR; reminders understand replies; compliant salary-week auto-pay.
 - **Stock up without cash:** a Diwali stock plan, funded by a Stock Advance that a partner lender pays directly to the distributor and that is repaid from 20% of incoming repayments.
 
-**The prototype consists of five web apps served by one FastAPI backend:**
+**The prototype consists of five web apps served by one FastAPI backend, gathered on one home page (`/`, §10.7) with three sections: Live Demo, Overview and Presentation.**
 
 | App | URL | Who uses it | Login |
 |---|---|---|---|
+| **Home** (three sections: Live Demo · Overview · Presentation) | `/` | Everyone; the screen on stage | None (the Live Demo section asks for the admin key) |
 | Merchant app (Paytm for Business style) | `/merchant` | Lakshmi Stores owner | Phone + OTP |
 | Customer app (Paytm app style, phone-first) | `/customer` | Priya, Ramesh, Vikram, Anita | Phone + OTP, or a login QR |
 | AI Soundbox simulator | `/soundbox` | The counter device (on the laptop) | None (fixed to Lakshmi Stores) |
 | Presenter screen | `/demo` | The team on stage | Admin key |
-| Overview (pitch page) | `/overview` | Anyone | None |
+| Overview (one-page summary) | `/overview` | Anyone | None |
+| Presentation (the pitch as slides, also a PDF) | `/presentation` | The team on stage; anyone rehearsing | None |
 
 **The headline moment:** the Soundbox on the laptop shows a QR for a credit entry; a **real phone** running the customer app scans it; the customer confirms; the laptop's Soundbox and merchant app update within about a second.
 
@@ -393,6 +395,7 @@ On the Confirm sheet, **Dispute** with a reason ("Wrong amount" / "I didn't take
 - Left: `/soundbox` (iframe). Centre: `/merchant` (iframe, merchant cookie). Right: `/customer` in a phone frame (iframe, customer cookie), used as the **no-phone fallback** and to mirror what's happening.
 - A slim strip at the bottom: four **login QR codes** (Priya, Ramesh, Vikram, Anita) + the **activity list** (last 10 lines) + **Reset**.
 - Nothing else. No steps, no captions, no controls.
+- On stage it is shown as the **Live Demo** section of the home page (§10.7); `/demo` still works on its own.
 
 ---
 
@@ -475,6 +478,79 @@ All JSON under `/api`. Auth as in §6.
 ---
 
 ## 9. AI layer (Sarvam), off by default
+
+### 9.0 Where the agents sit, and why (read before §9.1)
+
+This section is the reference for the architecture slides (§10.8, slides 7–11) and for anyone extending the AI layer. The full reasoning is in `bharosa-explained.md` Parts 5 and 8.
+
+#### 9.0.1 The layers (production view; the prototype keeps the same boundaries)
+```
+ PAYTM SURFACES     Soundbox (classic or AI)  ·  Paytm for Business (merchant)  ·  Paytm app (customer)
+                          │ voice / text              │ approvals                  │ scan · confirm · pay · consent
+ ─────────────────────────▼───────────────────────────▼────────────────────────────▼──────────────────────
+ ① ACCESS            identity & roles · consent checks                   app/auth.py, app/api/*
+ ② AI LAYER          Speech · Counter Agent · Recovery Agent · Growth    app/ai/sarvam.py, app/agents/*, app/voice.py
+   (proposes)        Agent (Munim)           │ JSON proposals / words
+ ③ VALIDATION        schema · policy · "every ₹ and every name must      validators inside each agent module
+   (the firewall)    exist in our data"      │ pass ─► use it   fail ─► rule / template fallback
+ ④ TRUST CORE        ledger & entry states · score · risk (limits,       app/core/score.py, risk.py, requests.py
+   (deterministic)   exposure cap) · consent · request service (QR)
+ ⑤ MONEY & GROWTH    payments · FIFO · 20% split · mandates · festive    app/core/payments.py, mandates.py, festive.py,
+   (deterministic)   planner · basket · Stock Advance · growth candidates   basket.py, advance.py, growth.py
+ ⑥ PROTECTION        shared-device check · audit (activity log + source)  app/core/requests.py, activity.py
+ ⑦ EVENTS            one write lock · "changed" pings · spoken lines      app/bus.py, /api/stream
+ ─────────────────────────────────────────────────────────────────────────────────────────────────────────
+ RAILS (simulated)   UPI · UPI AutoPay · credit line on UPI · partner NBFC · distributor payment
+```
+Agents live only in ②. Nothing in ② can write to ④ or ⑤: an agent returns a proposal, ③ checks it, and the deterministic service in ④/⑤ does the work, usually after a human taps a button.
+
+#### 9.0.2 The boundary
+```
+        NON-DETERMINISTIC (AI)                    │ FIREWALL │          DETERMINISTIC (code)
+  voice ─► Speech-to-text ─► Counter Agent ───────┼► validator ─► risk engine ─► safe limit + reasons
+  customer reply ─► Recovery Agent ───────────────┼► validator ─► promise stored, actions offered
+  growth candidates (code) ─► Growth Agent ───────┼► validator ─► plan wording shown (order = code)
+  question ─► Munim (read-only tools) ────────────┼► validator ─► answer shown
+  verdict text (code) ─► translate ─► Speech ─────┼► validator ─► one spoken line
+                                                  │            score · limits · ledger · payments ·
+                                                  │            split · advance · mandates · fraud check
+```
+
+#### 9.0.3 What an agent is here
+**An agent = an LLM + one job + (optionally) read-only tools + a strict JSON output + a validator + a fallback.**
+```
+ input ─► rules first ─ match? ─yes─────────────────────────────────────────────► result (source=rule)
+                 │ no, and AI on
+                 ▼
+          prompt ─► LLM ─► JSON proposal ─► VALIDATOR ─ pass ─► result (source=ai)
+                     ▲                          │ fail / timeout (8 s) / bad JSON
+          read-only tools (Munim only)          ▼
+                                         template / rule fallback ─► result (source=template)
+```
+Agents can read, never write. Every result is logged in the activity list with its source (`rule`, `ai`, `template`).
+
+#### 9.0.4 The agents, and why each is justified
+| Agent | Code | Fires in | Job | Why rules alone are not enough | Validator | Fallback | Can never |
+|---|---|---|---|---|---|---|---|
+| **Speech** (Sarvam STT/TTS) | `ai/sarvam.py`, `voice.py` | Flow A (mic, spoken verdict and confirmation), D (spoken repayment) | Voice → text; one short Kannada line per event | Speech recognition is inherently AI | Spoken line keeps exactly the ₹ figures of the code text | Text only, no audio | Decide anything |
+| **Counter Agent** | `agents/counter.py` | Flow A (and B) when the rule parser fails | Messy shopkeeper sentence → `{customer_id, amount}` | Many languages, code-mixing, number words | `customer_id` in the store list; amount 1–50,000 | "Didn't catch that" + preset chips | Invent a customer or amount; set a limit |
+| **Recovery Agent** | `agents/recovery.py` | Flow D: draft on A_REMIND approval; interpret every reply that keyword rules miss | Polite reminder in the customer's language; reply → `{intent, promise, suggest_mandate, escalate}` | Replies are open-ended | Only ₹ figure = dues; promise ≤ dues and within 30 days | Template reminder; keyword rules; "other" | Change dues; promise outside policy |
+| **Growth Agent (Munim)** | `agents/growth_agent.py` | Flow C/D/E: plan wording (on reset); Ask Munim | Words the three code-ranked actions; answers questions via `get_summary`, `get_growth_plan`, `get_stock`, `list_overdue` | Combining several data sources into plain advice | Same action ids in code order; every ₹ figure in the facts/tool results; ≤ 3 tool calls | Template titles/why; "Available when AI is enabled" | Change numbers or ranking; take an action without the merchant's tap |
+
+**Why not more agents?** Every extra agent adds non-determinism, latency and cost. Score, limits, allocation, the split, Stock Advance sizing, mandates, basket prediction and fraud checks are exact maths or policy: they are code, and they stay code.
+**Why not zero agents?** The shopkeeper would have to type an exact format at a busy counter, reminders would be generic, and replies like "salary 1 tareekh ko" would be ignored. That is just another khata app.
+
+#### 9.0.5 The agents along the journey
+| Step | Ask | Check | Decide | Confirm | Collect | Grow |
+|---|---|---|---|---|---|---|
+| Who acts | Shopkeeper (voice/text) | Code | Code + shopkeeper | Customer (own phone) | Code + customer | Code + merchant |
+| Agent | Speech → Counter (only if rules fail) | none | none (Speech says the verdict) | none (Speech says "confirmed") | Recovery (draft, read reply) | Growth (words the plan, Munim answers) |
+| Code that decides | rule parser, validator | score, risk, exposure cap | request service, ledger | identity check, sale, entry → verified, device check | promise, mandate schedule, FIFO, 20% split | festive planner, Stock Advance, basket, growth candidates |
+
+#### 9.0.6 How non-determinism is contained
+1. Strict JSON output; anything else is rejected. 2. Grounding: every ₹ figure and every customer the AI names must exist in our data. 3. Rules first, AI second. 4. Humans approve money: the merchant taps Approve/Accept, the customer confirms. 5. Fallbacks everywhere: with `SARVAM_ENABLED=false` the whole app runs (tested by `test_ai_off.py`). 6. In production: per-language phrase test sets, accuracy monitoring, and logging of every proposal and validator decision.
+
+**One line for judges:** "We use AI where the world is messy (speech, languages, conversations, explanations) and code where money moves. The AI can suggest; it can never decide or pay."
 
 ### 9.1 Toggle
 ```
@@ -702,7 +778,7 @@ Browser mic access requires HTTPS or localhost (the tunnel in §11 provides HTTP
 ## 10. UI specification
 
 ### 10.1 Principles
-1. **Real data only.** No literal names, amounts, dates or statuses in frontend code; everything comes from the APIs in §7. Remove every `mock*`, `fake*`, `sample*`, `dummy*` file or object.
+1. **Real data only.** No literal names, amounts, dates or statuses in frontend code (the only exceptions are the static pitch pages `static/overview/` and `static/presentation/`); everything comes from the APIs in §7. Remove every `mock*`, `fake*`, `sample*`, `dummy*` file or object.
 2. **Max five sections** on any home screen; one primary action per screen.
 3. **No audio** except the single spoken line per event when AI is on (Soundbox page only).
 4. **Status in words and colour** (Safe / Caution / High risk; Verified / Disputed / Settled).
@@ -747,9 +823,49 @@ A device render (cyan/white body):
 **Sheets:** Share (§5.2), Confirm + pay-now (§5.1), Pay dues, Auto-pay setup (§4.9), Basket offer (§5.5), Dispute.
 
 ### 10.6 Overview (`/overview`)
-Static content, sections: (1) Bharosa in one line + three pillars; (2) the flow: Ask → Check → Decide → Confirm → Collect → Grow; (3) AI vs code table + the five safety rules; (4) Who carries which risk + the protections (exposure cap, new-shop discount, velocity check) + consent; (5) **Fraud rings explained** (§ text in the overview doc); (6) Works on every Paytm Soundbox (Classic: printed QR + speaker + merchant phone; AI Soundbox: voice + displays + dynamic QR); (7) Compliant salary-week auto-pay; (8) Stack + prototype vs production; (9) Team.
+Unchanged; shown as the **Overview** section of the home page (§10.7). Static content, sections: (1) Bharosa in one line + three pillars; (2) the flow: Ask → Check → Decide → Confirm → Collect → Grow; (3) AI vs code table + the five safety rules; (4) Who carries which risk + the protections (exposure cap, new-shop discount, velocity check) + consent; (5) **Fraud rings explained** (§ text in the overview doc); (6) Works on every Paytm Soundbox (Classic: printed QR + speaker + merchant phone; AI Soundbox: voice + displays + dynamic QR); (7) Compliant salary-week auto-pay; (8) Stack + prototype vs production; (9) Team.
 
 ---
+
+### 10.7 Home page (`/`)
+One page that holds everything shown on stage, as **three sections** chosen by tabs in a slim navy header (wordmark left, tabs centre, context actions right):
+1. **Live Demo**: the presenter screen (§6.3) exactly as it is, embedded.
+2. **Overview**: the one-page summary (§10.6), unchanged.
+3. **Presentation**: the slides (§10.8). Header actions: **Fullscreen**, **PDF**, **PDF with notes**.
+
+Rules: the URL hash selects the section (`/#demo`, `/#overview`, `/#presentation`; default `#demo`), so a refresh keeps it. Each section loads the first time it is opened and is then kept alive, so switching to the slides and back never resets the demo (logins, the Soundbox state and open sheets survive). While the Presentation section is open, the arrow keys, Space, PageUp/PageDown, Home and End drive the slides even when focus is on the header. Every section can still be opened on its own URL.
+
+### 10.8 Presentation (`/presentation`)
+The pitch as **16:9 slides** (a 1280×720 canvas scaled to fit), static content from `bharosa-explained.md`. One idea per slide, large type, diagrams drawn in HTML/SVG (no images), Paytm colours. It flows in five acts: **Problem → Challenge → Solution → Architecture & flow → Risks & answers**.
+
+| # | Act | Slide | Content |
+|---|---|---|---|
+| 1 | | Title | "Bharosa on Paytm · Trust, turned into growth." · team · track |
+| 2 | Problem | Every kirana is secretly a lender | ₹340 "later" = an unsecured, interest-free loan → four gaps (no risk check · no proof · no collection · no funding) → rationing → lost growth |
+| 3 | Challenge | Trust is invisible | Khata apps record; the gap is verifiable trust. It needs four things at once (counter device · customer app · payment rail · lenders): only Paytm has all four |
+| 4 | Solution | Bharosa in one picture | Three pillars (Sell more · Get paid · Stock up) on a trust layer, tied together by the weekly growth plan |
+| 5 | Solution | The verified receivable | Khata (one-sided claim) vs Bharosa (customer confirms on their own phone) → score · safe limits · collateral for a Stock Advance |
+| 6 | Solution | One transaction, end to end | Ramesh ₹340 swimlane (shopkeeper · Soundbox · platform · phone): ₹3,215 × 0.6 − ₹1,700 → ₹200 credit + ₹140 now; "AI understood one sentence; everything else is code" |
+| 7 | Architecture | The architecture | §9.0.1 as a diagram: surfaces → ① access → ② **AI layer (the agents)** → ③ **validation firewall** → ④ trust core → ⑤ money & growth → ⑥ protection → ⑦ events → rails |
+| 8 | Architecture | Where AI stops | §9.0.2: the non-deterministic zone, the firewall, the deterministic zone |
+| 9 | Architecture | Anatomy of an agent | §9.0.3: rules first → LLM → JSON proposal → validator → result, else fallback; read-only tools; "agents read, never write" |
+| 10 | Architecture | The four agents, and why | §9.0.4 (job · why not rules · can never) + why not more / why not zero |
+| 11 | Architecture | Agents along the journey | §9.0.5: Ask → Check → Decide → Confirm → Collect → Grow, with the agent and the deciding code at each step |
+| 12 | Architecture | Containing non-determinism | §9.0.6 six controls + the one-line answer |
+| 13 | Architecture | Prototype vs production | "The intelligence is real; the rails are simulated behind adapters shaped like Paytm's" |
+| 14 | Solution | Who benefits | Merchant · Paytm · customers and lenders |
+| 15 | Risks | Key design decisions | Decision vs rejected alternative, and why |
+| 16 | Risks | Risks & answers (1/2) | Khatabook? · why would a customer confirm? · is AI deciding credit? · why agents at all? · who takes the loss? |
+| 17 | Risks | Risks & answers (2/2) | Regulation · auto-pay on salary day · fake receivables · needs the AI Soundbox? · how Paytm earns |
+| 18 | | Close | "Make trust verifiable, and credit becomes a growth engine." · "Bharosa: trust, turned into growth." |
+
+**Controls:** ← → / Space / PageUp / PageDown / Home / End; click the right or left half of the slide; **F** fullscreen; **N** shows the speaker notes under the slide; slide number and act progress at the bottom; `#7` in the URL opens slide 7. Every slide carries **speaker notes** (the 2-minute pitch split across slides, plus who-to-lead-with hints).
+
+### 10.9 Presentation as PDF
+`python tasks.py pdf` (`scripts/build_pdf.py`) prints the slides with a locally installed Edge or Chrome in headless mode (no extra Python package; it serves `static/` itself on a free local port, so the app server need not run) into:
+- `static/presentation/bharosa-pitch.pdf`: one slide per 16:9 page (to share);
+- `static/presentation/bharosa-pitch-notes.pdf`: each slide with its speaker notes below it (for rehearsal).
+Both are committed and linked from the home page header. Regenerate after any slide change.
 
 ## 11. Phone scanning and networking
 
@@ -822,7 +938,7 @@ bharosa/
 ├── requirements.txt
 ├── Makefile                # run | seed | test | smoke
 ├── app/
-│   ├── main.py             # FastAPI, static routes for /merchant /customer /soundbox /demo /overview, /c/r/{token}
+│   ├── main.py             # FastAPI: / (home), /merchant /customer /soundbox /demo /overview /presentation, /c/r/{token}
 │   ├── config.py           # env (DEMO_DATE, PUBLIC_BASE_URL, DEMO_OTP, ADMIN_KEY, SARVAM_*)
 │   ├── db.py  models.py  seed.py
 │   ├── auth.py             # OTP, sessions, magic links, role dependencies
@@ -844,9 +960,12 @@ bharosa/
 │   ├── soundbox/  index.html  soundbox.js  soundbox.css
 │   ├── demo/      index.html  demo.js
 │   ├── overview/  index.html  overview.css
+│   ├── home/      index.html                          # §10.7 three sections
+│   ├── presentation/  index.html  presentation.css  presentation.js  bharosa-pitch.pdf  bharosa-pitch-notes.pdf
 │   └── vendor/    alpine.min.js  qrcode.min.js  html5-qrcode.min.js  fonts/
 ├── scripts/
-│   └── sarvam_smoke.py     # §9.4
+│   ├── sarvam_smoke.py     # §9.4
+│   └── build_pdf.py        # §10.9 slides → PDF (headless Edge/Chrome)
 └── tests/
     ├── test_score.py  test_risk.py  test_requests.py  test_payments_split.py
     ├── test_festive_advance.py  test_growth.py  test_basket.py  test_recovery_rules.py
@@ -899,7 +1018,8 @@ make smoke                            # python scripts/sarvam_smoke.py
 | `test_recovery_rules.py` | The Ramesh reply → promise 1,900 on 2026-11-01, suggest_mandate true (with AI off) |
 | `test_auth_privacy.py` | Merchant APIs never return NET entries; customer A cannot read customer B; soundbox cannot read customer data |
 | `test_ai_off.py` | With `SARVAM_ENABLED=false`, no outbound HTTP calls are made and every flow in §5 completes |
-| `test_no_mock_ui.sh` | `grep -rnE "₹ ?[0-9]\|Ramesh\|Priya\|Vikram\|Anita\|Lakshmi\|Sharma" static --include=*.js --include=*.html` matches only `static/overview/` |
+| `test_no_mock_ui.sh` | `grep -rnE "₹ ?[0-9]\|Ramesh\|Priya\|Vikram\|Anita\|Lakshmi\|Sharma" static --include=*.js --include=*.html` matches only `static/overview/` and `static/presentation/` |
+| `test_pages.py` | `/` serves the home page with its three sections; `/presentation` has 18 slides, each with speaker notes, including the architecture, agent and risk slides; every app URL returns 200 |
 
 **Manual acceptance (must pass before presenting):**
 1. With AI off, run flows 5.1–5.6 end to end on the presenter screen only (no phone).
@@ -907,6 +1027,7 @@ make smoke                            # python scripts/sarvam_smoke.py
 3. Same for Anita on a second phone (share → ₹1,500 → credit line ₹500 → confirm).
 4. Turn AI on: say "Ramesh, 340 udhaar" in Kannada or Hindi into the mic → transcript → amber verdict spoken in Kannada.
 5. Reset returns everything to the seed in under 3 seconds.
+6. On `/`, switch Live Demo → Presentation → Live Demo: the demo keeps its state; the slides step with the arrow keys; `python tasks.py pdf` regenerates both PDFs (18 slides each).
 
 ---
 
@@ -923,7 +1044,8 @@ make smoke                            # python scripts/sarvam_smoke.py
 | 7 | **Reminders + replies + auto-pay setup + basket** (§4.8–4.9, §4.11) | `test_recovery_rules`, `test_basket` pass |
 | 8 | **UI polish** to §10 (five-section homes, Paytm style, no mock data) + Overview page | `test_no_mock_ui.sh` passes |
 | 9 | **Sarvam behind the toggle** (§9): smoke script → Counter → Recovery → Growth wording → STT/TTS | `make smoke` works; manual acceptance 4 passes; `test_ai_off` still passes |
-| 10 | **Rehearse** with AI off, then on; with phones and without | All manual acceptance items pass |
+| 8b | **Home page + Presentation + PDF** (§9.0, §10.7–10.9) | `test_pages` passes; manual acceptance 6 passes |
+| 10 | **Rehearse** with AI off, then on; with phones and without, using the PDF with notes | All manual acceptance items pass |
 
 **If time runs out, cut in this order:** Ask Munim → voice (STT/TTS) → basket → reminders/reply (keep auto-pay setup via the Dues screen) → Overview polish. **Never cut:** phone scan confirm, Anita's Portable Trust, Diwali plan + Stock Advance + split, logins, real data.
 
@@ -933,7 +1055,9 @@ make smoke                            # python scripts/sarvam_smoke.py
 
 ## 16. Presenting (no script enforced by the app)
 
-Suggested order (about 5 minutes); the app does not enforce it:
+Open `/` on the stage laptop. Start in **Presentation** (slides 1–6: problem, challenge, solution), switch to **Live Demo** for the flows below, then return to **Presentation** for the architecture, the agents and the risks (slides 7–18). **Overview** is the leave-behind.
+
+Suggested demo order (about 5 minutes); the app does not enforce it:
 1. Merchant logs in → growth plan (3 actions).
 2. Soundbox: Priya 340 (green), Ramesh 340 (amber) → Ramesh's phone scans → confirms → laptop updates.
 3. Judge scans the Anita login QR on their phone → Soundbox: Anita 2000 → judge scans → shares → ₹1,500 → pays ₹500 by credit line → confirms → "New · Paytm network".

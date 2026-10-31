@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bharosa on Paytm</title>
+<link rel="stylesheet" href="/static/shared/tokens.css">
+<link rel="stylesheet" href="/static/shared/base.css">
+<style>
+  html, body { height: 100%; overflow: hidden; }
+  body { display: flex; flex-direction: column; background: #E9ECF2; }
+  .top { flex: none; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; height: 54px; padding: 0 16px;
+         background: linear-gradient(110deg, var(--navy) 0%, var(--navy-deep) 70%, #1D4FC4 100%); color: #fff; }
+  .brand { font-weight: 800; font-size: 18px; letter-spacing: -.01em; color: #fff; }
+  .brand span { color: var(--cyan); font-weight: 700; }
+  .tabs { display: flex; gap: 4px; background: rgba(255,255,255,.1); padding: 4px; border-radius: var(--radius-pill); }
+  .tab { padding: 7px 18px; border-radius: var(--radius-pill); font-weight: 700; font-size: 14px; color: rgba(255,255,255,.82); white-space: nowrap; }
+  .tab:hover { color: #fff; }
+  .tab[aria-selected="true"] { background: #fff; color: var(--navy); }
+  .acts { display: flex; justify-content: flex-end; gap: 6px; }
+  .acts a, .acts button { color: #fff; font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: var(--radius-pill); border: 1px solid rgba(255,255,255,.35); white-space: nowrap; }
+  .acts a:hover, .acts button:hover { background: rgba(255,255,255,.12); }
+  .panes { flex: 1; position: relative; min-height: 0; }
+  .panes iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--bg); }
+  .panes iframe[hidden] { display: none; }
+  @media (max-width: 760px) {
+    .top { grid-template-columns: 1fr; height: auto; padding: 8px 12px; justify-items: center; }
+    .acts { display: none; }
+    .tab { padding: 6px 12px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">Bharosa <span>on Paytm</span></div>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" data-pane="demo">Live Demo</button>
+      <button class="tab" role="tab" data-pane="overview">Overview</button>
+      <button class="tab" role="tab" data-pane="presentation">Presentation</button>
+    </nav>
+    <div class="acts">
+      <span data-for="demo"><a href="/demo" target="_blank">Open on its own ↗</a></span>
+      <span data-for="overview"><a href="/overview" target="_blank">Open on its own ↗</a></span>
+      <span data-for="presentation" style="display:flex;gap:6px">
+        <button type="button" id="fs">Fullscreen</button>
+        <a href="/static/presentation/bharosa-pitch.pdf" target="_blank">PDF</a>
+        <a href="/static/presentation/bharosa-pitch-notes.pdf" target="_blank">PDF with notes</a>
+      </span>
+    </div>
+  </header>
+  <main class="panes">
+    <iframe data-pane="demo" title="Live Demo" hidden></iframe>
+    <iframe data-pane="overview" title="Overview" hidden></iframe>
+    <iframe data-pane="presentation" title="Presentation" allow="fullscreen" allowfullscreen hidden></iframe>
+  </main>
+<script>
+// Three sections (spec §10.7). Each iframe loads the first time its tab opens and then stays alive,
+// so switching to the slides and back never resets the live demo.
+const PANES = ['demo', 'overview', 'presentation'];
+const frame = name => document.querySelector(`iframe[data-pane="${name}"]`);
+let current = null;
+
+function show(name) {
+  if (!PANES.includes(name)) name = 'demo';
+  current = name;
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', String(t.dataset.pane === name)));
+  document.querySelectorAll('[data-for]').forEach(a => { a.style.display = a.dataset.for === name ? '' : 'none'; });
+  PANES.forEach(p => {
+    const f = frame(p);
+    if (p === name && !f.getAttribute('src')) f.src = '/' + p;
+    f.hidden = p !== name;
+  });
+  if (location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
+  document.title = 'Bharosa · ' + document.querySelector(`.tab[data-pane="${name}"]`).textContent;
+}
+
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => { show(t.dataset.pane); t.blur(); }));
+window.addEventListener('hashchange', () => show(location.hash.slice(1)));
+
+// While the slides are showing, keys pressed on the header still drive them.
+const DECK_KEYS = ['ArrowRight', 'ArrowLeft', 'ArrowDown', 'ArrowUp', ' ', 'PageDown', 'PageUp', 'Home', 'End', 'f', 'n'];
+document.addEventListener('keydown', e => {
+  if (current !== 'presentation' || !DECK_KEYS.includes(e.key) || e.ctrlKey || e.metaKey || e.altKey) return;
+  const deck = frame('presentation').contentWindow?.deck;
+  if (!deck) return;
+  e.preventDefault();
+  deck.key(e.key);
+});
+document.getElementById('fs').addEventListener('click', () => frame('presentation').contentWindow?.deck?.fullscreen());
+
+show(location.hash.slice(1));
+</script>
+</body>
+</html>

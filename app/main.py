@@ -1,13 +1,14 @@
-"""FastAPI app (v2 spec §13): APIs, the five web apps, and seed-if-missing on startup.
+"""FastAPI app (v2 spec §13): APIs, the web apps, and seed-if-missing on startup.
 
-    /merchant  /customer  /soundbox  /demo  /overview      the apps
+    /                                                        home: Live Demo · Overview · Presentation (§10.7)
+    /merchant  /customer  /soundbox  /demo  /overview  /presentation      the apps
     /c/r/{token}                                             a QR request, opened in the customer app
 """
 from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlmodel import select
 
@@ -17,7 +18,7 @@ from app.errors import EventError
 from app.models import Store
 
 STATIC = Path(__file__).resolve().parent.parent / "static"
-APPS = ("merchant", "customer", "soundbox", "demo", "overview")
+APPS = ("merchant", "customer", "soundbox", "demo", "overview", "presentation")
 
 
 @asynccontextmanager
@@ -47,7 +48,7 @@ def _page(name: str) -> FileResponse:
 
 @app.get("/", include_in_schema=False)
 def root():
-    return RedirectResponse("/demo")
+    return _page("home")
 
 
 @app.get("/c/r/{token}", include_in_schema=False)

@@ -198,7 +198,7 @@
           </div>
         </template>
         <div x-show="!disputing" class="row" style="margin-top:16px">
-          <button class="btn btn-primary grow" @click="confirm()" :disabled="busy || (req.collect_now && !payMethod)"
+          <button class="btn btn-primary grow" @click="confirm()" :disabled="busy || (req.collect_now > 0 && !payMethod)"
                   x-text="req.collect_now ? 'Pay ' + F.inr(req.collect_now) + ' & confirm' : 'Confirm'"></button>
           <button class="btn btn-outline" @click="disputing = true">Dispute</button>
         </div>
